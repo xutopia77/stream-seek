@@ -2,7 +2,6 @@
   <transition name="my-message-fade" @before-leave="onClose" @after-leave="$emit('destroy')">
     <div
       v-show="visible"
-      :id="id"
       ref="messageRef"
       :class="[
         'my-message',
@@ -29,103 +28,103 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
   message: {
     type: String,
-    default: '',
+    default: ''
   },
   type: {
     type: String,
-    default: 'info',
+    default: 'info'
   },
   duration: {
     type: Number,
-    default: 3000,
+    default: 3000
   },
   showClose: {
     type: Boolean,
-    default: false,
+    default: false
   },
   center: {
     type: Boolean,
-    default: false,
+    default: false
   },
   plain: {
     type: Boolean,
-    default: false,
+    default: false
   },
   dangerouslyUseHTMLString: {
     type: Boolean,
-    default: false,
+    default: false
   },
   customClass: {
     type: String,
-    default: '',
+    default: ''
   },
   customStyle: {
     type: Object,
-    default: () => ({}),
+    default: () => ({})
   },
   repeatNum: {
     type: Number,
     default: 1
   }
-});
+})
 
-const visible = ref(true);
-const messageRef = ref(null);
-let timer = null;
+const visible = ref(true)
+const messageRef = ref(null)
+let timer = null
 
 const iconMap = {
   success: 'my-message-icon-success',
   warning: 'my-message-icon-warning',
   info: 'my-message-icon-info',
   error: 'my-message-icon-error'
-};
+}
 
 const iconComponent = computed(() => {
-  return iconMap[props.type];
-});
+  return iconMap[props.type]
+})
 
 const iconClass = computed(() => {
-  return `my-message-icon ${iconComponent.value}`;
-});
+  return `my-message-icon ${iconComponent.value}`
+})
 
-const onClose = () => {
-  visible.value = false;
-};
+const onClose = (): void => {
+  visible.value = false
+}
 
-const close = () => {
-  onClose();
-};
+const close = (): void => {
+  onClose()
+}
 
-const clearTimer = () => {
+const clearTimer = (): void => {
   if (timer) {
-    clearTimeout(timer);
+    clearTimeout(timer)
   }
-};
+}
 
-const startTimer = () => {
+const startTimer = (): void => {
   if (props.duration > 0) {
-    timer = setTimeout(() => {
-      onClose();
-    }, props.duration);
+    setTimeout(() => {
+      onClose()
+    }, props.duration)
   }
-};
+}
 
 onMounted(() => {
-  startTimer();
-});
+  startTimer()
+})
 
 watch(
   () => props.repeatNum,
   () => {
-    clearTimer();
-    startTimer();
+    clearTimer()
+    startTimer()
   }
-);
+)
 </script>
 
 <style scoped>

@@ -64,7 +64,7 @@ const appStore = useAppStore()
 const togglePlay = (): void => {
   const tmpValue = appStore.videoPlayCtrl
   tmpValue.isPlay = !tmpValue.isPlay
-  appStore.setData('videoPlayCtrl', tmpValue)
+  appStore.videoPlayCtrl = tmpValue
 }
 
 // 改变播放倍速
@@ -100,7 +100,7 @@ let frameInfo = computed(() => genFrame())
 let frameRate = computed(() => {
   if (appStore.curVideoInfo == null) return ''
   if (appStore.curVideoInfo.mediaInfo == null) return ''
-  const frameRateStr = parseFloat(appStore.curVideoInfo.mediaInfo.video.frame_rate).toFixed(3)
+  const frameRateStr = appStore.curVideoInfo.mediaInfo.video.frame_rate.toFixed(3)
   return `${frameRateStr}fps`
 })
 
