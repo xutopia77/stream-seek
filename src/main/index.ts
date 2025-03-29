@@ -3,6 +3,10 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
+import { IpcHandlers } from './proc_models/IpcHandlers.ts'
+import appCfg from './proc_models/AppCfg.ts'
+const handlers = new IpcHandlers()
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -32,13 +36,16 @@ function createWindow(): void {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    handlers.mainWindow = mainWindow
   }
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then( async () => {
+  await appCfg.init()
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -51,6 +58,7 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.handle('render_event', handlers.handle_event)
 
   createWindow()
 
@@ -59,6 +67,12 @@ app.whenReady().then(() => {
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+app.on('before-quit', async (event) => {
+  console.log('app exit')
+  // event.preventDefault()
+  await appCfg.quiteApp()
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
