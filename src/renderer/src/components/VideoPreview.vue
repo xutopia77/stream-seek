@@ -30,7 +30,7 @@ import { ref, onMounted, watch, onBeforeMount, computed, onUnmounted } from 'vue
 import { IpcApi } from '../utils/IpcApi'
 import util from '../utils/util'
 import { useAppStore } from '../stores/AppStore'
-
+import MessageShow from './util/MessageShow'
 // 明确 IpcApi 实例的类型
 const ipcAPi: IpcApi = new IpcApi()
 // 明确 appStore 的类型
@@ -116,7 +116,7 @@ watch(
         videoRef.value.pause()
       } else {
         if (!(appStore.curSltVideo != null && appStore.curSltVideo.src != null)) {
-          window.$toast.error('请选择视频文件')
+          MessageShow.error('请选择视频文件')
           return
         }
         function convert_filepath_to_linux_style(filepath: string | null): string | null {

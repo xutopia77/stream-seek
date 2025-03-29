@@ -47,6 +47,7 @@ import { useAppStore } from '../../stores/AppStore'
 import '../../assets/common.css'
 import util from '../../utils/util.js'
 import { IpcApi } from '../../utils/IpcApi'
+import MessageShow from '../util/MessageShow'
 
 // 定义 SplitInfo 类型
 interface SplitInfo {
@@ -73,7 +74,7 @@ const btnclk_change_view_model = (): void => {
     appStore.curViewModel = 'video'
   }
   const showCtx = appStore.curViewModel === 'video' ? `视频播放模式` : `缩略图模式`
-  window.$toast.success(showCtx)
+  MessageShow.success(showCtx)
 }
 
 // ------
@@ -131,7 +132,7 @@ const selectSplitInfo = (splitInfo: SplitInfo): void => {
 
 const removeVideosplit = (): void => {
   if (selectedSplitInfo.value?.percent === 100) {
-    window.$toast.success(`不能删除系统片段`)
+    MessageShow.success(`不能删除系统片段`)
     return
   }
   if (selectedSplitInfo.value) {
@@ -185,9 +186,9 @@ const exportVideoRecord = async (): Promise<void> => {
     return
   }
   if (response.code !== 0) {
-    window.$toast.success(`剪辑失败: ${response.status}`)
+    MessageShow.success(`剪辑失败: ${response.status}`)
   } else {
-    window.$toast.success(response.bOver === false ? '后台运行' : `剪辑成功`)
+    MessageShow.success(response.bOver === false ? '后台运行' : `剪辑成功`)
   }
 }
 </script>

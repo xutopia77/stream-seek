@@ -45,7 +45,7 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 import { IpcApi } from '../../utils/IpcApi'
 import util from '../../utils/util.js'
-
+import MessageShow from '../util/MessageShow'
 const ipcAPi: IpcApi = new IpcApi()
 const appStore = useAppStore()
 
@@ -119,7 +119,7 @@ watch(
 
 async function processShowKeyInfo(): Promise<void> {
   if (appStore.curVideoInfo == null) {
-    window.$toast.error(`请先打开视频文件`)
+    MessageShow.error(`请先打开视频文件`)
     return
   }
   if (appStore.bShowKeyFrameInfo == false) {
@@ -133,9 +133,9 @@ async function processShowKeyInfo(): Promise<void> {
   }
   const response = await util.getKeyFrameInfo(ipcAPi)
   if (response.code != 0) {
-    window.$toast.error(`get key frame info err:${response.status}`)
+    MessageShow.error(`get key frame info err:${response.status}`)
   } else {
-    window.$toast.info(response.bOver == false ? '正在处理...' : `获取关键帧信息成功`)
+    MessageShow.info(response.bOver == false ? '正在处理...' : `获取关键帧信息成功`)
   }
 }
 

@@ -3,18 +3,19 @@ declare global {
   interface Window {
     electron: {
       ipcRenderer: {
-        invoke: (channel: string, ...args: any[]) => Promise<any>;
-        send: (channel: string, ...args: any[]) => void;
-      };
-    };
+        invoke: (channel: string, ...args: any[]) => Promise<any>
+        send: (channel: string, ...args: any[]) => void
+      }
+    }
   }
 }
 
 // 定义响应数据的类型
 interface IpcResponse {
-  code: number;
-  status: string;
-  message?: any;
+  code: number
+  status: string
+  data?: string
+  bOver?: boolean
 }
 
 export class IpcApi {
@@ -22,10 +23,10 @@ export class IpcApi {
   async trigger_event(reqStr: string): Promise<IpcResponse> {
     // console.log(`Arguments: ${reqStr}`)
     try {
-      return await window.electron.ipcRenderer.invoke('render_event', reqStr) as IpcResponse;
+      return (await window.electron.ipcRenderer.invoke('render_event', reqStr)) as IpcResponse
     } catch (error) {
-      console.error('err:', error);
-      return { code: 1, status: 'error', message: error };
+      console.error('err:', error)
+      return { code: 1, status: 'error', message: error }
     }
   }
 }

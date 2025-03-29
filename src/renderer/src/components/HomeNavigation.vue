@@ -66,6 +66,7 @@ import util from '../utils/util'
 
 const appStore = useAppStore()
 import { IpcApi } from '../utils/IpcApi'
+import MessageShow from './util/MessageShow'
 const ipcAPi: IpcApi = new IpcApi()
 
 // 控制下拉菜单是否显示
@@ -107,7 +108,7 @@ const openFolder = async (): Promise<void> => {
     console.log('打开文件夹失败')
   } else {
     if (response.bOver == false) {
-      window.$toast.success('后台执行中...')
+      MessageShow.success('后台执行中...')
     } else {
       util.folder_file_proc(response.data)
     }

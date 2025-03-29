@@ -1,7 +1,7 @@
 import { AppStore } from '../stores/AppStore' // 假设 AppStore 有对应的类型定义
 
 import { SltMediaInfo, SltMedia, MediaItem } from '../../../bridge/dataTypedef'
-
+import MessageShow from '../components/util/MessageShow'
 let appStore: AppStore | null = null
 
 // 定义 IpcApi 类型
@@ -50,7 +50,7 @@ function updateKeyframeSplitInfo(frameInfo: { pict_type: string; pts_time: numbe
 async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<IpcResponse> {
   let resp: IpcResponse = { code: 0, status: 'success' }
   if (appStore?.curSltVideo === null || appStore?.curVideoInfo?.mediaInfo === null) {
-    window.$toast.info('没有选择视频文件')
+    MessageShow.info('没有选择视频文件')
     resp = { code: 1, status: 'no video selected' }
     return resp
   }
@@ -141,20 +141,20 @@ function process_work_response(workRespose: { cmd: string; data: any }): void {
       break
     case 'cut_video':
       if (response.code !== 0) {
-        window.$toast.error(`视频裁剪失败: ${response.status}`)
+        MessageShow.error(`视频裁剪失败: ${response.status}`)
       } else {
-        window.$toast.info('视频裁剪完成：', response.status)
+        MessageShow.info('视频裁剪完成：', response.status)
       }
       break
     case 'get_key_frame_info':
       if (response.code !== 0) {
-        window.$toast.error(`获取关键帧信息失败: ${response.status}`)
+        MessageShow.error(`获取关键帧信息失败: ${response.status}`)
       } else {
         if (appStore) {
           appStore.curVideoInfo = appStore.curVideoInfo || {}
           appStore.curVideoInfo.frameInfo = response.data
         }
-        window.$toast.info('获取关键帧信息完成：', response.status)
+        MessageShow.info('获取关键帧信息完成：', response.status)
       }
       break
   }
@@ -278,7 +278,7 @@ async function make_prj_info(): Promise<{
   filename: string
 } | null> {
   if (appStore?.curVideoInfo === null) {
-    window.$toast.success(`当前没有选择视频文件`)
+    MessageShow.success(`当前没有选择视频文件`)
     return null
   }
   const prjInfo = {
@@ -293,9 +293,9 @@ const save_project = async (ipcAPi: IpcApi): Promise<void> => {
   const prjInfo = await util.make_prj_info()
   const response = await ipcAPi.trigger_event(JSON.stringify({ cmd: 'save_prj', data: prjInfo }))
   if (response.code !== 0) {
-    window.$toast.success(`保存失败: ${response.status}`)
+    MessageShow.success(`保存失败: ${response.status}`)
   } else {
-    window.$toast.success(`保存成功`)
+    MessageShow.success(`保存成功`)
   }
 }
 
@@ -325,9 +325,9 @@ function process_heartbeat(response: {
       const workResp = item.data
       const showCtx = `命令:${item.cmd} 执行结果: ${workResp.status}`
       if (workResp.code !== 0) {
-        window.$toast.error(showCtx)
+        MessageShow.error(showCtx)
       } else {
-        window.$toast.success(showCtx)
+        MessageShow.success(showCtx)
       }
       util.process_work_response(item)
     }

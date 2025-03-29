@@ -16,13 +16,14 @@ import { onBeforeMount, watch } from 'vue'
 import util from '../utils/util.js'
 import ToastMessage from './util/ToastMessage.vue'
 import { IpcApi } from '../utils/IpcApi'
+import MessageShow from './util/MessageShow'
 const ipcAPi: IpcApi = new IpcApi()
 
 // 定义响应数据的类型
 interface IpcResponse {
-  code: number;
-  data?: any;
-  status?: string;
+  code: number
+  data?: any
+  status?: string
 }
 
 // 启动一个定时器，周期性ipcAPi.trigger_event
@@ -31,30 +32,30 @@ function startTimer(): void {
     ipcAPi
       .trigger_event(JSON.stringify({ cmd: 'heart_beat', data: '' }))
       .then((response: IpcResponse) => {
-        util.process_heartbeat(response);
+        util.process_heartbeat(response)
       })
       .catch((error: Error) => {
-        console.log('process_heartbeat failed', error);
-      });
-  }, 500);
+        console.log('process_heartbeat failed', error)
+      })
+  }, 500)
 }
 
 // 定义项目数据的类型
 interface Project {
-  lastOpenedFolder?: string;
+  lastOpenedFolder?: string
 }
 
 async function updatePrj(prj: Project): Promise<void> {
-  appStore.prj = prj;
+  appStore.prj = prj
   if (prj.lastOpenedFolder != null) {
     const response: IpcResponse = await ipcAPi.trigger_event(
       JSON.stringify({ cmd: 'traversal_folder', data: { folder: prj.lastOpenedFolder } })
-    );
+    )
     if (response.code === 0) {
-      appStore.curOpenedFolder = prj.lastOpenedFolder;
-      util.folder_file_proc(response.data);
+      appStore.curOpenedFolder = prj.lastOpenedFolder
+      util.folder_file_proc(response.data)
     }
-    startTimer();
+    startTimer()
   }
 }
 
@@ -62,22 +63,24 @@ watch(
   () => appStore.documentTitle,
   (docTitle: string | null) => {
     if (docTitle === '' || docTitle === null) {
-      document.title = 'VideoPlayer';
-      return;
+      document.title = 'VideoPlayer'
+      return
     }
-    document.title = 'VideoPlayer' + '  ' + docTitle;
+    document.title = 'VideoPlayer' + '  ' + docTitle
   }
-);
+)
 
 onBeforeMount(async () => {
-  util.setAppStore(appStore);
-  const response: IpcResponse = await ipcAPi.trigger_event(JSON.stringify({ cmd: 'app_start', data: '' }));
+  util.setAppStore(appStore)
+  const response: IpcResponse = await ipcAPi.trigger_event(
+    JSON.stringify({ cmd: 'app_start', data: '' })
+  )
   if (response.code !== 0) {
-    window.$toast.error(`启动失败`);
-    return;
+    MessageShow.error(`启动失败`)
+    return
   }
-  updatePrj(response.data.prj);
-});
+  updatePrj(response.data.prj)
+})
 </script>
 
 <style scoped>

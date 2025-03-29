@@ -29,7 +29,7 @@
 import { ref, computed } from 'vue'
 import { IpcApi } from '../../utils/IpcApi'
 import { useAppStore } from '../../stores/AppStore'
-
+import MessageShow from '../util/MessageShow'
 // 明确 IpcApi 实例的类型
 const ipcAPi: IpcApi = new IpcApi()
 // 明确 appStore 的类型
@@ -81,11 +81,11 @@ const handleQuery = async (): Promise<void> => {
   )
   if (response.code != 0) {
     console.log(response)
-    window.$toast.error(`查询失败:${response.status}`)
+    MessageShow.error(`查询失败:${response.status}`)
     return
   } else {
     if (response.bOver != null && response.bOver == false) {
-      window.$toast.success(`后台执行中...`)
+      MessageShow.success(`后台执行中...`)
     }
   }
 }
