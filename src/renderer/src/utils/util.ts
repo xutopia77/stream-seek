@@ -1,5 +1,7 @@
 import { AppStore } from '../stores/AppStore' // 假设 AppStore 有对应的类型定义
 
+import { SltMediaInfo, SltMedia, MediaItem } from '../../../bridge/dataTypedef'
+
 let appStore: AppStore | null = null
 
 // 定义 IpcApi 类型
@@ -84,7 +86,7 @@ function clear_cur_slt_video_info(req: { clearModel?: string } | null): void {
   }
 
   // 有条件的清除
-  if (req !== null) {
+  if (req != null) {
     if (req.clearModel === 'changeToThumbnail') {
       const tmpDuration = appStore?.curVideoInfo?.mediaInfo?.duration
       clear_videoPlayCtrl()
@@ -271,7 +273,7 @@ const formatSecond2Time = (timeSec: number): string => {
 }
 
 async function make_prj_info(): Promise<{
-  fileInfo: any
+  fileInfo: SltMediaInfo
   filepath: string
   filename: string
 } | null> {

@@ -50,12 +50,12 @@ import { IpcApi } from '../../utils/IpcApi'
 
 // 定义 SplitInfo 类型
 interface SplitInfo {
-  startTime: number;
-  endTime: number;
-  duration: number;
-  frameNum: number;
-  percent: number;
-  isDelete?: boolean;
+  startTime: number
+  endTime: number
+  duration: number
+  frameNum: number
+  percent: number
+  isDelete: boolean
 }
 
 const ipcAPi: IpcApi = new IpcApi()
@@ -115,7 +115,14 @@ const videoSplitInfo = computed(() => {
   return splitInfo
 })
 
-const selectedSplitInfo = ref<SplitInfo | null>(null)
+const selectedSplitInfo = ref<SplitInfo>({
+  startTime: 0,
+  endTime: 0,
+  duration: 0,
+  frameNum: 0,
+  percent: 0,
+  isDelete: false
+})
 
 const selectSplitInfo = (splitInfo: SplitInfo): void => {
   selectedSplitInfo.value = splitInfo

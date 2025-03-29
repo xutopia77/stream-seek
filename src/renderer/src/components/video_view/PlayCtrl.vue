@@ -56,6 +56,7 @@
 import { computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 import '../../assets/common.css'
+import MyMessage from '../util/MessageShow'
 // import util from '../../utils/util.js'
 const appStore = useAppStore()
 
@@ -104,12 +105,15 @@ let frameRate = computed(() => {
 })
 
 function nextFrame(): void {
+  MyMessage.info('sdfsdfs1')
   if (appStore.func_nextFrame) {
     appStore.func_nextFrame()
   }
 }
 
 function previousFrame(): void {
+  MyMessage.error('sdfsdfs')
+  MyMessage.error('sdfsdfs1')
   if (appStore.func_previousFrame) {
     appStore.func_previousFrame()
   }
