@@ -1,7 +1,12 @@
 import { createApp, h } from 'vue'
 import MyMessage from './MessageShow.vue'
 
-const MyMessageFn = (options: any) => {
+const MyMessageFn = (options: {
+  message: string
+  type?: string
+  duration?: number
+  [key: string]: any
+}) => {
   const { message, type = 'info', duration = 3000, ...rest } = options
   const container = document.createElement('div')
   const app = createApp({
@@ -21,15 +26,24 @@ const MyMessageFn = (options: any) => {
   document.body.appendChild(container)
 }
 
-const types = ['success', 'warning', 'info', 'error']
-types.forEach((type) => {
-  MyMessageFn[type] = (options: any) => {
-    if (typeof options === 'string') {
-      options = { message: options }
-    }
-    return MyMessageFn({ ...options, type })
-  }
-})
+MyMessageFn.success = (options: string | { message: string; [key: string]: any }) => {
+  const opt = typeof options === 'string' ? { message: options } : options
+  return MyMessageFn({ ...opt, type: 'success' })
+}
 
-// 确保正确导出
+MyMessageFn.warning = (options: string | { message: string; [key: string]: any }) => {
+  const opt = typeof options === 'string' ? { message: options } : options
+  return MyMessageFn({ ...opt, type: 'warning' })
+}
+
+MyMessageFn.info = (options: string | { message: string; [key: string]: any }) => {
+  const opt = typeof options === 'string' ? { message: options } : options
+  return MyMessageFn({ ...opt, type: 'info' })
+}
+
+MyMessageFn.error = (options: string | { message: string; [key: string]: any }) => {
+  const opt = typeof options === 'string' ? { message: options } : options
+  return MyMessageFn({ ...opt, type: 'error' })
+}
+
 export default MyMessageFn

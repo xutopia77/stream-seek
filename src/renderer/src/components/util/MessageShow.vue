@@ -1,30 +1,28 @@
 <template>
-  <transition name="my-message-fade" @before-leave="onClose" @after-leave="$emit('destroy')">
-    <div
-      v-show="visible"
-      ref="messageRef"
-      :class="[
-        'my-message',
-        { ['my-message-' + type]: type },
-        { 'my-message-center': center },
-        { 'my-message-closable': showClose },
-        { 'my-message-plain': plain },
-        customClass
-      ]"
-      :style="customStyle"
-      role="alert"
-      @mouseenter="clearTimer"
-      @mouseleave="startTimer"
-    >
-      <span v-if="repeatNum > 1" class="my-message-badge">{{ repeatNum }}</span>
-      <i v-if="iconComponent" :class="[iconClass]"></i>
-      <p v-if="!dangerouslyUseHTMLString" class="my-message-content">
-        {{ message }}
-      </p>
-      <p v-else class="my-message-content" v-html="message" />
-      <i v-if="showClose" class="my-message-close-btn" @click.stop="close"></i>
-    </div>
-  </transition>
+  <div
+    v-show="visible"
+    ref="messageRef"
+    :class="[
+      'my-message',
+      { ['my-message-' + type]: type },
+      { 'my-message-center': center },
+      { 'my-message-closable': showClose },
+      { 'my-message-plain': plain },
+      customClass
+    ]"
+    :style="customStyle"
+    role="alert"
+    @mouseenter="clearTimer"
+    @mouseleave="startTimer"
+  >
+    <span v-if="repeatNum > 1" class="my-message-badge">{{ repeatNum }}</span>
+    <i v-if="iconComponent" :class="[iconClass]"></i>
+    <p v-if="!dangerouslyUseHTMLString" class="my-message-content">
+      {{ message }}
+    </p>
+    <p v-else class="my-message-content" v-html="message" />
+    <i v-if="showClose" class="my-message-close-btn" @click.stop="close"></i>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -45,7 +43,7 @@ const props = defineProps({
   },
   showClose: {
     type: Boolean,
-    default: false
+    default: true
   },
   center: {
     type: Boolean,
@@ -224,16 +222,5 @@ watch(
 
 .my-message-close-btn::before {
   content: '×';
-}
-
-/* 动画样式 */
-.my-message-fade-enter-active,
-.my-message-fade-leave-active {
-  transition: opacity 0.3s;
-}
-
-.my-message-fade-enter,
-.my-message-fade-leave-to {
-  opacity: 0;
 }
 </style>
