@@ -15,7 +15,7 @@
     @mouseenter="clearTimer"
     @mouseleave="startTimer"
   >
-    <span v-if="repeatNum > 1" class="my-message-badge">{{ repeatNum }}</span>
+    <span v-if="repeatNum != null && repeatNum > 1" class="my-message-badge">{{ repeatNum }}</span>
     <i v-if="iconComponent" :class="[iconClass]"></i>
     <p v-if="!dangerouslyUseHTMLString" class="my-message-content">
       {{ message }}
@@ -28,48 +28,21 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref, watch } from 'vue'
 
-const props = defineProps({
-  message: {
-    type: String,
-    default: ''
-  },
-  type: {
-    type: String,
-    default: 'info'
-  },
-  duration: {
-    type: Number,
-    default: 3000
-  },
-  showClose: {
-    type: Boolean,
-    default: true
-  },
-  center: {
-    type: Boolean,
-    default: false
-  },
-  plain: {
-    type: Boolean,
-    default: false
-  },
-  dangerouslyUseHTMLString: {
-    type: Boolean,
-    default: false
-  },
-  customClass: {
-    type: String,
-    default: ''
-  },
-  customStyle: {
-    type: Object,
-    default: () => ({})
-  },
-  repeatNum: {
-    type: Number,
-    default: 1
-  }
-})
+// 定义 interface
+interface MessageProps {
+  message: string
+  type?: string
+  duration?: number
+  showClose?: boolean
+  center?: boolean
+  plain?: boolean
+  dangerouslyUseHTMLString?: boolean
+  customClass?: string
+  customStyle?: Record<string, any>
+  repeatNum?: number
+}
+
+const props = defineProps<MessageProps>()
 
 const visible = ref(true)
 const messageRef = ref(null)
@@ -132,10 +105,15 @@ watch(
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px 20px;
+  padding: 6px 6px;
   border-radius: 4px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   z-index: 9999;
+  display: flex;
+}
+
+.my-message-content {
+  margin: 0px;
 }
 
 /* 不同类型的样式 */

@@ -1,13 +1,9 @@
 import { createApp, h } from 'vue'
 import MyMessage from './MessageShow.vue'
+import type { MessageProps } from './MessageShow.vue'
 
-const MyMessageFn = (options: {
-  message: string
-  type?: string
-  duration?: number
-  [key: string]: any
-}) => {
-  const { message, type = 'info', duration = 3000, ...rest } = options
+const MessageShow = (options: MessageProps): void => {
+  const { message, type = 'info', duration = 2000, ...rest } = options
   const container = document.createElement('div')
   const app = createApp({
     render: () =>
@@ -26,24 +22,24 @@ const MyMessageFn = (options: {
   document.body.appendChild(container)
 }
 
-MyMessageFn.success = (options: string | { message: string; [key: string]: any }) => {
+MessageShow.success = (options: string | MessageProps): void => {
   const opt = typeof options === 'string' ? { message: options } : options
-  return MyMessageFn({ ...opt, type: 'success' })
+  return MessageShow({ ...opt, type: 'success' })
 }
 
-MyMessageFn.warning = (options: string | { message: string; [key: string]: any }) => {
+MessageShow.warning = (options: string | MessageProps): void => {
   const opt = typeof options === 'string' ? { message: options } : options
-  return MyMessageFn({ ...opt, type: 'warning' })
+  return MessageShow({ ...opt, type: 'warning' })
 }
 
-MyMessageFn.info = (options: string | { message: string; [key: string]: any }) => {
+MessageShow.info = (options: string | MessageProps): void => {
   const opt = typeof options === 'string' ? { message: options } : options
-  return MyMessageFn({ ...opt, type: 'info' })
+  return MessageShow({ ...opt, type: 'info' })
 }
 
-MyMessageFn.error = (options: string | { message: string; [key: string]: any }) => {
+MessageShow.error = (options: string | MessageProps): void => {
   const opt = typeof options === 'string' ? { message: options } : options
-  return MyMessageFn({ ...opt, type: 'error' })
+  return MessageShow({ ...opt, type: 'error' })
 }
 
-export default MyMessageFn
+export default MessageShow

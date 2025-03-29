@@ -56,7 +56,7 @@
 import { computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 import '../../assets/common.css'
-import MyMessage from '../util/MessageShow'
+import MessageShow from '../util/MessageShow'
 // import util from '../../utils/util.js'
 const appStore = useAppStore()
 
@@ -105,17 +105,17 @@ let frameRate = computed(() => {
 })
 
 function nextFrame(): void {
-  MyMessage.info('sdfsdfs1')
+  MessageShow.info('sdfsdfs1')
   if (appStore.func_nextFrame) {
     appStore.func_nextFrame()
   }
 }
 
 function previousFrame(): void {
-  MyMessage.error('sdfsdfs')
-  MyMessage.error('sdfsdfs1')
-  if (appStore.func_previousFrame) {
-    appStore.func_previousFrame()
+  MessageShow.error('sdfsdfs')
+  MessageShow.error('sdfsdfs1')
+  if (appStore.func_prevFrame) {
+    appStore.func_prevFrame()
   }
 }
 
@@ -129,7 +129,7 @@ function showKeyFrame(): void {
 function changeFile(flag: string): void {
   // 根据curSltVideo 从appStore的videoList中找到当前视频的索引
   if (appStore.videoList.length == 0) {
-    window.$toast.info('没有视频文件')
+    MessageShow.info('没有视频文件')
     return
   }
   if (appStore.curSltVideo == null) {
@@ -150,14 +150,14 @@ function changeFile(flag: string): void {
 
   if (flag == 'previous') {
     if (curVideoIdx == 0) {
-      window.$toast.info('已经是第一个文件')
+      MessageShow.info('已经是第一个文件')
       appStore.curSltVideo = appStore.videoList[curVideoIdx]
       return
     }
     appStore.curSltVideo = appStore.videoList[curVideoIdx - 1]
   } else {
     if (curVideoIdx == appStore.videoList.length - 1) {
-      window.$toast.info('已经是最后一个文件')
+      MessageShow.info('已经是最后一个文件')
       appStore.curSltVideo = appStore.videoList[curVideoIdx]
       return
     }
