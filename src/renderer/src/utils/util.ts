@@ -1,58 +1,5 @@
 import { AppStore } from '../stores/AppStore' // 假设 AppStore 有对应的类型定义
 
-// 假设 AppStore 类型定义
-type AppStore = {
-  prj: any
-  serverUrlPrefix: string
-  curOpenedFolder: string
-  videoPlayCtrl: {
-    curSrc: string | null
-    curTime: number
-    videoStartTime: number
-    isPlay: boolean
-    playbackRate: number
-  }
-  curViewModel: 'video' | 'thumbnail'
-  func_nextFrame: (() => void) | null
-  func_prevFrame: (() => void) | null
-  rightPanel: 'list' | 'workPanel'
-  videoList: any[]
-  curSltVideo: any | null
-  curVideoInfo: {
-    mediaInfo?: {
-      duration: number
-      video: {
-        frame_rate: number
-      }
-    }
-    splitInfo?: any[]
-    frameInfo?: {
-      frames: {
-        pict_type: string
-        pts_time: number
-      }[]
-    }
-    eventInfo?: {
-      events: any[][]
-    }
-  } | null
-  barColorCfg: {
-    startTime: number
-    endTime: number
-    color: string
-  }[]
-  videoSplitInfo: any[]
-  bShowKeyFrameInfo: boolean
-  barSeekTime: number
-  documentTitle: string
-  thumbnailImages: any[]
-  thumbSeekTime: number
-  queryInfo: any | null
-  queryCtrl: {
-    displayOption: 'single' | 'daily'
-  }
-}
-
 let appStore: AppStore | null = null
 
 // 定义 IpcApi 类型
