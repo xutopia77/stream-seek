@@ -1,7 +1,7 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import logger from './Logger'
-
+import * as DataTypes from '../../bridge/dataTypedef'
 // 定义解析文件名后的返回类型
 interface ParsedFilename {
   sequence: string
@@ -57,42 +57,20 @@ class Util {
   parse_seconds_2_timestr = parse_seconds_2_timestr
 }
 
-// 定义遍历文件夹返回结果的类型
-interface TraversalResult {
-  code: number
-  status: string | Error
-  data: {
-    folder: string
-    files: {
-      title: string
-      src: string
-      size: number
-      birthtime: string
-      mtime: string
-    }[]
-  }
-}
-
 // 遍历文件夹类
 class TraversalFolder {
   type: string | null = null // search时才遍历子文件夹
   folder: string | null = null
 
   // 递归遍历文件夹
-  async traversal_folder(): Promise<TraversalResult> {
+  async traversal_folder(): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
     const folderPath = this.folder
     if (!folderPath) {
       return { code: 1, status: 'folder is null', data: { folder: '', files: [] } }
     }
     try {
-      const fileInfo: {
-        title: string
-        src: string
-        size: number
-        birthtime: string
-        mtime: string
-      }[] = []
-      const traverseRecursive = async (currentPath: string) => {
+      const fileInfo: DataTypes.FileInfo[] = []
+      const traverseRecursive = async (currentPath: string): Promise<void> => {
         const currentFiles = await fs.promises.readdir(currentPath)
         for (const file of currentFiles) {
           const filePath = path.join(currentPath, file)
@@ -119,14 +97,21 @@ class TraversalFolder {
       return { code: 0, status: 'success', data: { folder: folderPath, files: fileInfo } }
     } catch (error) {
       console.error('遍历文件夹时出错:', error)
-      return { code: 1, status: error, data: { folder: '', files: [] } }
+      return { code: 1, status: String(error), data: { folder: '', files: [] } }
     }
   }
 
   // 启动文件夹遍历
-  async start(): Promise<TraversalResult> {
+  async start(): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
     if (this.folder === null) {
-      return { code: 1, status: 'folder is null', data: { folder: '', files: [] } }
+      return {
+        code: 1,
+        status: 'folder is null',
+        data: {
+          folder: '',
+          files: []
+        }
+      }
     }
     return this.traversal_folder()
   }
@@ -138,17 +123,11 @@ interface WorkQueueRequest {
   // 可以根据实际情况添加更多属性
 }
 
-// 定义工作队列响应类型
-interface WorkQueueResponse {
-  cmd: string
-  data: any
-}
-
 // 工作队列类
 class WorkQueue {
   processing = false
   curReq: WorkQueueRequest | null = null
-  resps: WorkQueueResponse[] = []
+  resps: DataTypes.WorkResp[] = []
 
   // 判断队列是否忙碌
   isBusy = (): boolean => {
@@ -161,12 +140,12 @@ class WorkQueue {
   }
 
   // 添加任务到队列
-  addTask(req: WorkQueueRequest): void {
+  addTask(req: WorkQueueRequest | null): void {
     this.curReq = req
   }
 
   // 添加响应到队列
-  async addResp(resp: WorkQueueResponse): Promise<void> {
+  async addResp(resp: DataTypes.WorkResp): Promise<void> {
     if (this.curReq !== null) {
       if (resp.cmd !== this.curReq.cmd) {
         logger.warn('resp cmd not equal to req cmd', resp.cmd, this.curReq.cmd)
@@ -184,5 +163,11 @@ class WorkQueue {
 const workQueue = new WorkQueue()
 const util = new Util()
 
+interface WorkResp<T> {
+  cmd: string
+  data: T
+}
+
 export { util, workQueue }
 export { TraversalFolder }
+export type { WorkResp }

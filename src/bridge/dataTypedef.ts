@@ -86,3 +86,45 @@ export interface MediaItem {
   mtime: string
   filePath: string
 }
+
+// ========================
+
+export interface FileInfo {
+  title: string
+  filePath: string //文件的路径，由后端赋值
+  src?: string // 文件的url由前端组装
+  size: number
+  birthtime: string
+  mtime: string
+}
+
+export interface TraversalFolder {
+  folder?: string
+  files?: FileInfo[]
+}
+
+export interface Prj {
+  name: string
+  version: string
+  lastOpenedFolder?: string
+}
+
+export interface Resp_Prj {
+  code: number
+  status: string
+  data?: {
+    prj?: Prj
+  }
+}
+
+export interface WorkResp {
+  cmd: string
+  data: string
+}
+
+export interface Resp<T> {
+  code: number
+  status: string
+  bOver?: boolean
+  data?: T
+}

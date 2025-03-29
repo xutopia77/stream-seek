@@ -6,7 +6,8 @@ import appCfg from './AppCfg.js'
 import logger from './Logger.js'
 import recordsProc from './RecordsProcess.js'
 import { TraversalFolder, workQueue } from './Utils.js'
-
+// import type { WorkResp } from './Utils.js'
+import * as DataTypes from '../../bridge/dataTypedef'
 // 定义请求对象的类型
 interface Request {
   cmd: string
@@ -40,7 +41,7 @@ function make_file_prj_path(filename: string): string {
 async function handle_open_folder(
   mainWindow: Electron.BrowserWindow,
   req: Request
-): Promise<Response> {
+): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
   let openType: string | null = null
   if (req.data != null) {
     openType = req.data.type
@@ -62,18 +63,18 @@ async function handle_open_folder(
     traversalFolder.folder = folderPath
     traversalFolder
       .start()
-      .then((resp: TraversalFolderResponse) => {
-        const workResp = {
+      .then((resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+        const workResp: DataTypes.WorkResp = {
           cmd: req.cmd,
-          data: resp
+          data: JSON.stringify(resp)
         }
         workQueue.addResp(workResp)
       })
-      .catch((error: any) => {
-        workQueue.addResp({ cmd: req.cmd, data: { code: 1, status: error } })
+      .catch((error: unknown) => {
+        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
         logger.error('open folder err:', error)
       })
-    const resp: Response = {
+    const resp: DataTypes.Resp<DataTypes.TraversalFolder> = {
       code: 0,
       status: 'success',
       bOver: false,
@@ -97,16 +98,16 @@ async function handle_query_video(req: Request): Promise<Response> {
         .start_file_classify({ req, files: resp.data.files })
         .then((resp: Response) => {
           logger.log('handle_query_video after classify:', resp)
-          workQueue.addResp({ cmd: req.cmd, data: resp })
+          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
         })
-        .catch((error: any) => {
+        .catch((error: unknown) => {
           logger.error('open folder err:', error)
-          workQueue.addResp({ cmd: req.cmd, data: { code: 1, status: error } })
+          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
         })
     })
-    .catch((error: any) => {
+    .catch((error: unknown) => {
       logger.error('open folder err:', error)
-      workQueue.addResp({ cmd: req.cmd, data: { code: 1, status: error } })
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
     })
 
   return { code: 0, status: 'success', bOver: false }
@@ -247,7 +248,7 @@ async function handle_save_prj(req: Request): Promise<Response> {
   }
 }
 
-function handle_app_start(): Response {
+function handle_app_start(): DataTypes.Resp<DataTypes.Prj> {
   const resp: Response = { code: 0, status: 'success', bOver: true, data: {} }
   // 读取cfg.json
 
@@ -257,14 +258,14 @@ function handle_app_start(): Response {
     data = fs.readFileSync(cfgPath, {
       encoding: 'utf-8'
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('读取文件时出错:', error)
   }
   try {
     const jsonData = JSON.parse(data)
     appCfg.prj = jsonData
     resp.data['prj'] = appCfg.prj
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.log('err parse json:', error)
   }
   return resp
@@ -275,16 +276,16 @@ async function handle_get_key_frame_info(req: Request): Promise<Response> {
   mediaProc
     .get_frame_info(filePath)
     .then((resp: Response) => {
-      workQueue.addResp({ cmd: req.cmd, data: resp })
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
     })
-    .catch((error: any) => {
+    .catch((error: unknown) => {
       logger.error('get frame info err:', error)
-      workQueue.addResp({ cmd: req.cmd, data: { code: 1, status: error } })
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
     })
   return { code: 0, status: 'success', bOver: false }
 }
 
-async function traversal_folder(req: Request): Promise<TraversalFolderResponse> {
+async function traversal_folder(req: Request): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
   const folderpath = req.data.folder
   const traversalFolder = new TraversalFolder()
   traversalFolder.type = req.data.type
@@ -292,7 +293,7 @@ async function traversal_folder(req: Request): Promise<TraversalFolderResponse> 
   return await traversalFolder.start()
 }
 
-async function process_heart_beat(): Promise<Response> {
+async function process_heart_beat(): Promise<DataTypes.Resp<string>> {
   // 获取当前的时间的字符串，精确到秒，格式为：YYYY-MM-DD hh:mm:ss
   const now = new Date()
   const year = now.getFullYear()
@@ -319,7 +320,29 @@ async function process_heart_beat(): Promise<Response> {
   respData['workRespose'] = workQueue.resps
   workQueue.resps = []
   workQueue.processing = false
-  return { code: 0, status: 'success', data: respData }
+  return { code: 0, status: 'success', data: JSON.stringify(respData) }
+}
+
+interface CmdResponse<T> {
+  code: number
+  status: string
+  data?: T
+}
+
+interface CommonResponse {
+  code: number
+  status: string
+  bOver?: boolean
+  data?: string
+}
+
+function make_cmd_response<T>(resp: CmdResponse<T>): CommonResponse {
+  const response: CommonResponse = {
+    code: resp.code,
+    status: resp.status,
+    data: JSON.stringify(resp.data)
+  }
+  return response
 }
 
 export class IpcHandlers {
@@ -335,12 +358,14 @@ export class IpcHandlers {
       case 'get_key_frame_info':
         logger.log(cmd, req)
         return handle_get_key_frame_info(req)
-      case 'open_folder':
+      case 'open_folder': {
         logger.log(cmd, req)
-        return handle_open_folder(this.mainWindow!, req)
+        const resp = await handle_open_folder(this.mainWindow!, req)
+        return make_cmd_response(resp)
+      }
       case 'traversal_folder':
         logger.log(cmd, req)
-        return traversal_folder(req)
+        return make_cmd_response(await traversal_folder(req))
       case 'slt_video_event':
         logger.log(cmd, req)
         return handle_video_event_detect(req)
@@ -355,7 +380,7 @@ export class IpcHandlers {
         return handle_select_video(req)
       case 'app_start':
         logger.log(cmd, req)
-        return handle_app_start()
+        return make_cmd_response(await handle_app_start())
       case 'query_video':
         logger.log(cmd, req)
         return handle_query_video(req)
@@ -373,7 +398,7 @@ export class IpcHandlers {
     }
 
     if (req.cmd == 'heart_beat') {
-      return await process_heart_beat()
+      return make_cmd_response(await process_heart_beat())
     }
     if (workQueue.isBusy()) {
       return workQueue.makeBusyResponse()

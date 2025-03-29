@@ -1,6 +1,6 @@
 import { AppStore } from '../stores/AppStore' // 假设 AppStore 有对应的类型定义
 
-import { SltMediaInfo, SltMedia, MediaItem } from '../../../bridge/dataTypedef'
+import * as DataTypes from '../../../bridge/dataTypedef'
 import MessageShow from '../components/util/MessageShow'
 let appStore: AppStore | null = null
 
@@ -113,30 +113,31 @@ function clear_cur_slt_video_info(req: { clearModel?: string } | null): void {
   }
 }
 
-function folder_file_proc(fileinfo: { files: any[]; folder: string }): void {
-  const files = fileinfo.files
+function folder_file_proc(resp: DataTypes.TraversalFolder): void {
+  const files = resp?.files
+  if (files === undefined) {
+    return
+  }
   for (let i = 0; i < files.length; i++) {
-    files[i].filePath = `${files[i].src}`
-    files[i].src = `file://${files[i].src}`
+    files[i].src = `file://${files[i].filePath}`
   }
-  if (appStore) {
-    appStore.videoList = files
-    appStore.curOpenedFolder = fileinfo.folder
-  }
+  appStore.videoList = files
+  appStore.curOpenedFolder = resp?.folder || ''
 }
 
-function process_work_response(workRespose: { cmd: string; data: any }): void {
+function process_work_response(workRespose: DataTypes.WorkResp): void {
   const cmd = workRespose.cmd
-  const response = workRespose.data
-  console.log('process_work_response', cmd, response)
+
+  const response = JSON.parse(workRespose.data)
+  // console.log('process_work_response', cmd, response)
   switch (cmd) {
     case 'open_folder':
       console.log('open folder', response)
-      util.folder_file_proc(response.data)
+      util.folder_file_proc(response)
       break
     case 'query_video':
       if (appStore) {
-        appStore.queryInfo = response.data
+        // appStore.queryInfo = response.data
       }
       break
     case 'cut_video':
@@ -299,29 +300,36 @@ const save_project = async (ipcAPi: IpcApi): Promise<void> => {
   }
 }
 
-function process_heartbeat(response: {
-  code: number
-  data: {
-    time: string
-    appStatus: string
-    workRespose?: { cmd: string; data: { code: number; status: string } }[]
-  }
-}): void {
-  if (response.code !== 0) {
-    console.log('process_heartbeat failed', response)
+// function process_heartbeat(response: {
+//   code: number
+//   data: {
+//     time: string
+//     appStatus: string
+//     workRespose?: { cmd: string; data: { code: number; status: string } }[]
+//   }
+// }): void {
+
+function process_heartbeat(resp: DataTypes.Resp<string>): void {
+  if (resp.code !== 0) {
+    console.log('process_heartbeat failed', resp)
     return
   }
-
-  const curTime = response.data.time
-  const appStatus = response.data.appStatus
-  if (appStore) {
-    appStore.documentTitle = `${curTime} ${appStatus}`
+  let response = JSON.parse(resp.data ?? '{}')
+  if (response == null) {
+    console.log('process_heartbeat failed', resp)
+    return
   }
-  if (response.data.workRespose !== null) {
-    if (response.data.workRespose.length > 0) {
-      console.log('process_heartbeat', response.data.workRespose)
+  response = JSON.parse(response)
+   const curTime = response.time
+  const appStatus = response.appStatus
+  if (appStore) {
+    appStore.documentTitle = `${curTime} ${appStatus!=null ?appStatus: ''}`
+  }
+  if (response.workRespose !== null) {
+    if (response.workRespose.length > 0) {
+      console.log('process_heartbeat', response.workRespose)
     }
-    for (const item of response.data.workRespose) {
+    for (const item of response.workRespose) {
       const workResp = item.data
       const showCtx = `命令:${item.cmd} 执行结果: ${workResp.status}`
       if (workResp.code !== 0) {

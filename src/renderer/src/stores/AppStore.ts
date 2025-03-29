@@ -1,13 +1,9 @@
 import { defineStore } from 'pinia'
 
-import { SltMediaInfo, SltMedia, MediaItem } from '../../../bridge/dataTypedef'
+import * as DataTypes from '../../../bridge/dataTypedef'
 
 type AppStore = {
-  prj: {
-    name: string
-    version: string
-    lastOpenedFolder: string
-  }
+  prj: DataTypes.Prj
   serverUrlPrefix: string
   curOpenedFolder: string
   videoPlayCtrl: {

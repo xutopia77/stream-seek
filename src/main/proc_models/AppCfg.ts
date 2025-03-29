@@ -16,6 +16,9 @@ interface AppCfgInterface {
 
 // 初始化应用配置的函数
 async function initApp(appCfg: AppCfgInterface): Promise<void> {
+  if (!fs.existsSync(appCfg.appData)) {
+    fs.mkdirSync(appCfg.appData)
+  }
   const cfgDir = path.join(appCfg.appData, 'cfg')
   if (!fs.existsSync(cfgDir)) {
     fs.mkdirSync(cfgDir)
@@ -41,7 +44,7 @@ class AppCfg implements AppCfgInterface {
   }
 
   constructor() {
-    this.appData = 'D:/02_workspace/05_timeCapsule/02_stream_manager/stream_manager/appData'
+    this.appData = 'D:/02_workspace/05_timeCapsule/02_stream_manager/record-manager/appData'
   }
 
   async init(): Promise<void> {

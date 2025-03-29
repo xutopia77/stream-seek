@@ -366,10 +366,10 @@ async function start_cut_video(req: Request): Promise<Response> {
     .cutVideo(req)
     .then((resp) => {
       console.log('cutVideo resp: ', resp)
-      workQueue.addResp({ cmd: req.cmd, data: resp })
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
     })
     .catch((error) => {
-      workQueue.addResp({ cmd: req.cmd, data: { code: 1, status: error } })
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
     })
   return { code: 0, status: 'success', bOver: false }
 }

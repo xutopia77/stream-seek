@@ -18,7 +18,7 @@ import ToastMessage from './util/ToastMessage.vue'
 import { IpcApi } from '../utils/IpcApi'
 import MessageShow from './util/MessageShow'
 const ipcAPi: IpcApi = new IpcApi()
-
+import * as DataTypes from '../../../bridge/dataTypedef'
 // 定义响应数据的类型
 interface IpcResponse {
   code: number
@@ -31,7 +31,7 @@ function startTimer(): void {
   setInterval(() => {
     ipcAPi
       .trigger_event(JSON.stringify({ cmd: 'heart_beat', data: '' }))
-      .then((response: IpcResponse) => {
+      .then((response: DataTypes.Resp<string>) => {
         util.process_heartbeat(response)
       })
       .catch((error: Error) => {
@@ -40,22 +40,21 @@ function startTimer(): void {
   }, 500)
 }
 
-// 定义项目数据的类型
-interface Project {
-  lastOpenedFolder?: string
-}
-
-async function updatePrj(prj: Project): Promise<void> {
+async function updatePrj(prj: DataTypes.Prj): Promise<void> {
   appStore.prj = prj
   if (prj.lastOpenedFolder != null) {
-    const response: IpcResponse = await ipcAPi.trigger_event(
+    const response: DataTypes.Resp<string> = await ipcAPi.trigger_event(
       JSON.stringify({ cmd: 'traversal_folder', data: { folder: prj.lastOpenedFolder } })
     )
     if (response.code === 0) {
+      const resp = JSON.parse(response.data ?? '{}')
       appStore.curOpenedFolder = prj.lastOpenedFolder
-      util.folder_file_proc(response.data)
+      util.folder_file_proc(resp)
+    } else {
+      MessageShow.error(`遍历文件夹失败`)
     }
-    startTimer()
+  } else {
+    console.log('lastOpenedFolder is null')
   }
 }
 
@@ -72,14 +71,19 @@ watch(
 
 onBeforeMount(async () => {
   util.setAppStore(appStore)
-  const response: IpcResponse = await ipcAPi.trigger_event(
+  const response: DataTypes.Resp<string> = await ipcAPi.trigger_event(
     JSON.stringify({ cmd: 'app_start', data: '' })
   )
   if (response.code !== 0) {
     MessageShow.error(`启动失败`)
     return
   }
-  updatePrj(response.data.prj)
+  startTimer()
+  const resp = JSON.parse(response.data ?? '{}')
+  if (resp == null) {
+    return
+  }
+  updatePrj(resp.prj)
 })
 </script>
 
