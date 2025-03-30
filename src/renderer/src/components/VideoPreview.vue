@@ -37,12 +37,12 @@ const ipcAPi: IpcApi = new IpcApi()
 const appStore = useAppStore()
 
 // 明确计算属性的类型
-let rightPanel = computed(() => appStore.rightPanel) as ComputedRef<string>
+let rightPanel = computed(() => appStore.rightPanel)
 
 // 明确计算属性的类型
 const viewModel = computed(() => {
   return appStore.curViewModel
-}) as ComputedRef<string>
+})
 
 // 明确视频元素引用的类型
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -63,7 +63,6 @@ const playVideo = (src: string, req: PlayVideoReq | null): void => {
   videoRef.value.pause()
   appStore.videoPlayCtrl.curSrc = src
   appStore.videoPlayCtrl.isPlay = true
-  appStore.videoPlayCtrl.playbeginTime = 0
   videoRef.value.load()
 
   const removeEventListeners = setupVideoEventListeners()
@@ -71,7 +70,11 @@ const playVideo = (src: string, req: PlayVideoReq | null): void => {
     removeEventListeners()
   }
   // 监听 canplay 事件
-  const onCanPlay = () => {
+  const onCanPlay = (): void => {
+    if (videoRef.value == null) {
+      MessageShow.error('video ref null')
+      return
+    }
     appStore.videoPlayCtrl.curTime = 0
     if (videoRef.value.duration != appStore.curVideoInfo?.mediaInfo?.duration) {
       console.log(
@@ -85,7 +88,7 @@ const playVideo = (src: string, req: PlayVideoReq | null): void => {
     console.log(`video can play ${appStore.videoPlayCtrl.curTime}`)
     // videoRef.value.currentTime = appStore.videoPlayCtrl.curTime
     videoRef.value.play()
-    setupVideoEventListeners(req)
+    setupVideoEventListeners()
     // 移除监听器，避免重复触发
     videoRef.value.removeEventListener('canplay', onCanPlay)
   }
@@ -145,7 +148,7 @@ watch(
           p2 = p2.substring(7)
         }
         if (p1 !== p2) {
-          playVideo(appStore.curSltVideo.src)
+          playVideo(appStore.curSltVideo.src, null)
         } else {
           videoRef.value.play()
         }
@@ -162,7 +165,7 @@ const setupVideoEventListeners = (): (() => void) | null => {
     return null
   }
   // 监听视频加载元数据事件，获取视频总时长
-  const onLoadedMetadata = () => {
+  const onLoadedMetadata = (): void => {
     // appStore.videoPlayCtrl.duration 要废弃了
     // appStore.videoPlayCtrl.duration = videoRef.value.duration
     // 获取视频的起始时间
@@ -171,7 +174,7 @@ const setupVideoEventListeners = (): (() => void) | null => {
   videoRef.value.addEventListener('loadedmetadata', onLoadedMetadata)
 
   // 监听视频时间更新事件，更新当前播放时间
-  const onTimeUpdate = () => {
+  const onTimeUpdate = (): void => {
     if (videoRef.value != null) {
       if (appStore.videoPlayCtrl.videoStartTime == 0) {
         appStore.videoPlayCtrl.videoStartTime = videoRef.value.currentTime
@@ -188,17 +191,20 @@ const setupVideoEventListeners = (): (() => void) | null => {
   videoRef.value.addEventListener('timeupdate', onTimeUpdate)
 
   // 监听视频播放事件，更新播放状态
-  const onPlay = () => {
+  const onPlay = (): void => {
     appStore.videoPlayCtrl.isPlay = true
   }
 
   // 监听视频暂停事件，更新播放状态
-  const onPause = () => {
+  const onPause = (): void => {
     appStore.videoPlayCtrl.isPlay = false
   }
   videoRef.value.addEventListener('pause', onPause)
 
   return () => {
+    if (videoRef.value == null) {
+      return
+    }
     videoRef.value.removeEventListener('loadedmetadata', onLoadedMetadata)
     videoRef.value.removeEventListener('timeupdate', onTimeUpdate)
     videoRef.value.removeEventListener('play', onPlay)
@@ -208,7 +214,11 @@ const setupVideoEventListeners = (): (() => void) | null => {
 
 function nextFrame(): void {
   if (videoRef.value != null) {
-    const frameRate = appStore.curVideoInfo.mediaInfo.video.frame_rate
+    const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+    if (frameRate == null) {
+      console.log('frame rate is null')
+      return
+    }
     let video = videoRef.value
     if (!video.paused) video.pause()
     const frameInterval = 1 / frameRate
@@ -218,7 +228,11 @@ function nextFrame(): void {
 
 function previousFrame(): void {
   if (videoRef.value != null) {
-    const frameRate = appStore.curVideoInfo.mediaInfo.video.frame_rate
+    const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+    if (frameRate == null) {
+      console.log('frame rate is null')
+      return
+    }
     let video = videoRef.value
     if (!video.paused) video.pause()
     const frameInterval = 1 / frameRate
@@ -237,7 +251,7 @@ watch(
       return
     }
     if (appStore.curSltVideo?.src != null) {
-      playVideo(appStore.curSltVideo.src)
+      playVideo(appStore.curSltVideo.src, null)
     }
   }
 )
@@ -257,7 +271,7 @@ watch(
       }
 
       if (appStore.curSltVideo?.src != null) {
-        playVideo(appStore.curSltVideo.src)
+        playVideo(appStore.curSltVideo.src, null)
       }
     } else if (newVal === 'thumbnail') {
       const removeEventListeners = setupVideoEventListeners()
@@ -278,7 +292,7 @@ watch(
       return
     }
     if (videoRef.value != null) {
-      videoRef.value.playbackRate = parseFloat(appStore.videoPlayCtrl.playbackRate)
+      videoRef.value.playbackRate = appStore.videoPlayCtrl.playbackRate
     }
   }
 )
@@ -308,7 +322,7 @@ onUnmounted(() => {
   if (removeEventListeners != null) {
     removeEventListeners()
   }
-  util.clear_cur_slt_video_info()
+  util.clear_cur_slt_video_info(null)
 })
 </script>
 

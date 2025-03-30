@@ -1,13 +1,13 @@
-import { AppStore } from '../stores/AppStore' // 假设 AppStore 有对应的类型定义
+import type { AppStore } from '../stores/AppStore'
+let appStore: AppStore
 
 import * as DataTypes from '../../../bridge/dataTypedef'
 import MessageShow from '../components/util/MessageShow'
-import { IpcApi } from './ipcApi'
-let appStore: AppStore | null = null
+import { IpcApi } from './IpcApi'
 
-function updateKeyframeSplitInfo(
-  frameInfo: { pict_type: string; pts_time: number }[]
-): DataTypes.SplitInfo[] {
+function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.SplitInfo[] {
+  if (!appStore) return []
+  const frameInfo = frameInfoReq.frames
   // 根据i帧的时间信息，生成bar上的分割信息
   const frameSplitInfo: DataTypes.SplitInfo[] = []
   let lastTime = 0.0
@@ -98,7 +98,7 @@ function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
     appStore.curVideoInfo = null
     appStore.barColorCfg = []
     if (appStore.curVideoInfo !== null) {
-      appStore.curVideoInfo['frameInfo'] = null
+      // appStore.curVideoInfo.frameInfo = null
     }
     appStore.bShowKeyFrameInfo = false
     appStore.barSeekTime = 0
@@ -281,7 +281,7 @@ async function get_slt_video(ipcAPi: IpcApi, video: DataTypes.FileInfo | null): 
       MessageShow.error(`获取视频信息失败: ${response.status}`)
       return
     }
-    appStore.curVideoInfo = response.data
+    appStore.curVideoInfo = respData
     if (respData.eventInfo != null) {
       util.processVideoEvent(respData.eventInfo?.events)
     }
@@ -379,7 +379,8 @@ class Util {
   calculateCurFrameIdx(curTime: number): number {
     if (appStore?.curVideoInfo === null) return 0
     if (appStore?.curVideoInfo?.mediaInfo === null) return 0
-    const frameRate = appStore.curVideoInfo.mediaInfo.video.frame_rate
+    const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+    if (frameRate === undefined) return 0
     const frame = Math.floor(curTime * frameRate)
     return frame
   }
@@ -427,8 +428,7 @@ class Util {
     }
     splitInfos.sort((a, b) => a.percent - b.percent)
   }
-
-  setAppStore(store: AppStore): void {
+  setAppStore(store): void {
     appStore = store
   }
 }

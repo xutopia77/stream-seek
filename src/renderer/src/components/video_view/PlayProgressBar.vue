@@ -43,11 +43,13 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
+const appStore = useAppStore()
 import { IpcApi } from '../../utils/IpcApi'
 import util from '../../utils/util.js'
 import MessageShow from '../util/MessageShow'
+import * as DataTypes from '../../../../bridge/dataTypedef'
 const ipcAPi: IpcApi = new IpcApi()
-const appStore = useAppStore()
+
 
 const mergedProgressBar = ref<HTMLElement | null>(null)
 const isDragging = ref<boolean>(false)
@@ -65,18 +67,18 @@ const playBarPercent = computed(() => {
 
 // 拖动进度条改变播放位置
 const seekVideo = (time: number): void => {
-  appStore.setData('barSeekTime', time)
+  appStore.barSeekTime = time
 }
 
 let videoSplitInfo = computed(() => {
-  let resp: any[] = []
+  let resp: DataTypes.SplitInfo[] = []
   if (appStore.curVideoInfo?.splitInfo != null) {
     resp = appStore.curVideoInfo.splitInfo
   }
   if (appStore.bShowKeyFrameInfo) {
-    const kFrameInfo = appStore.curVideoInfo?.frameInfo?.frames
+    const kFrameInfo = appStore.curVideoInfo?.frameInfo
     if (kFrameInfo != null) {
-      const respKframe = util.updateKeyframeSplitInfo(appStore.curVideoInfo.frameInfo.frames)
+      const respKframe = util.updateKeyframeSplitInfo(kFrameInfo)
       resp = resp.concat(respKframe)
     }
   }
@@ -85,10 +87,17 @@ let videoSplitInfo = computed(() => {
   return resp
 })
 
+interface BarClip {
+  left: number
+  width: number
+  color: string
+  tip: string
+}
+
 // 生成进度条片段数据
-const barClips = ref<any[]>([])
-const generateBarClips = (barColorCfg: any[], duration: number): void => {
-  const clips: any[] = []
+const barClips = ref<BarClip[]>([])
+const generateBarClips = (barColorCfg: DataTypes.BarColorCfg[], duration: number): void => {
+  const clips: BarClip[] = []
   for (const config of barColorCfg) {
     const startTime = Math.min(config.startTime, duration)
     const endTime = config.endTime === Infinity ? duration : Math.min(config.endTime, duration)
@@ -108,11 +117,14 @@ const generateBarClips = (barColorCfg: any[], duration: number): void => {
 // 监听 barColorCfg 和 curSltVideo 的变化
 watch(
   [
-    (): any => appStore.barColorCfg,
-    (): any => appStore.curSltVideo,
+    (): DataTypes.BarColorCfg[] => appStore.barColorCfg,
+    (): DataTypes.FileInfo | null => appStore.curSltVideo,
     (): number | undefined => appStore.curVideoInfo?.mediaInfo?.duration
   ],
   () => {
+    if( appStore.curVideoInfo?.mediaInfo?.duration == null) {
+      return
+    }
     generateBarClips(appStore.barColorCfg, appStore.curVideoInfo?.mediaInfo?.duration)
   }
 )
@@ -148,18 +160,18 @@ watch(
 
 // tooltip 相关
 const showTip = ref<boolean>(false)
-const currentClip = ref<any>(null)
+const currentClip = ref<BarClip>()
 
-const showTooltip = (clip: any): void => {
+const showTooltip = (clip: BarClip): void => {
   showTip.value = true
   currentClip.value = clip
 }
 
-const handleMouseOut = (event: MouseEvent, clip: any): void => {
-  const tooltip = event.target.querySelector('.tooltip')
-  if (!tooltip || !tooltip.contains(event.relatedTarget)) {
+const handleMouseOut = (event: MouseEvent, clip: BarClip): void => {
+  const tooltip = (event.target as HTMLElement).querySelector('.tooltip')
+  if (!tooltip || !tooltip.contains(event.relatedTarget as Node)) {
     showTip.value = false
-    currentClip.value = null
+    currentClip.value = undefined
   }
   if (clip) {
     return
@@ -214,6 +226,9 @@ const onProgressBarMouseLeave = (): void => {
 
 // 处理进度条键盘按下事件
 const onProgressBarKeyDown = (event: KeyboardEvent): void => {
+  if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+    return
+  }
   if (isMouseOver.value) {
     const step = 1 // 每次移动的秒数
     let newTime = appStore.videoPlayCtrl.curTime

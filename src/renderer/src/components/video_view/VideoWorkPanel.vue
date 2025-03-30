@@ -12,7 +12,7 @@
       {{ curViewBtn }}
     </button>
     <br />
-    <button class="common-button" title="在光标处拆分片段" @click="splitVideo">➕</button>
+    <button class="common-button" title="在光标处拆分片段" @click="btnclk_splitVideo">➕</button>
     <button class="common-button" title="去掉此片段的拆分信息" @click="removeVideosplit">➖</button>
     <button class="common-button" title="去掉此片段" @click="removeVideoRecord">❌</button>
     <button class="common-button" title="恢复此片段" @click="restoreVideoRecord">🔃</button>
@@ -22,7 +22,7 @@
       :key="splitInfo.percent"
       class="slpit-info-card"
       :class="{
-        selected: splitInfo === selectedSplitInfo.value,
+        selected: splitInfo === selectedSplitInfo,
         deleted: splitInfo.isDelete
       }"
       @click="selectSplitInfo(splitInfo)"
@@ -44,23 +44,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
+const appStore = useAppStore()
 import '../../assets/common.css'
 import util from '../../utils/util.js'
 import { IpcApi } from '../../utils/IpcApi'
+const ipcAPi: IpcApi = new IpcApi()
 import MessageShow from '../util/MessageShow'
 import * as DataTypes from '../../../../bridge/dataTypedef'
-// 定义 SplitInfo 类型
-interface SplitInfo {
-  startTime: number
-  endTime: number
-  duration: number
-  frameNum: number
-  percent: number
-  isDelete: boolean
-}
-
-const ipcAPi: IpcApi = new IpcApi()
-const appStore = useAppStore()
 
 // ------ 切换视图
 const curViewBtn = computed(() => {
@@ -78,20 +68,31 @@ const btnclk_change_view_model = (): void => {
 }
 
 // ------
-const splitVideo = (): void => {
+const btnclk_splitVideo = (): void => {
+  if (appStore.curVideoInfo?.mediaInfo == null) {
+    MessageShow.error(`请先选择视频`)
+    return
+  }
+  if (appStore.curVideoInfo?.splitInfo == null) {
+    MessageShow.error(`没有分段信息`)
+    return
+  }
   const currentTime = appStore.videoPlayCtrl.curTime
   const videoDuration = appStore.curVideoInfo?.mediaInfo.duration
   const curpercent = (currentTime / videoDuration) * 100
-  if (appStore.curVideoInfo?.splitInfo === null) {
-    return
-  }
-  if (appStore.curVideoInfo?.splitInfo.some((item: SplitInfo) => item.percent === curpercent)) {
+  if (
+    appStore.curVideoInfo?.splitInfo.some(
+      (item: DataTypes.SplitInfo) => item.percent === curpercent
+    )
+  ) {
     return
   }
   if (currentTime >= videoDuration) {
     return
   }
-  appStore.curVideoInfo.splitInfo.sort((a: SplitInfo, b: SplitInfo) => a.percent - b.percent)
+  appStore.curVideoInfo.splitInfo.sort(
+    (a: DataTypes.SplitInfo, b: DataTypes.SplitInfo) => a.percent - b.percent
+  )
 
   for (let i = 0; i < appStore.curVideoInfo.splitInfo.length; i++) {
     const splitInfo = appStore.curVideoInfo.splitInfo[i]
@@ -109,23 +110,26 @@ const splitVideo = (): void => {
 }
 
 const videoSplitInfo = computed(() => {
-  if (appStore.curVideoInfo?.splitInfo === null) {
+  if (appStore.curVideoInfo?.splitInfo == null) {
     return []
   }
   let splitInfo = appStore.curVideoInfo.splitInfo
   return splitInfo
 })
 
-const selectedSplitInfo = ref<SplitInfo>({
+const selectedSplitInfo = ref<DataTypes.SplitInfo | null>({
+  percent: 0,
   startTime: 0,
   endTime: 0,
-  duration: 0,
   frameNum: 0,
-  percent: 0,
-  isDelete: false
+  duration: 0,
+  isDelete: false,
+  color: '#669999',
+  currentTime: 0,
+  frameIdx: 0
 })
 
-const selectSplitInfo = (splitInfo: SplitInfo): void => {
+const selectSplitInfo = (splitInfo: DataTypes.SplitInfo): void => {
   selectedSplitInfo.value = splitInfo
   console.log(splitInfo)
 }
@@ -135,11 +139,15 @@ const removeVideosplit = (): void => {
     MessageShow.success(`不能删除系统片段`)
     return
   }
+  if (appStore.curVideoInfo?.splitInfo == null) {
+    MessageShow.success(`没有分段信息`)
+    return
+  }
   if (selectedSplitInfo.value) {
     const confirmDelete = confirm('确定要删除当前选中的片段信息记录吗？')
     if (confirmDelete) {
-      const index = appStore.curVideoInfo.splitInfo.findIndex(
-        (item: SplitInfo) => item.percent === selectedSplitInfo.value?.percent
+      const index = appStore.curVideoInfo?.splitInfo.findIndex(
+        (item: DataTypes.SplitInfo) => item.percent === selectedSplitInfo.value?.percent
       )
       if (index !== -1) {
         appStore.curVideoInfo.splitInfo.splice(index, 1)
@@ -150,7 +158,12 @@ const removeVideosplit = (): void => {
 }
 
 const removeVideoRecord = (): void => {
-  if (!selectedSplitInfo.value) {
+  if (selectedSplitInfo.value == null) {
+    MessageShow.error(`请先选择要删除的片段`)
+    return
+  }
+  if (appStore.curVideoInfo?.splitInfo == null) {
+    MessageShow.error(`没有分段信息`)
     return
   }
   const confirmDelete = confirm('确定要删除当前选中的片段信息记录吗？')
@@ -158,7 +171,7 @@ const removeVideoRecord = (): void => {
     return
   }
   const index = appStore.curVideoInfo.splitInfo.findIndex(
-    (item: SplitInfo) => item.percent === selectedSplitInfo.value.percent
+    (item: DataTypes.SplitInfo) => item.percent == selectedSplitInfo?.value?.percent
   )
   if (index === -1) {
     return
@@ -168,10 +181,15 @@ const removeVideoRecord = (): void => {
 
 const restoreVideoRecord = (): void => {
   if (!selectedSplitInfo.value) {
+    MessageShow.error(`请先选择要恢复的片段`)
+    return
+  }
+  if (appStore.curVideoInfo?.splitInfo == null) {
+    MessageShow.error(`没有分段信息`)
     return
   }
   const index = appStore.curVideoInfo.splitInfo.findIndex(
-    (item: SplitInfo) => item.percent === selectedSplitInfo.value.percent
+    (item: DataTypes.SplitInfo) => item.percent == selectedSplitInfo?.value?.percent
   )
   if (index === -1) {
     return

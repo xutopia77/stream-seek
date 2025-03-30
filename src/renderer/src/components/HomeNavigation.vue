@@ -67,7 +67,7 @@ import util from '../utils/util'
 const appStore = useAppStore()
 import { IpcApi } from '../utils/IpcApi'
 import MessageShow from './util/MessageShow'
-import * as DataTypes from '../../bridge/dataTypedef'
+import * as DataTypes from '../../../bridge/dataTypedef'
 const ipcAPi: IpcApi = new IpcApi()
 
 // 控制下拉菜单是否显示
@@ -168,13 +168,13 @@ const hideAboutModal = (): void => {
 
 // 点击页面其他地方隐藏下拉菜单
 const handleClickOutside = (event: MouseEvent): void => {
-  if (dropdownMenuRefHome.value && !dropdownMenuRefHome.value.contains(event.target)) {
+  if (dropdownMenuRefHome.value && !dropdownMenuRefHome.value.contains(event.target as Node)) {
     isDropdownOpen.value.home = false
   }
-  if (dropdownMenuRefVideo.value && !dropdownMenuRefVideo.value.contains(event.target)) {
+  if (dropdownMenuRefVideo.value && !dropdownMenuRefVideo.value.contains(event.target as Node)) {
     isDropdownOpen.value.video = false
   }
-  if (dropdownMenuRefView.value && !dropdownMenuRefView.value.contains(event.target)) {
+  if (dropdownMenuRefView.value && !dropdownMenuRefView.value.contains(event.target as Node)) {
     isDropdownOpen.value.view = false
   }
 }

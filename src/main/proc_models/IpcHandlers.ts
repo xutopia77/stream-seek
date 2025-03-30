@@ -32,11 +32,11 @@ function make_file_prj_path(filename: string): string {
 
 async function handle_open_folder(
   mainWindow: Electron.BrowserWindow,
-  req: Request
+  req: DataTypes.Req
 ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
   let openType: string | null = null
   if (req.data != null) {
-    openType = req.data.type
+    openType = 'search'
   }
 
   const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
@@ -78,7 +78,13 @@ async function handle_open_folder(
   return { code: 0, status: 'canceled' }
 }
 
-async function handle_query_video(req: Request): Promise<Response> {
+async function handle_query_video(): Promise<Response> {
+  const req: Request = {
+    cmd: 'query_video',
+    data: {
+      folder: appCfg.prj['lastOpenedFolder']
+    }
+  }
   const traversalFolder = new TraversalFolder()
   traversalFolder.type = req.data.type
   traversalFolder.folder = req.data.folder
@@ -153,8 +159,13 @@ function getFilenameFromPath(filePath: string): string {
   return parts[parts.length - 1]
 }
 
-async function handle_select_video(req: Request): Promise<DataTypes.Resp<DataTypes.SltMediaInfo>> {
-  const video_path = req.data.src
+async function handle_select_video(
+  req: DataTypes.Req<DataTypes.Req_SltFile>
+): Promise<DataTypes.Resp<DataTypes.SltMediaInfo>> {
+  const video_path = req.data?.filepath
+  if (video_path == null) {
+    return { code: 1, status: 'video_path is null' }
+  }
   const filename = getFilenameFromPath(video_path)
   const resp: DataTypes.Resp<DataTypes.SltMediaInfo> = {
     code: 0,
@@ -318,8 +329,11 @@ async function process_heart_beat(): Promise<DataTypes.Resp<DataTypes.HeartBeat>
   workQueue.processing = true
   if (workQueue.resps.length != 0) {
     workQueue.addTask(null)
+    for (const item of workQueue.resps) {
+      logger.log(`work resp:cmd: ${item.cmd}`)
+    }
   }
-  respData['workRespose'] = workQueue.resps
+  respData.workRespose = workQueue.resps
   workQueue.resps = []
   workQueue.processing = false
   resp.data = respData
@@ -348,37 +362,52 @@ export class IpcHandlers {
     this.mainWindow = null
   }
 
-  async start_process_cmd(req: Request): Promise<DataTypes.Resp> {
-    const cmd = req['cmd']
+  async start_process_cmd(req: DataTypes.Req): Promise<DataTypes.Resp> {
+    function convertCmdRequest<T>(req: DataTypes.Req): DataTypes.Req<T> {
+      const cmdReq: DataTypes.Req<T> = {
+        cmd: req.cmd,
+        data: JSON.parse(req.data ? req.data : '{}') as T
+      }
+      return cmdReq
+    }
+    const cmd = req.cmd
     switch (cmd) {
-      case 'get_key_frame_info':
+      case 'get_key_frame_info': {
         logger.log(cmd, req)
-        return make_cmd_response(await handle_get_key_frame_info(req))
+        const cmdReq = convertCmdRequest<DataTypes.Req<DataTypes.Req_FrameInfo>>(req)
+        return make_cmd_response(await handle_get_key_frame_info(cmdReq))
+      }
       case 'open_folder': {
         logger.log(cmd, req)
         return make_cmd_response(await handle_open_folder(this.mainWindow!, req))
       }
-      case 'traversal_folder':
+      case 'traversal_folder': {
         logger.log(cmd, req)
-        return make_cmd_response(await traversal_folder(req))
-      case 'slt_video_event':
+        const cmdReq = convertCmdRequest<DataTypes.Req<DataTypes.Req_TraversalFolder>>(req)
+        return make_cmd_response(await traversal_folder(cmdReq))
+      }
+      case 'slt_video_event': {
         logger.log(cmd, req)
         return make_cmd_response(await handle_video_event_detect())
+      }
       case 'save_prj':
         logger.log(cmd)
         return make_cmd_response(await handle_save_prj(req))
-      case 'cut_video':
-        logger.log(cmd, req.data.filepath)
-        return make_cmd_response(await recordsProc.start_cut_video(req))
-      case 'slt_video':
+      case 'cut_video': {
+        const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
+        return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
+      }
+      case 'slt_video': {
+        const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
         logger.log(cmd, req)
-        return make_cmd_response(await handle_select_video(req))
+        return make_cmd_response(await handle_select_video(cmdReq))
+      }
       case 'app_start':
         logger.log(cmd, req)
         return make_cmd_response(await handle_app_start())
       case 'query_video':
         logger.log(cmd, req)
-        return make_cmd_response(await handle_query_video(req))
+        return make_cmd_response(await handle_query_video())
       default:
         console.log(`Unknown event: ${cmd}`)
         return { code: 1, status: `Unknown event: ${cmd}` }
@@ -387,7 +416,7 @@ export class IpcHandlers {
 
   handle_event = async (event: string, ...args: string[]): Promise<DataTypes.Resp> => {
     // console.log(`Handling event: ${event}`);
-    const req = JSON.parse(args[0])
+    const req: DataTypes.Req<string> = JSON.parse(args[0])
     if (req.cmd != 'heart_beat') {
       // console.log(`Arguments: ${args}`);
     }

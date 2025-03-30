@@ -152,6 +152,13 @@ export interface ClearSltInfoReq {
   clearModel?: string
 }
 
+export interface BarColorCfg {
+  startTime: number
+  endTime: number
+  color: string
+}
+
+
 // ========================
 export interface Resp<T = string> {
   code: number

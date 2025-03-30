@@ -361,7 +361,9 @@ async function query_images(filepath: string): Promise<Response> {
 }
 
 // 开始切割视频
-async function start_cut_video(req: Request): Promise<DataTypes.Resp<string>> {
+async function start_cut_video(
+  req: DataTypes.Req<DataTypes.Req_CutVideo>
+): Promise<DataTypes.Resp<string>> {
   mediaProc
     .cutVideo(req)
     .then((resp) => {

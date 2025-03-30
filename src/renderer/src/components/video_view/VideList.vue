@@ -11,16 +11,10 @@
 <script setup lang="ts">
 import { computed, onBeforeMount } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
-import '../../assets/common.css'
-
-// 定义视频对象的类型
-interface Video {
-  title: string
-  src: string
-}
-
 const appStore = useAppStore()
-const videoList = computed<Video[]>(() => appStore.videoList)
+import '../../assets/common.css'
+import * as DataTypes from '../../../../bridge/dataTypedef'
+const videoList = computed<DataTypes.FileInfo[]>(() => appStore.videoList)
 
 onBeforeMount(() => {
   // const videoList = ref([
@@ -32,7 +26,7 @@ onBeforeMount(() => {
   // appStore.setData('videoList', videoList.value)
 })
 
-const playVideo = (video: Video): void => {
+const playVideo = (video: DataTypes.FileInfo): void => {
   appStore.curSltVideo = video
 }
 </script>

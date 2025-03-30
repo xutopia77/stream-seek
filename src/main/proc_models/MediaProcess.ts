@@ -69,7 +69,9 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 }
 
 // 生成分割信息
-async function make_split_info(req: Request): Promise<SplitInfo[] | Response> {
+async function make_split_info(
+  req: DataTypes.Req<DataTypes.Req_CutVideo>
+): Promise<SplitInfo[] | DataTypes.Resp> {
   const processSplitInKeyFrame = (
     splitInfo: SplitInfo[],
     keyFrameSplitInfo: FrameInfo[]
@@ -113,6 +115,9 @@ async function make_split_info(req: Request): Promise<SplitInfo[] | Response> {
     }
     return splitCutInfo
   }
+  if(req.data?.fileInfo === undefined) {
+    return { code: 1, status: 'fileInfo is null' }
+  }
 
   const splitInfo = req.data.fileInfo.splitInfo
   let keyFrameSplitInfo = req.data.fileInfo?.frameInfo?.frames
@@ -120,7 +125,7 @@ async function make_split_info(req: Request): Promise<SplitInfo[] | Response> {
     const kResp = await getFrameInfo(req.data.filepath)
     if (kResp.code !== 0) {
       console.log('getFrameInfo err: ', kResp)
-      return null
+      return { code: 1, status: 'getFrameInfo err' }
     }
     keyFrameSplitInfo = kResp.data.frames
   }
@@ -160,8 +165,15 @@ async function make_split_info(req: Request): Promise<SplitInfo[] | Response> {
 }
 
 // 切割视频
-async function cutVideo(req: Request): Promise<DataTypes.Resp<string>> {
+async function cutVideo(
+  req: DataTypes.Req<DataTypes.Req_CutVideo>
+): Promise<DataTypes.Resp<string>> {
   const resp: DataTypes.Resp<string> = { code: 0, status: 'success' }
+  if (!req.data?.filepath) {
+    resp.code = 1
+    resp.status = 'filepath is null'
+    return resp
+  }
   const filepath = req.data.filepath
 
   function makeDistFileName(

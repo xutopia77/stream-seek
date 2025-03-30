@@ -15,10 +15,20 @@ import * as DataTypes from '../../../bridge/dataTypedef'
 export class IpcApi {
   // 为函数添加返回类型注解
   async trigger_event<T = string, R = string>(req: DataTypes.Req<T>): Promise<DataTypes.Resp<R>> {
-    const reqStr = JSON.stringify(req)
+    const sendReq: DataTypes.Req<string> = {
+      ...req,
+      data: req.data ? JSON.stringify(req.data) : undefined
+    }
+    const reqStr = JSON.stringify(sendReq)
     console.log(`Arguments: ${reqStr}`)
     try {
-      return (await window.electron.ipcRenderer.invoke('render_event', reqStr)) as DataTypes.Resp<R>
+      const response = await window.electron.ipcRenderer.invoke('render_event', reqStr)
+      return {
+        ...response, // 1. 展开response对象的所有属性
+        data: response.data // 2. 条件判断response.data是否存在
+          ? (JSON.parse(response.data) as R) // 3. 存在则解析JSON并类型断言为R
+          : undefined // 4. 不存在则设为undefined
+      }
     } catch (error) {
       console.error('err:', error)
       return { code: 1, status: String(error) }

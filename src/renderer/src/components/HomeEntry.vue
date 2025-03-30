@@ -41,7 +41,7 @@ async function updatePrj(prj: DataTypes.Prj): Promise<void> {
   appStore.prj = prj
   if (prj.lastOpenedFolder != null) {
     const req: DataTypes.Req<DataTypes.Req_TraversalFolder> = {
-      cmd: 'set_last_opened_folder',
+      cmd: 'traversal_folder',
       data: { folder: prj.lastOpenedFolder }
     }
     const response: DataTypes.Resp<DataTypes.TraversalFolder> = await ipcAPi.trigger_event(req)

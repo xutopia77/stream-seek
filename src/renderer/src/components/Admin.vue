@@ -22,10 +22,7 @@ import VideoAction from './video_search/VideoAction.vue'
 import QueryForm from './video_search/QueryForm.vue'
 import ResultDisplay from './video_search/ResultDisplay.vue'
 import { useAppStore } from '../stores/AppStore'
-
-// 明确 appStore 的类型
 const appStore = useAppStore()
-
 // 明确计算属性的类型
 const searchFolder = computed<string>(() => {
   return appStore.curOpenedFolder

@@ -2,12 +2,12 @@ import { defineStore } from 'pinia'
 
 import * as DataTypes from '../../../bridge/dataTypedef'
 
-type AppStore = {
+export type AppStore = {
   prj: DataTypes.Prj
   serverUrlPrefix: string
   curOpenedFolder: string
   videoPlayCtrl: {
-    curSrc: string | null
+    curSrc: string
     curTime: number
     videoStartTime: number
     isPlay: boolean
@@ -17,14 +17,10 @@ type AppStore = {
   func_nextFrame: (() => void) | null
   func_prevFrame: (() => void) | null
   rightPanel: 'list' | 'workPanel'
-  videoList: MediaItem[]
+  videoList: DataTypes.FileInfo[]
   curSltVideo: DataTypes.FileInfo | null
   curVideoInfo: DataTypes.SltMediaInfo | null
-  barColorCfg: {
-    startTime: number
-    endTime: number
-    color: string
-  }[]
+  barColorCfg: DataTypes.BarColorCfg[]
   //   videoSplitInfo: any[]
   bShowKeyFrameInfo: boolean
   barSeekTime: number
@@ -49,7 +45,7 @@ export const useAppStore = defineStore('app', {
     curOpenedFolder: '',
     // video play
     videoPlayCtrl: {
-      curSrc: null, // 当前播放视频地址
+      curSrc: '', // 当前播放视频地址
       curTime: 0, // 当前播放时间
       videoStartTime: 0, // 播放开始的时间
       isPlay: false, // 播放状态
