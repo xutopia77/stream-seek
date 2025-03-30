@@ -67,6 +67,7 @@ import util from '../utils/util'
 const appStore = useAppStore()
 import { IpcApi } from '../utils/IpcApi'
 import MessageShow from './util/MessageShow'
+import * as DataTypes from '../../bridge/dataTypedef'
 const ipcAPi: IpcApi = new IpcApi()
 
 // 控制下拉菜单是否显示
@@ -103,14 +104,17 @@ const btnclk_save_project = (): void => {
 
 // 打开文件夹的处理函数
 const openFolder = async (): Promise<void> => {
-  let response = await ipcAPi.trigger_event(JSON.stringify({ cmd: 'open_folder' }))
+  const req: DataTypes.Req = {
+    cmd: 'open_folder'
+  }
+  const response: DataTypes.Resp<DataTypes.TraversalFolder> = await ipcAPi.trigger_event(req)
   if (response.code != 0) {
     console.log('打开文件夹失败')
   } else {
     if (response.bOver == false) {
       MessageShow.success('后台执行中...')
     } else {
-      util.folder_file_proc(response.data)
+      util.folder_file_proc(response)
     }
   }
 }

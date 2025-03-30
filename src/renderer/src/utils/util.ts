@@ -2,23 +2,14 @@ import { AppStore } from '../stores/AppStore' // 假设 AppStore 有对应的类
 
 import * as DataTypes from '../../../bridge/dataTypedef'
 import MessageShow from '../components/util/MessageShow'
+import { IpcApi } from './ipcApi'
 let appStore: AppStore | null = null
 
-// 定义 IpcApi 类型
-interface IpcApi {
-  trigger_event(reqStr: string): Promise<any>
-}
-
-// 定义响应类型
-interface IpcResponse {
-  code: number
-  status: string
-  data?: any
-}
-
-function updateKeyframeSplitInfo(frameInfo: { pict_type: string; pts_time: number }[]): any[] {
+function updateKeyframeSplitInfo(
+  frameInfo: { pict_type: string; pts_time: number }[]
+): DataTypes.SplitInfo[] {
   // 根据i帧的时间信息，生成bar上的分割信息
-  const frameSplitInfo: any[] = []
+  const frameSplitInfo: DataTypes.SplitInfo[] = []
   let lastTime = 0.0
   for (let i = 0; i < frameInfo.length; i++) {
     const frame = frameInfo[i]
@@ -47,21 +38,22 @@ function updateKeyframeSplitInfo(frameInfo: { pict_type: string; pts_time: numbe
   return frameSplitInfo
 }
 
-async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<IpcResponse> {
-  let resp: IpcResponse = { code: 0, status: 'success' }
+async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
+  let resp: DataTypes.Resp<DataTypes.FrameInfo> = { code: 0, status: 'success' }
   if (appStore?.curSltVideo === null || appStore?.curVideoInfo?.mediaInfo === null) {
     MessageShow.info('没有选择视频文件')
     resp = { code: 1, status: 'no video selected' }
     return resp
   }
+  const req: DataTypes.Req<DataTypes.Req_FrameInfo> = {
+    cmd: 'get_key_frame_info',
+    data: {
+      filepath: appStore?.curSltVideo?.filePath
+    }
+  }
   if (appStore?.curVideoInfo?.frameInfo === null) {
-    const response = await ipcAPi.trigger_event(
-      JSON.stringify({
-        cmd: 'get_key_frame_info',
-        data: { filepath: appStore?.curSltVideo?.filePath }
-      })
-    )
-    return response
+    resp = await ipcAPi.trigger_event(req)
+    return resp
   }
   return resp
 }
@@ -71,7 +63,7 @@ async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<IpcResponse> {
   clearModel: "changeToThumbnail",
 }
 */
-function clear_cur_slt_video_info(req: { clearModel?: string } | null): void {
+function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
   function clear_videoPlayCtrl(): void {
     if (appStore) {
       appStore.videoPlayCtrl.curSrc = ''
@@ -113,8 +105,21 @@ function clear_cur_slt_video_info(req: { clearModel?: string } | null): void {
   }
 }
 
-function folder_file_proc(resp: DataTypes.TraversalFolder): void {
-  const files = resp?.files
+function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void {
+  if (resp.code !== 0) {
+    MessageShow.error(`打开文件夹失败: ${resp.status}`)
+    return
+  }
+  if (resp.bOver == false) {
+    MessageShow.info(`正在处理...`)
+    return
+  }
+  if (resp.data == null) {
+    MessageShow.error(`打开文件夹失败: ${resp.status}`)
+    return
+  }
+  const respData: DataTypes.TraversalFolder = resp.data
+  const files = respData.files
   if (files === undefined) {
     return
   }
@@ -122,13 +127,20 @@ function folder_file_proc(resp: DataTypes.TraversalFolder): void {
     files[i].src = `file://${files[i].filePath}`
   }
   appStore.videoList = files
-  appStore.curOpenedFolder = resp?.folder || ''
+  appStore.curOpenedFolder = respData.folder || ''
 }
 
 function process_work_response(workRespose: DataTypes.WorkResp): void {
   const cmd = workRespose.cmd
 
   const response = JSON.parse(workRespose.data)
+  const showCtx = `命令:${cmd} 执行结果: ${response.status}`
+  if (response.code !== 0) {
+    MessageShow.error(showCtx)
+  } else {
+    MessageShow.success(showCtx)
+  }
+
   // console.log('process_work_response', cmd, response)
   switch (cmd) {
     case 'open_folder':
@@ -144,7 +156,7 @@ function process_work_response(workRespose: DataTypes.WorkResp): void {
       if (response.code !== 0) {
         MessageShow.error(`视频裁剪失败: ${response.status}`)
       } else {
-        MessageShow.info('视频裁剪完成：', response.status)
+        MessageShow.info(`视频裁剪完成:${response.status}`)
       }
       break
     case 'get_key_frame_info':
@@ -155,13 +167,13 @@ function process_work_response(workRespose: DataTypes.WorkResp): void {
           appStore.curVideoInfo = appStore.curVideoInfo || {}
           appStore.curVideoInfo.frameInfo = response.data
         }
-        MessageShow.info('获取关键帧信息完成：', response.status)
+        MessageShow.info(`获取关键帧信息完成:${response.status}`)
       }
       break
   }
 }
 
-function processVideoEvent(events: any[][]): void {
+function processVideoEvent(events: DataTypes.FileEventInfo[][]): void {
   const videoEvent = events
   const colorSegments: { startTime: number; endTime: number; color: string }[] = []
   let startTime = 0
@@ -249,18 +261,30 @@ function processSplitInfo(): void {
   }
 }
 
-async function get_slt_video(ipcAPi: IpcApi, video: { filePath: string }): Promise<void> {
-  const response = await ipcAPi.trigger_event(
-    JSON.stringify({ cmd: 'slt_video', data: { src: video.filePath } })
-  )
+async function get_slt_video(ipcAPi: IpcApi, video: DataTypes.FileInfo | null): Promise<void> {
+  if (video == null) {
+    return
+  }
+  console.log('slect video', video)
+  const req: DataTypes.Req<DataTypes.Req_SltFile> = {
+    cmd: 'slt_video',
+    data: {
+      filepath: video.filePath
+    }
+  }
+  const response: DataTypes.Resp<DataTypes.SltMediaInfo> = await ipcAPi.trigger_event(req)
   if (response.code !== 0) {
     console.log('slect video failed')
   } else {
-    const respData = response.data
-    if (appStore) {
-      appStore.curVideoInfo = respData
+    const respData: DataTypes.SltMediaInfo | undefined = response.data
+    if (respData == undefined) {
+      MessageShow.error(`获取视频信息失败: ${response.status}`)
+      return
     }
-    util.processVideoEvent(respData.eventInfo.events)
+    appStore.curVideoInfo = response.data
+    if (respData.eventInfo != null) {
+      util.processVideoEvent(respData.eventInfo?.events)
+    }
     util.processSplitInfo()
   }
 }
@@ -273,16 +297,12 @@ const formatSecond2Time = (timeSec: number): string => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 }
 
-async function make_prj_info(): Promise<{
-  fileInfo: SltMediaInfo
-  filepath: string
-  filename: string
-} | null> {
+async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
   if (appStore?.curVideoInfo === null) {
     MessageShow.success(`当前没有选择视频文件`)
     return null
   }
-  const prjInfo = {
+  const prjInfo: DataTypes.Req_CutVideo = {
     fileInfo: appStore.curVideoInfo,
     filepath: appStore.curSltVideo?.filePath || '',
     filename: util.getFilenameFromPath(appStore.curSltVideo?.filePath || '')
@@ -291,8 +311,16 @@ async function make_prj_info(): Promise<{
 }
 
 const save_project = async (ipcAPi: IpcApi): Promise<void> => {
-  const prjInfo = await util.make_prj_info()
-  const response = await ipcAPi.trigger_event(JSON.stringify({ cmd: 'save_prj', data: prjInfo }))
+  const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
+  if (prjInfo == null) {
+    MessageShow.success(`当前没有选择视频文件`)
+    return
+  }
+  const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
+    cmd: 'save_prj',
+    data: prjInfo
+  }
+  const response = await ipcAPi.trigger_event(req)
   if (response.code !== 0) {
     MessageShow.success(`保存失败: ${response.status}`)
   } else {
@@ -309,34 +337,26 @@ const save_project = async (ipcAPi: IpcApi): Promise<void> => {
 //   }
 // }): void {
 
-function process_heartbeat(resp: DataTypes.Resp<string>): void {
+function process_heartbeat(resp: DataTypes.Resp<DataTypes.HeartBeat>): void {
   if (resp.code !== 0) {
     console.log('process_heartbeat failed', resp)
     return
   }
-  let response = JSON.parse(resp.data ?? '{}')
-  if (response == null) {
+  if (resp.data === undefined) {
     console.log('process_heartbeat failed', resp)
     return
   }
-  response = JSON.parse(response)
-   const curTime = response.time
-  const appStatus = response.appStatus
+  const respData: DataTypes.HeartBeat = resp.data
+  const curTime = respData.time
+  const appStatus = respData.appStatus
   if (appStore) {
-    appStore.documentTitle = `${curTime} ${appStatus!=null ?appStatus: ''}`
+    appStore.documentTitle = `${curTime} ${appStatus != null ? appStatus : ''}`
   }
-  if (response.workRespose !== null) {
-    if (response.workRespose.length > 0) {
-      console.log('process_heartbeat', response.workRespose)
+  if (respData.workRespose != null) {
+    if (respData.workRespose.length > 0) {
+      console.log('process_heartbeat', respData.workRespose)
     }
-    for (const item of response.workRespose) {
-      const workResp = item.data
-      const showCtx = `命令:${item.cmd} 执行结果: ${workResp.status}`
-      if (workResp.code !== 0) {
-        MessageShow.error(showCtx)
-      } else {
-        MessageShow.success(showCtx)
-      }
+    for (const item of respData.workRespose) {
       util.process_work_response(item)
     }
   }
@@ -373,25 +393,15 @@ class Util {
   }
 
   getFilenameFromPath(filePath: string | null | undefined): string {
-    if (filePath === null || filePath === '') return ''
+    if (filePath == null || filePath === '') return ''
     const parts = filePath.split(/[\\/]/)
     const fileName = parts[parts.length - 1]
     return fileName
   }
 
-  makeSplitInfo(): {
-    startTime: number
-    endTime: number
-    duration: number
-    percent: number
-    color: string
-    currentTime: number
-    isDelete: boolean
-    frameIdx: number
-    frameNum: number
-  } {
+  makeSplitInfo(): DataTypes.SplitInfo {
     // 进度条的分段信息，黄色表示是关键帧
-    const sqlitInfo = {
+    const sqlitInfo: DataTypes.SplitInfo = {
       startTime: 0,
       endTime: 0,
       duration: 0,
@@ -405,7 +415,7 @@ class Util {
     return sqlitInfo
   }
 
-  splitInfoCorrect(splitInfos: any[], videoDuration: number): void {
+  splitInfoCorrect(splitInfos: DataTypes.SplitInfo[], videoDuration: number): void {
     // 把开始时间，结束时间，颜色确定后，再矫正一些关键信息
     for (let i = 0; i < splitInfos.length; i++) {
       const splitInfo = splitInfos[i]

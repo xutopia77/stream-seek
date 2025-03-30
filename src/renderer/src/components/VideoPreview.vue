@@ -52,7 +52,7 @@ interface PlayVideoReq {
   onPlayCbk?: () => void
   beforePlayCbk?: () => void
 }
-const playVideo = (src: string, req: PlayVideoReq = {}): void => {
+const playVideo = (src: string, req: PlayVideoReq | null): void => {
   if (videoRef.value == null) {
     console.log('video ref null')
     return
@@ -66,7 +66,7 @@ const playVideo = (src: string, req: PlayVideoReq = {}): void => {
   appStore.videoPlayCtrl.playbeginTime = 0
   videoRef.value.load()
 
-  const removeEventListeners = setupVideoEventListeners(req)
+  const removeEventListeners = setupVideoEventListeners()
   if (removeEventListeners != null) {
     removeEventListeners()
   }
@@ -98,9 +98,15 @@ watch(
     if (newVal === oldVal) {
       return
     }
-    util.clear_cur_slt_video_info()
+    if (newVal == null) {
+      return
+    }
+    util.clear_cur_slt_video_info(null)
     await util.get_slt_video(ipcAPi, newVal)
-    playVideo(newVal.src)
+    if (newVal == null) {
+      return
+    }
+    playVideo(newVal.src, null)
   },
   { deep: true }
 )
@@ -151,7 +157,7 @@ watch(
 )
 
 // 封装视频事件监听函数，并明确返回值类型
-const setupVideoEventListeners = (req: PlayVideoReq): (() => void) | null => {
+const setupVideoEventListeners = (): (() => void) | null => {
   if (videoRef.value == null) {
     return null
   }
@@ -291,7 +297,7 @@ watch(
 
 onBeforeMount(() => {
   appStore.func_nextFrame = nextFrame
-  appStore.func_previousFrame = previousFrame
+  appStore.func_prevFrame = previousFrame
 })
 onMounted(() => {
   setupVideoEventListeners()

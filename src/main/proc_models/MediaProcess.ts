@@ -4,7 +4,7 @@ import { util } from './Utils'
 import { exec, execSync } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
-
+import * as DataTypes from '../../bridge/dataTypedef'
 // 定义响应对象的类型
 interface Response {
   code: number
@@ -42,7 +42,7 @@ interface Request {
 }
 
 // 获取帧信息
-async function getFrameInfo(filepath: string): Promise<Response> {
+async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
   return new Promise((resolve, reject) => {
     const cmd = `ffprobe -v error -i ${filepath} -skip_frame nokey -select_streams v -show_frames -show_entries frame=pict_type,pts_time -of json`
     exec(cmd, (error, stdout, stderr) => {
@@ -58,7 +58,7 @@ async function getFrameInfo(filepath: string): Promise<Response> {
         const jsonData = JSON.parse(stdout)
         // 遍历jsonData，把pts_time转换为数字
         jsonData.frames.forEach((frame: FrameInfo) => {
-          frame.pts_time = parseFloat(frame.pts_time)
+          frame.pts_time = frame.pts_time ? frame.pts_time : 0
         })
         resolve({ code: 0, status: 'success', data: jsonData })
       } catch (parseError) {
@@ -160,8 +160,8 @@ async function make_split_info(req: Request): Promise<SplitInfo[] | Response> {
 }
 
 // 切割视频
-async function cutVideo(req: Request): Promise<Response> {
-  const resp: Response = { code: 0, status: 'success' }
+async function cutVideo(req: Request): Promise<DataTypes.Resp<string>> {
+  const resp: DataTypes.Resp<string> = { code: 0, status: 'success' }
   const filepath = req.data.filepath
 
   function makeDistFileName(
@@ -170,8 +170,8 @@ async function cutVideo(req: Request): Promise<Response> {
     endTimeIn: number
   ): string | null {
     const filename = path.basename(filepath)
-    const { startTime } = util.parse_filename_mi(filename)
-    const baseStartTimeSec = util.parse_timestr_2_seconds(startTime)
+    const startTime = util.parse_filename_mi(filename)?.startTime
+    const baseStartTimeSec = util.parse_timestr_2_seconds(startTime == null ? '' : startTime)
     // startTimeSec和endTimeSec是毫秒，baseStartTimeSec是秒 现在要把startTimeSec和endTimeSec转换为秒
     const startTimeSec = startTimeIn + baseStartTimeSec
     const endTimeSec = endTimeIn + baseStartTimeSec
@@ -215,7 +215,7 @@ async function cutVideo(req: Request): Promise<Response> {
     } catch (rmErr) {
       console.error('remove dir err:', rmErr)
       resp.code = 1
-      resp.status = rmErr
+      resp.status = String(rmErr)
       return resp
     }
   } catch (err) {
@@ -227,7 +227,7 @@ async function cutVideo(req: Request): Promise<Response> {
     } catch (mkdirErr) {
       console.error('create dir err:', mkdirErr)
       resp.code = 1
-      resp.status = mkdirErr
+      resp.status = String(mkdirErr)
       return resp
     }
   }
@@ -254,7 +254,7 @@ async function cutVideo(req: Request): Promise<Response> {
           return
         }
         splitFilepath.push(distFilename)
-        resolve()
+        resolve(undefined)
       })
     })
   }
@@ -281,14 +281,14 @@ async function cutVideo(req: Request): Promise<Response> {
         reject(new Error(stderr))
         return
       }
-      resolve()
+      resolve(undefined)
     })
   })
   return resp
 }
 
 class MediaProcess {
-  constructor() {}
+  // constructor() {}
   cutVideo = cutVideo
   get_frame_info = getFrameInfo
 

@@ -85,7 +85,8 @@ class TraversalFolder {
           } else {
             fileInfo.push({
               title: file,
-              src: filePath,
+              filePath: filePath,
+              src: '',
               size: stats.size,
               birthtime: `${stats.birthtime}`,
               mtime: `${stats.mtime}`

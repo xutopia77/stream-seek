@@ -48,7 +48,7 @@ import '../../assets/common.css'
 import util from '../../utils/util.js'
 import { IpcApi } from '../../utils/IpcApi'
 import MessageShow from '../util/MessageShow'
-
+import * as DataTypes from '../../../../bridge/dataTypedef'
 // 定义 SplitInfo 类型
 interface SplitInfo {
   startTime: number
@@ -180,8 +180,16 @@ const restoreVideoRecord = (): void => {
 }
 
 const exportVideoRecord = async (): Promise<void> => {
-  const prjInfo = await util.make_prj_info()
-  const response = await ipcAPi.trigger_event(JSON.stringify({ cmd: 'cut_video', data: prjInfo }))
+  const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
+  if (prjInfo === null) {
+    MessageShow.error(`no project info`)
+    return
+  }
+  const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
+    cmd: 'cut_video',
+    data: prjInfo
+  }
+  const response = await ipcAPi.trigger_event(req)
   if (response.code === 1001) {
     return
   }

@@ -10,6 +10,18 @@ export interface SplitInfo {
   frameNum: number
 }
 
+export interface FileEventInfo {
+  time: number
+  area: number
+  x: number
+  y: number
+  width: number
+  height: number
+  center_x: number
+  center_y: number
+  distance: number
+  object_id: number
+}
 export interface SltMediaInfo {
   mediaInfo?: {
     nb_streams: number
@@ -41,27 +53,11 @@ export interface SltMediaInfo {
     end_time: string
     execution_time: number
     file_name: string
-    events: {
-      time: number
-      area: number
-      x: number
-      y: number
-      width: number
-      height: number
-      center_x: number
-      center_y: number
-      distance: number
-      object_id: number
-    }[][]
+    events: FileEventInfo[][]
   }
   splitInfo?: SplitInfo[]
-  frameInfo?: {
-    frames: {
-      pict_type: string
-      pts_time: number
-    }[]
-  }
-  thumbnail: {
+  frameInfo?: FrameInfo
+  thumbnail?: {
     filepath: string
     time: string
     indexTime: number
@@ -87,22 +83,6 @@ export interface MediaItem {
   filePath: string
 }
 
-// ========================
-
-export interface FileInfo {
-  title: string
-  filePath: string //文件的路径，由后端赋值
-  src?: string // 文件的url由前端组装
-  size: number
-  birthtime: string
-  mtime: string
-}
-
-export interface TraversalFolder {
-  folder?: string
-  files?: FileInfo[]
-}
-
 export interface Prj {
   name: string
   version: string
@@ -122,9 +102,66 @@ export interface WorkResp {
   data: string
 }
 
-export interface Resp<T> {
+export interface HeartBeat {
+  time: string
+  appStatus: string
+  workRespose?: WorkResp[]
+}
+
+export interface Req_TraversalFolder {
+  folder: string
+}
+
+export interface TraversalFolder {
+  folder?: string
+  files?: FileInfo[]
+}
+
+export interface Req_CutVideo {
+  fileInfo: SltMediaInfo
+  filepath: string
+  filename: string
+}
+
+export interface FrameInfo {
+  frames: {
+    pict_type: string
+    pts_time: number
+  }[]
+}
+
+export interface Req_FrameInfo {
+  filepath: string
+}
+
+export interface FileInfo {
+  title: string
+  filePath: string //文件的路径，由后端赋值
+  src: string // 文件的url由前端组装
+  size: number
+  birthtime: string
+  mtime: string
+}
+
+export interface Req_SltFile {
+  filepath: string
+}
+
+// ======================== render
+export interface ClearSltInfoReq {
+  clearModel?: string
+}
+
+// ========================
+export interface Resp<T = string> {
   code: number
   status: string
   bOver?: boolean
   data?: T
 }
+
+export interface Req<T = string> {
+  cmd: string
+  data?: T
+}
+

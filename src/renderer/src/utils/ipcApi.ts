@@ -1,32 +1,27 @@
-// 定义 Window 类型的扩展，解决 'electron' 属性不存在的问题
-declare global {
-  interface Window {
-    electron: {
-      ipcRenderer: {
-        invoke: (channel: string, ...args: any[]) => Promise<any>
-        send: (channel: string, ...args: any[]) => void
-      }
-    }
-  }
-}
+// // 定义 Window 类型的扩展，解决 'electron' 属性不存在的问题
+// declare global {
+//   interface Window {
+//     electron: {
+//       ipcRenderer: {
+//         invoke: (channel: string, ...args: any[]) => Promise<any>
+//         send: (channel: string, ...args: any[]) => void
+//       }
+//     }
+//   }
+// }
 
-// 定义响应数据的类型
-interface IpcResponse {
-  code: number
-  status: string
-  data?: string
-  bOver?: boolean
-}
+import * as DataTypes from '../../../bridge/dataTypedef'
 
 export class IpcApi {
   // 为函数添加返回类型注解
-  async trigger_event(reqStr: string): Promise<IpcResponse> {
-    // console.log(`Arguments: ${reqStr}`)
+  async trigger_event<T = string, R = string>(req: DataTypes.Req<T>): Promise<DataTypes.Resp<R>> {
+    const reqStr = JSON.stringify(req)
+    console.log(`Arguments: ${reqStr}`)
     try {
-      return (await window.electron.ipcRenderer.invoke('render_event', reqStr)) as IpcResponse
+      return (await window.electron.ipcRenderer.invoke('render_event', reqStr)) as DataTypes.Resp<R>
     } catch (error) {
       console.error('err:', error)
-      return { code: 1, status: 'error', message: error }
+      return { code: 1, status: String(error) }
     }
   }
 }

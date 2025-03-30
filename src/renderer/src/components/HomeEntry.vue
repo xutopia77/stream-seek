@@ -19,19 +19,16 @@ import { IpcApi } from '../utils/IpcApi'
 import MessageShow from './util/MessageShow'
 const ipcAPi: IpcApi = new IpcApi()
 import * as DataTypes from '../../../bridge/dataTypedef'
-// 定义响应数据的类型
-interface IpcResponse {
-  code: number
-  data?: any
-  status?: string
-}
 
-// 启动一个定时器，周期性ipcAPi.trigger_event
+// 启动一个定时器，周期性trigger_event
 function startTimer(): void {
   setInterval(() => {
+    const req: DataTypes.Req = {
+      cmd: 'heart_beat'
+    }
     ipcAPi
-      .trigger_event(JSON.stringify({ cmd: 'heart_beat', data: '' }))
-      .then((response: DataTypes.Resp<string>) => {
+      .trigger_event<string, DataTypes.HeartBeat>(req)
+      .then((response: DataTypes.Resp<DataTypes.HeartBeat>) => {
         util.process_heartbeat(response)
       })
       .catch((error: Error) => {
@@ -43,13 +40,14 @@ function startTimer(): void {
 async function updatePrj(prj: DataTypes.Prj): Promise<void> {
   appStore.prj = prj
   if (prj.lastOpenedFolder != null) {
-    const response: DataTypes.Resp<string> = await ipcAPi.trigger_event(
-      JSON.stringify({ cmd: 'traversal_folder', data: { folder: prj.lastOpenedFolder } })
-    )
+    const req: DataTypes.Req<DataTypes.Req_TraversalFolder> = {
+      cmd: 'set_last_opened_folder',
+      data: { folder: prj.lastOpenedFolder }
+    }
+    const response: DataTypes.Resp<DataTypes.TraversalFolder> = await ipcAPi.trigger_event(req)
     if (response.code === 0) {
-      const resp = JSON.parse(response.data ?? '{}')
       appStore.curOpenedFolder = prj.lastOpenedFolder
-      util.folder_file_proc(resp)
+      util.folder_file_proc(response)
     } else {
       MessageShow.error(`遍历文件夹失败`)
     }
@@ -71,19 +69,20 @@ watch(
 
 onBeforeMount(async () => {
   util.setAppStore(appStore)
-  const response: DataTypes.Resp<string> = await ipcAPi.trigger_event(
-    JSON.stringify({ cmd: 'app_start', data: '' })
-  )
+  const req: DataTypes.Req = {
+    cmd: 'app_start'
+  }
+  const response: DataTypes.Resp<DataTypes.Prj> = await ipcAPi.trigger_event(req)
   if (response.code !== 0) {
     MessageShow.error(`启动失败`)
     return
   }
   startTimer()
-  const resp = JSON.parse(response.data ?? '{}')
-  if (resp == null) {
+  const respData = response.data
+  if (respData == null) {
     return
   }
-  updatePrj(resp.prj)
+  updatePrj(respData)
 })
 </script>
 

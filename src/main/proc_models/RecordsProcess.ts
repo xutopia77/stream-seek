@@ -5,7 +5,7 @@ import mediaProc from './MediaProcess.js'
 import * as path from 'path'
 import * as fs from 'fs'
 import { execFile } from 'child_process'
-
+import * as DataTypes from '../../bridge/dataTypedef'
 // 定义响应对象类型
 interface Response {
   code: number
@@ -361,7 +361,7 @@ async function query_images(filepath: string): Promise<Response> {
 }
 
 // 开始切割视频
-async function start_cut_video(req: Request): Promise<Response> {
+async function start_cut_video(req: Request): Promise<DataTypes.Resp<string>> {
   mediaProc
     .cutVideo(req)
     .then((resp) => {

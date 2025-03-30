@@ -18,8 +18,8 @@ type AppStore = {
   func_prevFrame: (() => void) | null
   rightPanel: 'list' | 'workPanel'
   videoList: MediaItem[]
-  curSltVideo: SltMedia | null
-  curVideoInfo: SltMediaInfo | null
+  curSltVideo: DataTypes.FileInfo | null
+  curVideoInfo: DataTypes.SltMediaInfo | null
   barColorCfg: {
     startTime: number
     endTime: number
