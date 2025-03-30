@@ -83,9 +83,14 @@ function check_record_time(files: File[]): void {
 }
 
 // 文件分类处理
-async function file_classify(reqInfo: RequestInfo): Promise<Response> {
-  const { req, files } = reqInfo
-  const folder = req.data.folder
+async function file_classify(
+  req: DataTypes.Req<DataTypes.Req_SearchFile>,
+  files: DataTypes.FileInfo[]
+): Promise<DataTypes.Resp> {
+  const folder = req.data?.folder
+  if (folder === undefined) {
+    return { code: 1, status: 'folder is undefined' }
+  }
 
   // 计算文件信息
   function calculateFilesInfo(files: File[]): { totalSize: number; totalCount: number } {
@@ -107,8 +112,14 @@ async function file_classify(reqInfo: RequestInfo): Promise<Response> {
   // 排序文件
   const folderpath = folder
   const sortFiles = files.slice().sort((a, b) => {
-    const { startTime: startTimeA } = util.parse_filename_mi(a.title)
-    const { startTime: startTimeB } = util.parse_filename_mi(b.title)
+    const startTimeA = util.parse_filename_mi(a.title)?.startTime
+    const startTimeB = util.parse_filename_mi(b.title)?.startTime
+    if (startTimeA === undefined) {
+      return 0
+    }
+    if (startTimeB === undefined) {
+      return 0
+    }
     return startTimeA.localeCompare(startTimeB)
   })
 
@@ -378,9 +389,13 @@ async function start_cut_video(
 
 // 记录处理类
 class RecordsProc {
-  async start_file_classify(req: Request): Promise<Response> {
-    await file_classify({ req, files: [] })
-    return await this.start_gen_thumbnail(req)
+  async start_file_classify(
+    req: DataTypes.Req<DataTypes.Req_SearchFile>,
+    files: DataTypes.FileInfo[]
+  ): Promise<DataTypes.Resp> {
+    await file_classify(req, files)
+    await this.start_gen_thumbnail(req)
+    return { code: 0, status: 'success' }
   }
   async start_gen_thumbnail(req: Request): Promise<Response> {
     return await gen_thumbnail(req)

@@ -6,7 +6,6 @@ import MessageShow from '../components/util/MessageShow'
 import { IpcApi } from './IpcApi'
 
 function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.SplitInfo[] {
-  if (!appStore) return []
   const frameInfo = frameInfoReq.frames
   // 根据i帧的时间信息，生成bar上的分割信息
   const frameSplitInfo: DataTypes.SplitInfo[] = []

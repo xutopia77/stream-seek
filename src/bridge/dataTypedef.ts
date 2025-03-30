@@ -22,32 +22,35 @@ export interface FileEventInfo {
   distance: number
   object_id: number
 }
-export interface SltMediaInfo {
-  mediaInfo?: {
-    nb_streams: number
-    duration: number
-    size: number
-    start_time: number
+
+export interface MediaInfo {
+  nb_streams: number
+  duration: number
+  size: number
+  start_time: number
+  bit_rate: number
+  video: {
+    codec_name: string
+    codec_type: string
+    width: number
+    height: number
+    pix_fmt: string
     bit_rate: number
-    video: {
-      codec_name: string
-      codec_type: string
-      width: number
-      height: number
-      pix_fmt: string
-      bit_rate: number
-      frame_rate: number
-      nb_frames: number
-    }
-    audio: {
-      codec_name: string
-      codec_type: string
-      sample_rate: number
-      channels: number
-      bit_rate: number
-      channel_layout: string
-    }
+    frame_rate: number
+    nb_frames: number
   }
+  audio: {
+    codec_name: string
+    codec_type: string
+    sample_rate: number
+    channels: number
+    bit_rate: number
+    channel_layout: string
+  }
+}
+
+export interface SltMediaInfo {
+  mediaInfo?: MediaInfo
   eventInfo?: {
     start_time: string
     end_time: string
@@ -123,11 +126,13 @@ export interface Req_CutVideo {
   filename: string
 }
 
-export interface FrameInfo {
-  frames: {
+export interface Frame {
     pict_type: string
     pts_time: number
-  }[]
+}
+
+export interface FrameInfo {
+  frames: Frame[]
 }
 
 export interface Req_FrameInfo {
@@ -147,6 +152,10 @@ export interface Req_SltFile {
   filepath: string
 }
 
+export interface Req_SearchFile {
+  folder: string
+}
+
 // ======================== render
 export interface ClearSltInfoReq {
   clearModel?: string
@@ -157,7 +166,6 @@ export interface BarColorCfg {
   endTime: number
   color: string
 }
-
 
 // ========================
 export interface Resp<T = string> {
@@ -171,4 +179,3 @@ export interface Req<T = string> {
   cmd: string
   data?: T
 }
-

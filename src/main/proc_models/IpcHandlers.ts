@@ -1,6 +1,6 @@
 import * as path from 'path'
 import * as fs from 'fs'
-import { Data, dialog } from 'electron'
+import { dialog } from 'electron'
 import mediaProc from './MediaProcess.js'
 import appCfg from './AppCfg.js'
 import logger from './Logger.js'
@@ -8,21 +8,6 @@ import recordsProc from './RecordsProcess.js'
 import { TraversalFolder, workQueue } from './Utils.js'
 // import type { WorkResp } from './Utils.js'
 import * as DataTypes from '../../bridge/dataTypedef'
-// 定义请求对象的类型
-interface Request {
-  cmd: string
-  data?: any
-}
-
-// 定义 TraversalFolder 类的响应类型
-interface TraversalFolderResponse {
-  code: number
-  status: string
-  data: {
-    folder: string
-    files: any[]
-  }
-}
 
 function make_file_prj_path(filename: string): string {
   let filePath = `${filename}_prj.json`
@@ -40,8 +25,8 @@ async function handle_open_folder(
   }
 
   const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory'],
-    modal: true
+    properties: ['openDirectory']
+    // modal: true
   })
   if (!canceled) {
     const folderPath = filePaths[0]
@@ -78,30 +63,34 @@ async function handle_open_folder(
   return { code: 0, status: 'canceled' }
 }
 
-async function handle_query_video(): Promise<Response> {
-  const req: Request = {
-    cmd: 'query_video',
-    data: {
-      folder: appCfg.prj['lastOpenedFolder']
-    }
+async function handle_query_video(
+  req: DataTypes.Req<DataTypes.Req_SearchFile>
+): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+  if (req.data == null) {
+    return { code: 1, status: 'req.data is null' }
   }
   const traversalFolder = new TraversalFolder()
-  traversalFolder.type = req.data.type
-  traversalFolder.folder = req.data.folder
+  traversalFolder.type = null
+  traversalFolder.folder = req.data?.folder
   traversalFolder
     .start()
-    .then((resp: TraversalFolderResponse) => {
-      logger.log('traversal folder:', resp.status, resp.data.files.length)
-      recordsProc
-        .start_file_classify({ req, files: resp.data.files })
-        .then((resp: Response) => {
-          logger.log('handle_query_video after classify:', resp)
-          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-        })
-        .catch((error: unknown) => {
-          logger.error('open folder err:', error)
-          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
-        })
+    .then((resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+      if (resp.data?.files != null) {
+        logger.log('traversal folder:', resp.status, resp.data.files?.length)
+        recordsProc
+          .start_file_classify(req, resp.data.files)
+          .then((resp: DataTypes.Resp) => {
+            logger.log('handle_query_video after classify:', resp)
+            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+          })
+          .catch((error: unknown) => {
+            logger.error('open folder err:', error)
+            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+          })
+      } else {
+        logger.log('traversal folder:', resp.status)
+        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+      }
     })
     .catch((error: unknown) => {
       logger.error('open folder err:', error)
@@ -234,8 +223,12 @@ async function handle_select_video(
   return resp
 }
 
-async function handle_save_prj(req: Request): Promise<DataTypes.Resp<string>> {
-  // 把req.data 保存到文件
+async function handle_save_prj(
+  req: DataTypes.Req<DataTypes.Req_CutVideo>
+): Promise<DataTypes.Resp> {
+  if (req.data == null) {
+    return { code: 1, status: 'req.data is null' }
+  }
   const filePath = make_file_prj_path(req.data.filename)
   const data = JSON.stringify(req.data)
   try {
@@ -268,14 +261,19 @@ function handle_app_start(): DataTypes.Resp<DataTypes.Prj> {
 }
 
 async function handle_get_key_frame_info(
-  req: Request
+  req: DataTypes.Req<DataTypes.Req_FrameInfo>
 ): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
   const resp: DataTypes.Resp<DataTypes.FrameInfo> = {
     code: 0,
     status: 'success',
     bOver: false
   }
-  const filePath = req.data.filepath
+  const filePath = req.data?.filepath
+  if (filePath == null) {
+    resp.code = 1
+    resp.status = 'filePath is null'
+    return resp
+  }
   mediaProc
     .get_frame_info(filePath)
     .then((resp: DataTypes.Resp<DataTypes.FrameInfo>) => {
@@ -291,10 +289,14 @@ async function handle_get_key_frame_info(
   return resp
 }
 
-async function traversal_folder(req: Request): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
-  const folderpath = req.data.folder
+async function traversal_folder(
+  req: DataTypes.Req<DataTypes.Req_TraversalFolder>
+): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+  const folderpath = req.data?.folder
+  if (folderpath == null) {
+    return { code: 1, status: 'folderpath is null' }
+  }
   const traversalFolder = new TraversalFolder()
-  traversalFolder.type = req.data.type
   traversalFolder.folder = folderpath
   return await traversalFolder.start()
 }
@@ -374,7 +376,7 @@ export class IpcHandlers {
     switch (cmd) {
       case 'get_key_frame_info': {
         logger.log(cmd, req)
-        const cmdReq = convertCmdRequest<DataTypes.Req<DataTypes.Req_FrameInfo>>(req)
+        const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
         return make_cmd_response(await handle_get_key_frame_info(cmdReq))
       }
       case 'open_folder': {
@@ -383,16 +385,18 @@ export class IpcHandlers {
       }
       case 'traversal_folder': {
         logger.log(cmd, req)
-        const cmdReq = convertCmdRequest<DataTypes.Req<DataTypes.Req_TraversalFolder>>(req)
+        const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
         return make_cmd_response(await traversal_folder(cmdReq))
       }
       case 'slt_video_event': {
         logger.log(cmd, req)
         return make_cmd_response(await handle_video_event_detect())
       }
-      case 'save_prj':
+      case 'save_prj': {
         logger.log(cmd)
-        return make_cmd_response(await handle_save_prj(req))
+        const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
+        return make_cmd_response(await handle_save_prj(cmdReq))
+      }
       case 'cut_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
         return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
@@ -405,9 +409,11 @@ export class IpcHandlers {
       case 'app_start':
         logger.log(cmd, req)
         return make_cmd_response(await handle_app_start())
-      case 'query_video':
+      case 'query_video': {
+        const cmdReq = convertCmdRequest<DataTypes.Req_SearchFile>(req)
         logger.log(cmd, req)
-        return make_cmd_response(await handle_query_video())
+        return make_cmd_response(await handle_query_video(cmdReq))
+      }
       default:
         console.log(`Unknown event: ${cmd}`)
         return { code: 1, status: `Unknown event: ${cmd}` }

@@ -5,41 +5,6 @@ import { exec, execSync } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as DataTypes from '../../bridge/dataTypedef'
-// 定义响应对象的类型
-interface Response {
-  code: number
-  status: string | Error
-  data?: any
-}
-
-// 定义帧信息对象的类型
-interface FrameInfo {
-  pict_type: string
-  pts_time: number
-}
-
-// 定义分割信息对象的类型
-interface SplitInfo {
-  startTime: number
-  endTime: number
-  isDelete?: boolean
-}
-
-// 定义文件信息对象的类型
-interface FileInfo {
-  splitInfo?: SplitInfo[]
-  frameInfo?: {
-    frames: FrameInfo[]
-  }
-}
-
-// 定义请求对象的类型
-interface Request {
-  data: {
-    filepath: string
-    fileInfo: FileInfo
-  }
-}
 
 // 获取帧信息
 async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
@@ -57,7 +22,7 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
       try {
         const jsonData = JSON.parse(stdout)
         // 遍历jsonData，把pts_time转换为数字
-        jsonData.frames.forEach((frame: FrameInfo) => {
+        jsonData.frames.forEach((frame: DataTypes.Frame) => {
           frame.pts_time = frame.pts_time ? frame.pts_time : 0
         })
         resolve({ code: 0, status: 'success', data: jsonData })
@@ -71,16 +36,16 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 // 生成分割信息
 async function make_split_info(
   req: DataTypes.Req<DataTypes.Req_CutVideo>
-): Promise<SplitInfo[] | DataTypes.Resp> {
+): Promise<DataTypes.Resp<CutSplitInfo[]>> {
   const processSplitInKeyFrame = (
-    splitInfo: SplitInfo[],
-    keyFrameSplitInfo: FrameInfo[]
-  ): SplitInfo[] => {
+    splitInfo: CutSplitInfo[],
+    keyFrameSplitInfo: DataTypes.Frame[]
+  ): CutSplitInfo[] => {
     const makeSartTime = (t: number): number => {
       return t < 0.0001 ? 0 : t - 0.0001
     }
 
-    const splitCutInfo: SplitInfo[] = []
+    const splitCutInfo: CutSplitInfo[] = []
     for (let i = 0; i < splitInfo.length; i++) {
       const item = splitInfo[i]
       const startTime = item.startTime
@@ -115,7 +80,7 @@ async function make_split_info(
     }
     return splitCutInfo
   }
-  if(req.data?.fileInfo === undefined) {
+  if (req.data?.fileInfo === undefined) {
     return { code: 1, status: 'fileInfo is null' }
   }
 
@@ -127,15 +92,19 @@ async function make_split_info(
       console.log('getFrameInfo err: ', kResp)
       return { code: 1, status: 'getFrameInfo err' }
     }
-    keyFrameSplitInfo = kResp.data.frames
+    keyFrameSplitInfo = kResp.data?.frames
+  }
+  if (!keyFrameSplitInfo || keyFrameSplitInfo.length === 0) {
+    console.log('getFrameInfo err: ', keyFrameSplitInfo)
+    return { code: 1, status: 'getFrameInfo err' }
   }
   if (!splitInfo || splitInfo.length === 0) {
     console.log('cut video req: ', req)
     return { code: 1, status: 'not find split info' }
   }
   splitInfo.sort((a, b) => a.startTime - b.startTime)
-  const resvSplitInfo: SplitInfo[] = []
-  let recvItem: SplitInfo = {
+  const resvSplitInfo: CutSplitInfo[] = []
+  let recvItem: CutSplitInfo = {
     startTime: 0,
     endTime: 0
   }
@@ -160,8 +129,16 @@ async function make_split_info(
   if (recvItem.endTime !== 0) {
     resvSplitInfo.push(recvItem)
   }
+  return {
+    code: 0,
+    status: 'success',
+    data: processSplitInKeyFrame(resvSplitInfo, keyFrameSplitInfo)
+  }
+}
 
-  return processSplitInKeyFrame(resvSplitInfo, keyFrameSplitInfo)
+interface CutSplitInfo {
+  startTime: number
+  endTime: number
 }
 
 // 切割视频
@@ -206,15 +183,20 @@ async function cutVideo(
     return distFilename
   }
 
-  const splitCutInfo = await make_split_info(req)
-  if (!splitCutInfo) {
+  const makeResp: DataTypes.Resp<CutSplitInfo[]> = await make_split_info(req)
+  if (makeResp.code !== 0) {
+    resp.code = 1
+    resp.status = makeResp.status
+    return resp
+  }
+  const cutSplitInfo = makeResp.data
+  if (!cutSplitInfo) {
     resp.code = 1
     resp.status = 'make_split_info err'
     return resp
   }
-  console.log('splitCutInfo: ', splitCutInfo)
-  const splitInfo = splitCutInfo as SplitInfo[]
-  if (splitInfo.length === 0) {
+  console.log('splitCutInfo: ', cutSplitInfo)
+  if (cutSplitInfo.length === 0) {
     return resp
   }
   const distFolderPath = path.join(appCfg.appData, 'video_cut_tmp')
@@ -244,8 +226,8 @@ async function cutVideo(
     }
   }
   const splitFilepath: string[] = []
-  for (let i = 0; i < splitInfo.length; i++) {
-    const item = splitInfo[i]
+  for (let i = 0; i < cutSplitInfo.length; i++) {
+    const item = cutSplitInfo[i]
     let distFilename = makeDistFileName(filepath, item.startTime, item.endTime)
     if (!distFilename) {
       resp.code = 1
@@ -304,55 +286,86 @@ class MediaProcess {
   cutVideo = cutVideo
   get_frame_info = getFrameInfo
 
-  async getVideoInfo(filePath: string): Promise<any> {
+  async getVideoInfo(filePath: string): Promise<DataTypes.MediaInfo> {
     // let video_path = 'D:/02_workspace/05_timeCapsule/01_stream_manager_ui/stream_manager_ui/src/data/00_20250310042708_20250310051906.mp4'
     const video_path = filePath
     const cmd = `ffprobe -v error -of json -show_format -show_streams ${video_path}`
     const output = execSync(cmd).toString()
     const jsonData = JSON.parse(output)
 
-    const videoInfo: any = {}
-    const videoStream = jsonData.streams.find((stream: any) => stream.codec_type === 'video')
+    const mediaInfo: DataTypes.MediaInfo = {
+      nb_streams: 0,
+      duration: 0,
+      size: 0,
+      start_time: 0,
+      bit_rate: 0,
+      video: {
+        codec_name: '',
+        codec_type: '',
+        width: 0,
+        height: 0,
+        pix_fmt: '',
+        bit_rate: 0,
+        frame_rate: 0,
+        nb_frames: 0
+      },
+      audio: {
+        codec_name: '',
+        codec_type: '',
+        sample_rate: 0,
+        channels: 0,
+        bit_rate: 0,
+        channel_layout: ''
+      }
+    }
+
+    interface StreamInfo {
+      codec_type: string
+      codec_name: string
+      width?: number
+      height?: number
+      pix_fmt?: string
+      bit_rate?: string
+      r_frame_rate?: string
+      duration?: string
+      sample_rate?: string
+      channels?: number
+      channel_layout?: string
+    }
+    const videoStream = jsonData.streams.find((stream: StreamInfo) => stream.codec_type === 'video')
     if (!videoStream) {
       console.error('未找到视频流')
     } else {
-      videoInfo['codec_name'] = videoStream.codec_name
-      videoInfo['codec_type'] = videoStream.codec_type
-      videoInfo['width'] = videoStream.width
-      videoInfo['height'] = videoStream.height
-      videoInfo['pix_fmt'] = videoStream.pix_fmt
-      videoInfo['bit_rate'] = videoStream.bit_rate
+      mediaInfo.video.codec_name = videoStream.codec_name
+      mediaInfo.video.codec_type = videoStream.codec_type
+      mediaInfo.video.width = videoStream.width
+      mediaInfo.video.height = videoStream.height
+      mediaInfo.video.pix_fmt = videoStream.pix_fmt
+      mediaInfo.video.bit_rate = videoStream.bit_rate
 
       const [numerator, denominator] = videoStream.r_frame_rate.split('/').map(Number)
       const frameRate = numerator / denominator
-      videoInfo['frame_rate'] = frameRate
+      mediaInfo.video.frame_rate = frameRate
       const duration = parseFloat(videoStream.duration)
-      videoInfo['nb_frames'] = duration * frameRate
+      mediaInfo.video.nb_frames = duration * frameRate
     }
-    const audioInfo: any = {}
-    const audioStream = jsonData.streams.find((stream: any) => stream.codec_type === 'audio')
+    const audioStream = jsonData.streams.find((stream: StreamInfo) => stream.codec_type === 'audio')
     if (!audioStream) {
       console.error('未找到音频流')
     } else {
-      audioInfo['codec_name'] = audioStream.codec_name
-      audioInfo['codec_type'] = audioStream.codec_type
-      audioInfo['sample_rate'] = audioStream.sample_rate
-      audioInfo['channels'] = audioStream.channels
-      audioInfo['channel_layout'] = audioStream.channel_layout
-      audioInfo['bit_rate'] = audioStream.bit_rate
+      mediaInfo.audio.codec_name = audioStream.codec_name
+      mediaInfo.audio.codec_type = audioStream.codec_type
+      mediaInfo.audio.sample_rate = audioStream.sample_rate
+      mediaInfo.audio.channels = audioStream.channels
+      mediaInfo.audio.channel_layout = audioStream.channel_layout
+      mediaInfo.audio.bit_rate = audioStream.bit_rate
     }
-
-    const infoData = {
-      nb_streams: jsonData.format.nb_streams,
-      duration: jsonData.format.duration,
-      size: jsonData.format.size,
-      start_time: jsonData.format.start_time,
-      bit_rate: jsonData.format.bit_rate,
-      video: videoInfo,
-      audio: audioInfo,
-      frameInfo: null
-    }
-    return infoData
+    mediaInfo.nb_streams = jsonData.format.nb_streams
+    mediaInfo.duration = jsonData.format.duration
+    mediaInfo.size = jsonData.format.size
+    mediaInfo.start_time = jsonData.format.start_time
+    mediaInfo.bit_rate = jsonData.format.bit_rate
+    return mediaInfo
   }
 }
 
