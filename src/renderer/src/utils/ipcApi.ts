@@ -20,7 +20,7 @@ export class IpcApi {
       data: req.data ? JSON.stringify(req.data) : undefined
     }
     const reqStr = JSON.stringify(sendReq)
-    console.log(`Arguments: ${reqStr}`)
+    // console.log(`Arguments: ${reqStr}`)
     try {
       const response = await window.electron.ipcRenderer.invoke('render_event', reqStr)
       return {

@@ -40,7 +40,6 @@ function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.S
 async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
   let resp: DataTypes.Resp<DataTypes.FrameInfo> = { code: 0, status: 'success' }
   if (appStore?.curSltVideo === null || appStore?.curVideoInfo?.mediaInfo === null) {
-    MessageShow.info('没有选择视频文件')
     resp = { code: 1, status: 'no video selected' }
     return resp
   }
@@ -50,7 +49,7 @@ async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<DataTypes.Resp<DataTypes
       filepath: appStore?.curSltVideo?.filePath
     }
   }
-  if (appStore?.curVideoInfo?.frameInfo === null) {
+  if (appStore?.curVideoInfo?.frameInfo == null) {
     resp = await ipcAPi.trigger_event(req)
     return resp
   }
@@ -237,34 +236,35 @@ function processVideoEvent(events: DataTypes.FileEventInfo[][]): void {
   }
 }
 
-function processSplitInfo(): void {
-  if (appStore?.curVideoInfo?.splitInfo !== null) {
-    // 从后台已经获取到了信息，就不用再处理了
-    return
-  }
-  // 如果后台没有标记信息，就需要把完整的视频分段添加到splitInfo中
-  const duration = appStore?.curVideoInfo?.mediaInfo?.duration || 0
-  const itemInfo = util.makeSplitInfo()
-  itemInfo.endTime = duration
-  itemInfo.duration = duration
-  itemInfo.percent = 100
-  itemInfo.frameNum = util.calculateCurFrameIdx(duration)
-  if (appStore?.curVideoInfo?.splitInfo === null) {
-    if (appStore?.curVideoInfo) {
-      appStore.curVideoInfo.splitInfo = []
+async function get_slt_video(ipcAPi: IpcApi, video: DataTypes.FileInfo | null): Promise<void> {
+  function processSplitInfo(): void {
+    if (appStore?.curVideoInfo?.splitInfo != null) {
+      // 从后台已经获取到了信息，就不用再处理了
+      if (appStore.curVideoInfo.splitInfo.length > 0) {
+        return
+      }
+    }
+    // 如果后台没有标记信息，就需要把完整的视频分段添加到splitInfo中
+    const duration = appStore?.curVideoInfo?.mediaInfo?.duration || 0
+    const itemInfo = util.makeSplitInfo()
+    itemInfo.endTime = duration
+    itemInfo.duration = duration
+    itemInfo.percent = 100
+    itemInfo.frameNum = util.calculateCurFrameIdx(duration)
+    if (appStore?.curVideoInfo?.splitInfo == null) {
+      if (appStore?.curVideoInfo) {
+        appStore.curVideoInfo.splitInfo = []
+      }
+    }
+    if (appStore?.curVideoInfo?.splitInfo) {
+      appStore.curVideoInfo.splitInfo.push(itemInfo)
+      appStore.curVideoInfo.splitInfo.sort((a, b) => a.percent - b.percent)
     }
   }
-  if (appStore?.curVideoInfo?.splitInfo) {
-    appStore.curVideoInfo.splitInfo.push(itemInfo)
-    appStore.curVideoInfo.splitInfo.sort((a, b) => a.percent - b.percent)
-  }
-}
 
-async function get_slt_video(ipcAPi: IpcApi, video: DataTypes.FileInfo | null): Promise<void> {
   if (video == null) {
     return
   }
-  console.log('slect video', video)
   const req: DataTypes.Req<DataTypes.Req_SltFile> = {
     cmd: 'slt_video',
     data: {
@@ -284,7 +284,7 @@ async function get_slt_video(ipcAPi: IpcApi, video: DataTypes.FileInfo | null): 
     if (respData.eventInfo != null) {
       util.processVideoEvent(respData.eventInfo?.events)
     }
-    util.processSplitInfo()
+    processSplitInfo()
   }
 }
 
@@ -367,7 +367,6 @@ class Util {
   save_project = save_project
   formatSecond2Time = formatSecond2Time
   get_slt_video = get_slt_video
-  processSplitInfo = processSplitInfo
   processVideoEvent = processVideoEvent
   process_work_response = process_work_response
   folder_file_proc = folder_file_proc

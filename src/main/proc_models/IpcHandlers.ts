@@ -342,16 +342,11 @@ async function process_heart_beat(): Promise<DataTypes.Resp<DataTypes.HeartBeat>
   return resp
 }
 
-interface CmdResponse<T> {
-  code: number
-  status: string
-  data?: T
-}
-
-function make_cmd_response<T>(resp: CmdResponse<T>): DataTypes.Resp<string> {
+function make_cmd_response<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<string> {
   const response: DataTypes.Resp<string> = {
     code: resp.code,
     status: resp.status,
+    bOver: resp.bOver,
     data: JSON.stringify(resp.data)
   }
   return response
@@ -375,8 +370,8 @@ export class IpcHandlers {
     const cmd = req.cmd
     switch (cmd) {
       case 'get_key_frame_info': {
-        logger.log(cmd, req)
         const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
+        logger.log(cmd, cmdReq.data?.filepath)
         return make_cmd_response(await handle_get_key_frame_info(cmdReq))
       }
       case 'open_folder': {
@@ -384,8 +379,8 @@ export class IpcHandlers {
         return make_cmd_response(await handle_open_folder(this.mainWindow!, req))
       }
       case 'traversal_folder': {
-        logger.log(cmd, req)
         const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
+        logger.log(cmd, cmdReq.data?.folder)
         return make_cmd_response(await traversal_folder(cmdReq))
       }
       case 'slt_video_event': {
@@ -393,8 +388,8 @@ export class IpcHandlers {
         return make_cmd_response(await handle_video_event_detect())
       }
       case 'save_prj': {
-        logger.log(cmd)
         const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
+        logger.log(`${cmd}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_save_prj(cmdReq))
       }
       case 'cut_video': {
@@ -403,7 +398,7 @@ export class IpcHandlers {
       }
       case 'slt_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
-        logger.log(cmd, req)
+        logger.log(cmd, cmdReq.data?.filepath)
         return make_cmd_response(await handle_select_video(cmdReq))
       }
       case 'app_start':
@@ -411,7 +406,7 @@ export class IpcHandlers {
         return make_cmd_response(await handle_app_start())
       case 'query_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SearchFile>(req)
-        logger.log(cmd, req)
+        logger.log(cmd, cmdReq)
         return make_cmd_response(await handle_query_video(cmdReq))
       }
       default:

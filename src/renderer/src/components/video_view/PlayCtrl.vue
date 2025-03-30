@@ -105,15 +105,12 @@ let frameRate = computed(() => {
 })
 
 function nextFrame(): void {
-  MessageShow.info('sdfsdfs1')
   if (appStore.func_nextFrame) {
     appStore.func_nextFrame()
   }
 }
 
 function previousFrame(): void {
-  MessageShow.error('sdfsdfs')
-  MessageShow.error('sdfsdfs1')
   if (appStore.func_prevFrame) {
     appStore.func_prevFrame()
   }

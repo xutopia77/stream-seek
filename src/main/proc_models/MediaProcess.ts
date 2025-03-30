@@ -105,30 +105,33 @@ async function make_split_info(
   splitInfo.sort((a, b) => a.startTime - b.startTime)
   const resvSplitInfo: CutSplitInfo[] = []
   let recvItem: CutSplitInfo = {
-    startTime: 0,
+    startTime: 0.0001,
     endTime: 0
   }
-
-  for (let i = 0; i < splitInfo.length; i++) {
-    const item = splitInfo[i]
-    if (!item.isDelete) {
-      if (recvItem.startTime === 0) {
-        recvItem.startTime = item.startTime
-      }
-      recvItem.endTime = item.endTime
-    } else {
-      if (recvItem.endTime !== 0) {
-        resvSplitInfo.push(recvItem)
-      }
-      recvItem = {
-        startTime: 0,
-        endTime: 0
+  //------ Merge the segment information and remove the deleted segment
+  {
+    for (let i = 0; i < splitInfo.length; i++) {
+      const item = splitInfo[i]
+      if (!item.isDelete) {
+        if (recvItem.startTime === 0.0001) {
+          recvItem.startTime = item.startTime
+        }
+        recvItem.endTime = item.endTime
+      } else {
+        if (recvItem.endTime !== 0) {
+          resvSplitInfo.push(recvItem)
+        }
+        recvItem = {
+          startTime: 0.0001,
+          endTime: 0
+        }
       }
     }
+    if (recvItem.endTime !== 0) {
+      resvSplitInfo.push(recvItem)
+    }
   }
-  if (recvItem.endTime !== 0) {
-    resvSplitInfo.push(recvItem)
-  }
+  logger.log('resvSplitInfo: ', resvSplitInfo)
   return {
     code: 0,
     status: 'success',
@@ -183,62 +186,102 @@ async function cutVideo(
     return distFilename
   }
 
-  const makeResp: DataTypes.Resp<CutSplitInfo[]> = await make_split_info(req)
-  if (makeResp.code !== 0) {
-    resp.code = 1
-    resp.status = makeResp.status
-    return resp
+  //------ make cut split info
+  let cutSplitInfo: CutSplitInfo[] = []
+  {
+    const makeResp: DataTypes.Resp<CutSplitInfo[]> = await make_split_info(req)
+    if (makeResp.code !== 0 || makeResp.data === undefined) {
+      resp.code = 1
+      resp.status = makeResp.status
+      return resp
+    }
+    cutSplitInfo = makeResp.data
+    if (!cutSplitInfo) {
+      resp.code = 1
+      resp.status = 'make_split_info err'
+      return resp
+    }
+    console.log('splitCutInfo: ', cutSplitInfo)
+    if (cutSplitInfo.length === 0) {
+      return resp
+    }
   }
-  const cutSplitInfo = makeResp.data
-  if (!cutSplitInfo) {
-    resp.code = 1
-    resp.status = 'make_split_info err'
-    return resp
-  }
-  console.log('splitCutInfo: ', cutSplitInfo)
-  if (cutSplitInfo.length === 0) {
-    return resp
-  }
+
   const distFolderPath = path.join(appCfg.appData, 'video_cut_tmp')
-  try {
-    await fs.promises.access(distFolderPath, fs.constants.F_OK)
-    // 文件夹存在，先删除文件夹，再创建新文件夹
+  //------ make cut destination folder
+  {
     try {
-      await fs.promises.rm(distFolderPath, { recursive: true })
-      await fs.promises.mkdir(distFolderPath, { recursive: true })
-    } catch (rmErr) {
-      console.error('remove dir err:', rmErr)
-      resp.code = 1
-      resp.status = String(rmErr)
-      return resp
-    }
-  } catch (err) {
-    if (err) {
-      console.error('dir not exist:', distFolderPath)
-    }
-    try {
-      await fs.promises.mkdir(distFolderPath, { recursive: true })
-    } catch (mkdirErr) {
-      console.error('create dir err:', mkdirErr)
-      resp.code = 1
-      resp.status = String(mkdirErr)
-      return resp
+      await fs.promises.access(distFolderPath, fs.constants.F_OK)
+      // 文件夹存在，先删除文件夹，再创建新文件夹
+      try {
+        await fs.promises.rm(distFolderPath, { recursive: true })
+        await fs.promises.mkdir(distFolderPath, { recursive: true })
+      } catch (rmErr) {
+        console.error('remove dir err:', rmErr)
+        resp.code = 1
+        resp.status = String(rmErr)
+        return resp
+      }
+    } catch (err) {
+      if (err) {
+        console.error('dir not exist:', distFolderPath)
+      }
+      try {
+        await fs.promises.mkdir(distFolderPath, { recursive: true })
+      } catch (mkdirErr) {
+        console.error('create dir err:', mkdirErr)
+        resp.code = 1
+        resp.status = String(mkdirErr)
+        return resp
+      }
     }
   }
+
   const splitFilepath: string[] = []
-  for (let i = 0; i < cutSplitInfo.length; i++) {
-    const item = cutSplitInfo[i]
-    let distFilename = makeDistFileName(filepath, item.startTime, item.endTime)
-    if (!distFilename) {
-      resp.code = 1
-      resp.status = 'makeDistFileName err'
-      return resp
+  //------ start cut video
+  {
+    for (let i = 0; i < cutSplitInfo.length; i++) {
+      const item = cutSplitInfo[i]
+      let distFilename = makeDistFileName(filepath, item.startTime, item.endTime)
+      if (!distFilename) {
+        resp.code = 1
+        resp.status = 'makeDistFileName err'
+        return resp
+      }
+      distFilename = path.join(distFolderPath, distFilename)
+      const cmd = `ffmpeg -i ${filepath} -v error -ss ${item.startTime} -to ${item.endTime} -c copy ${distFilename}`
+      console.log(cmd)
+      await new Promise((resolve, reject) => {
+        exec(cmd, (error, stdout, stderr) => {
+          if (error) {
+            reject(error)
+            return
+          }
+          if (stderr) {
+            reject(new Error(stderr))
+            return
+          }
+          splitFilepath.push(distFilename)
+          resolve(undefined)
+        })
+      })
     }
-    distFilename = path.join(distFolderPath, distFilename)
-    const cmd = `ffmpeg -i ${filepath} -v error -ss ${item.startTime} -to ${item.endTime} -c copy ${distFilename}`
-    console.log(cmd)
+  }
+
+  //------ 把splitFilepath中记录的文件全部放到txt中，然后使用ffmpeg -f concat -safe 0 -i files.txt -c copy output.mp4合并文件
+  {
+    let filesTxt = ''
+    for (let i = 0; i < splitFilepath.length; i++) {
+      const item = splitFilepath[i]
+      filesTxt += `file '${item}'\n`
+    }
+    const distFilename = path.join(distFolderPath, 'output.mp4')
+    const filesTxtPath = path.join(distFolderPath, 'files.txt')
+    await fs.promises.writeFile(filesTxtPath, filesTxt)
+    const concatCmd = `ffmpeg -v error -f concat -safe 0 -i ${filesTxtPath} -c copy -reset_timestamps 1 ${distFilename}`
+    console.log(concatCmd)
     await new Promise((resolve, reject) => {
-      exec(cmd, (error, stdout, stderr) => {
+      exec(concatCmd, (error, stdout, stderr) => {
         if (error) {
           reject(error)
           return
@@ -247,37 +290,11 @@ async function cutVideo(
           reject(new Error(stderr))
           return
         }
-        splitFilepath.push(distFilename)
         resolve(undefined)
       })
     })
   }
 
-  // 把splitFilepath中记录的文件全部放到txt中，然后使用ffmpeg -f concat -safe 0 -i files.txt -c copy output.mp4合并文件
-  let filesTxt = ''
-  for (let i = 0; i < splitFilepath.length; i++) {
-    const item = splitFilepath[i]
-    filesTxt += `file '${item}'\n`
-  }
-
-  const distFilename = path.join(distFolderPath, 'output.mp4')
-  const filesTxtPath = path.join(distFolderPath, 'files.txt')
-  await fs.promises.writeFile(filesTxtPath, filesTxt)
-  const concatCmd = `ffmpeg -v error -f concat -safe 0 -i ${filesTxtPath} -c copy -reset_timestamps 1 ${distFilename}`
-  console.log(concatCmd)
-  await new Promise((resolve, reject) => {
-    exec(concatCmd, (error, stdout, stderr) => {
-      if (error) {
-        reject(error)
-        return
-      }
-      if (stderr) {
-        reject(new Error(stderr))
-        return
-      }
-      resolve(undefined)
-    })
-  })
   return resp
 }
 

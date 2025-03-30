@@ -147,6 +147,7 @@ async function processShowKeyInfo(): Promise<void> {
   if (response.code != 0) {
     MessageShow.error(`get key frame info err:${response.status}`)
   } else {
+    console.log('get key frame info success', response)
     MessageShow.info(response.bOver == false ? '正在处理...' : `获取关键帧信息成功`)
   }
 }
