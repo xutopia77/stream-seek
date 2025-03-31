@@ -1,6 +1,5 @@
 import logger from './Logger'
 import appCfg from './AppCfg'
-import { util } from './Utils'
 import { exec, execSync } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -25,7 +24,9 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
         jsonData.frames.forEach((frame: DataTypes.Frame) => {
           frame.pts_time = frame.pts_time ? frame.pts_time : 0
         })
-        resolve({ code: 0, status: 'success', data: jsonData })
+        const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
+        resp.success('success').data = jsonData
+        resolve(resp)
       } catch (parseError) {
         reject({ code: 1, status: parseError })
       }
@@ -54,34 +55,40 @@ async function make_split_info(
         const keyFrameItem = keyFrameSplitInfo[j]
         if (keyFrameItem.pts_time === startTime) {
           lastKeyFrameTime = keyFrameItem.pts_time
-          splitCutInfo.push({
+          const cutInfoItem: CutSplitInfo = {
             startTime: makeSartTime(startTime),
             endTime: item.endTime
-          })
+          }
+          splitCutInfo.push(cutInfoItem)
           lastKeyFrameTime = -1
           break
         } else if (keyFrameItem.pts_time < startTime) {
           lastKeyFrameTime = keyFrameItem.pts_time
         } else {
-          splitCutInfo.push({
+          const cutInfoItem: CutSplitInfo = {
             startTime: makeSartTime(lastKeyFrameTime),
             endTime: item.endTime
-          })
+          }
+          splitCutInfo.push(cutInfoItem)
           lastKeyFrameTime = -1
           break
         }
       }
       if (lastKeyFrameTime !== -1) {
-        splitCutInfo.push({
+        const cutInfoItem: CutSplitInfo = {
           startTime: makeSartTime(lastKeyFrameTime),
           endTime: item.endTime
-        })
+        }
+        splitCutInfo.push(cutInfoItem)
       }
     }
     return splitCutInfo
   }
+
+  const resp = new DataTypes.Resp<CutSplitInfo[]>()
+
   if (req.data?.fileInfo === undefined) {
-    return { code: 1, status: 'fileInfo is null' }
+    return resp.err('fileInfo is null')
   }
 
   const splitInfo = req.data.fileInfo.splitInfo
@@ -90,22 +97,22 @@ async function make_split_info(
     const kResp = await getFrameInfo(req.data.filepath)
     if (kResp.code !== 0) {
       console.log('getFrameInfo err: ', kResp)
-      return { code: 1, status: 'getFrameInfo err' }
+      return resp.err('getFrameInfo err')
     }
     keyFrameSplitInfo = kResp.data?.frames
   }
   if (!keyFrameSplitInfo || keyFrameSplitInfo.length === 0) {
     console.log('getFrameInfo err: ', keyFrameSplitInfo)
-    return { code: 1, status: 'getFrameInfo err' }
+    return resp.err('getFrameInfo err')
   }
   if (!splitInfo || splitInfo.length === 0) {
     console.log('cut video req: ', req)
-    return { code: 1, status: 'not find split info' }
+    return resp.err('splitInfo is null')
   }
   splitInfo.sort((a, b) => a.startTime - b.startTime)
   const resvSplitInfo: CutSplitInfo[] = []
   let recvItem: CutSplitInfo = {
-    startTime: 0.0001,
+    startTime: 0.0001, //Avoid losing the first fragment
     endTime: 0
   }
   //------ Merge the segment information and remove the deleted segment
@@ -132,11 +139,8 @@ async function make_split_info(
     }
   }
   logger.log('resvSplitInfo: ', resvSplitInfo)
-  return {
-    code: 0,
-    status: 'success',
-    data: processSplitInKeyFrame(resvSplitInfo, keyFrameSplitInfo)
-  }
+  resp.success('success').data = processSplitInKeyFrame(resvSplitInfo, keyFrameSplitInfo)
+  return resp
 }
 
 interface CutSplitInfo {
@@ -144,15 +148,12 @@ interface CutSplitInfo {
   endTime: number
 }
 
-// 切割视频
 async function cutVideo(
   req: DataTypes.Req<DataTypes.Req_CutVideo>
 ): Promise<DataTypes.Resp<string>> {
-  const resp: DataTypes.Resp<string> = { code: 0, status: 'success' }
+  const resp = new DataTypes.Resp()
   if (!req.data?.filepath) {
-    resp.code = 1
-    resp.status = 'filepath is null'
-    return resp
+    return resp.err('filepath is null')
   }
   const filepath = req.data.filepath
 
@@ -162,26 +163,26 @@ async function cutVideo(
     endTimeIn: number
   ): string | null {
     const filename = path.basename(filepath)
-    const startTime = util.parse_filename_mi(filename)?.startTime
-    const baseStartTimeSec = util.parse_timestr_2_seconds(startTime == null ? '' : startTime)
+    const startTime = DataTypes.FileTools.parse_filename_mi(filename)?.startTime
+    const baseStartTimeSec = DataTypes.FileTools.parse_timestr_2_seconds(
+      startTime == null ? '' : startTime
+    )
     // startTimeSec和endTimeSec是毫秒，baseStartTimeSec是秒 现在要把startTimeSec和endTimeSec转换为秒
     const startTimeSec = startTimeIn + baseStartTimeSec
     const endTimeSec = endTimeIn + baseStartTimeSec
-    logger.log(`filename ${filename}, startTime ${startTime}, baseStartTimeSec ${baseStartTimeSec}`)
-    logger.log(
-      `cut param: start ${startTimeIn}, end ${endTimeIn}, calc start ${startTimeSec}, end ${endTimeSec}`
-    )
     if (startTimeSec >= endTimeSec) {
+      logger.log(`Type of startTimeSec: ${typeof startTimeSec}`)
+      logger.log(`Type of endTimeSec: ${typeof endTimeSec}`)
       logger.log(`startTimeSec > endTimeSec: ${startTimeSec}, ${endTimeSec}`)
+      logger.log(`startTimeIn > endTimeIn: ${startTimeIn}, ${endTimeIn}`)
       return null
     }
     // 现在把startTimeSec和endTimeSec转换为20250301104336格式的字符串
-    const startTimeStr = util.parse_seconds_2_timestr(startTimeSec)
-    const endTimeStr = util.parse_seconds_2_timestr(endTimeSec)
+    const startTimeStr = DataTypes.FileTools.parse_seconds_2_timestr(startTimeSec)
+    const endTimeStr = DataTypes.FileTools.parse_seconds_2_timestr(endTimeSec)
     const distFilename = `10_${startTimeStr}_${endTimeStr}.mp4`
-    logger.log(`filename: ${filename}`)
     logger.log(
-      `filename: ${filename}, startTime: ${startTime},${baseStartTimeSec}, startTimeSec:${startTimeStr},${startTimeSec}, endTimeSec:${endTimeStr},${endTimeSec}; ${distFilename}`
+      `cut parameter, src filename:${filename}, startTime:${startTime}(${baseStartTimeSec}), clip start:${startTimeStr}(${startTimeSec}), end:${endTimeStr}(${endTimeSec}); dest filename:${distFilename}`
     )
     return distFilename
   }
@@ -191,15 +192,11 @@ async function cutVideo(
   {
     const makeResp: DataTypes.Resp<CutSplitInfo[]> = await make_split_info(req)
     if (makeResp.code !== 0 || makeResp.data === undefined) {
-      resp.code = 1
-      resp.status = makeResp.status
-      return resp
+      return resp.err(makeResp.status)
     }
     cutSplitInfo = makeResp.data
     if (!cutSplitInfo) {
-      resp.code = 1
-      resp.status = 'make_split_info err'
-      return resp
+      return resp.err('make_split_info err')
     }
     console.log('splitCutInfo: ', cutSplitInfo)
     if (cutSplitInfo.length === 0) {
@@ -218,9 +215,7 @@ async function cutVideo(
         await fs.promises.mkdir(distFolderPath, { recursive: true })
       } catch (rmErr) {
         console.error('remove dir err:', rmErr)
-        resp.code = 1
-        resp.status = String(rmErr)
-        return resp
+        return resp.err(String(rmErr))
       }
     } catch (err) {
       if (err) {
@@ -230,9 +225,7 @@ async function cutVideo(
         await fs.promises.mkdir(distFolderPath, { recursive: true })
       } catch (mkdirErr) {
         console.error('create dir err:', mkdirErr)
-        resp.code = 1
-        resp.status = String(mkdirErr)
-        return resp
+        return resp.err(String(mkdirErr))
       }
     }
   }
@@ -244,21 +237,15 @@ async function cutVideo(
       const item = cutSplitInfo[i]
       let distFilename = makeDistFileName(filepath, item.startTime, item.endTime)
       if (!distFilename) {
-        resp.code = 1
-        resp.status = 'makeDistFileName err'
-        return resp
+        return resp.err('makeDistFileName err')
       }
       distFilename = path.join(distFolderPath, distFilename)
       const cmd = `ffmpeg -i ${filepath} -v error -ss ${item.startTime} -to ${item.endTime} -c copy ${distFilename}`
       console.log(cmd)
       await new Promise((resolve, reject) => {
-        exec(cmd, (error, stdout, stderr) => {
+        exec(cmd, (error) => {
           if (error) {
             reject(error)
-            return
-          }
-          if (stderr) {
-            reject(new Error(stderr))
             return
           }
           splitFilepath.push(distFilename)
@@ -268,34 +255,34 @@ async function cutVideo(
     }
   }
 
-  //------ 把splitFilepath中记录的文件全部放到txt中，然后使用ffmpeg -f concat -safe 0 -i files.txt -c copy output.mp4合并文件
-  {
-    let filesTxt = ''
-    for (let i = 0; i < splitFilepath.length; i++) {
-      const item = splitFilepath[i]
-      filesTxt += `file '${item}'\n`
-    }
-    const distFilename = path.join(distFolderPath, 'output.mp4')
-    const filesTxtPath = path.join(distFolderPath, 'files.txt')
-    await fs.promises.writeFile(filesTxtPath, filesTxt)
-    const concatCmd = `ffmpeg -v error -f concat -safe 0 -i ${filesTxtPath} -c copy -reset_timestamps 1 ${distFilename}`
-    console.log(concatCmd)
-    await new Promise((resolve, reject) => {
-      exec(concatCmd, (error, stdout, stderr) => {
-        if (error) {
-          reject(error)
-          return
-        }
-        if (stderr) {
-          reject(new Error(stderr))
-          return
-        }
-        resolve(undefined)
-      })
-    })
-  }
+  // //------ 把splitFilepath中记录的文件全部放到txt中，然后使用ffmpeg -f concat -safe 0 -i files.txt -c copy output.mp4合并文件
+  // {
+  //   let filesTxt = ''
+  //   for (let i = 0; i < splitFilepath.length; i++) {
+  //     const item = splitFilepath[i]
+  //     filesTxt += `file '${item}'\n`
+  //   }
+  //   const distFilename = path.join(distFolderPath, 'output.mp4')
+  //   const filesTxtPath = path.join(distFolderPath, 'files.txt')
+  //   await fs.promises.writeFile(filesTxtPath, filesTxt)
+  //   const concatCmd = `ffmpeg -v error -f concat -safe 0 -i ${filesTxtPath} -c copy -reset_timestamps 1 ${distFilename}`
+  //   console.log(concatCmd)
+  //   await new Promise((resolve, reject) => {
+  //     exec(concatCmd, (error, stdout, stderr) => {
+  //       if (error) {
+  //         reject(error)
+  //         return
+  //       }
+  //       if (stderr) {
+  //         reject(new Error(stderr))
+  //         return
+  //       }
+  //       resolve(undefined)
+  //     })
+  //   })
+  // }
 
-  return resp
+  return resp.success('success')
 }
 
 class MediaProcess {
@@ -355,14 +342,14 @@ class MediaProcess {
     } else {
       mediaInfo.video.codec_name = videoStream.codec_name
       mediaInfo.video.codec_type = videoStream.codec_type
-      mediaInfo.video.width = videoStream.width
-      mediaInfo.video.height = videoStream.height
+      mediaInfo.video.width = Number(videoStream.width)
+      mediaInfo.video.height = Number(videoStream.height)
       mediaInfo.video.pix_fmt = videoStream.pix_fmt
-      mediaInfo.video.bit_rate = videoStream.bit_rate
+      mediaInfo.video.bit_rate = Number(videoStream.bit_rate)
 
       const [numerator, denominator] = videoStream.r_frame_rate.split('/').map(Number)
       const frameRate = numerator / denominator
-      mediaInfo.video.frame_rate = frameRate
+      mediaInfo.video.frame_rate = Number(frameRate)
       const duration = parseFloat(videoStream.duration)
       mediaInfo.video.nb_frames = duration * frameRate
     }
@@ -372,16 +359,16 @@ class MediaProcess {
     } else {
       mediaInfo.audio.codec_name = audioStream.codec_name
       mediaInfo.audio.codec_type = audioStream.codec_type
-      mediaInfo.audio.sample_rate = audioStream.sample_rate
-      mediaInfo.audio.channels = audioStream.channels
+      mediaInfo.audio.sample_rate = Number(audioStream.sample_rate)
+      mediaInfo.audio.channels = Number(audioStream.channels)
       mediaInfo.audio.channel_layout = audioStream.channel_layout
-      mediaInfo.audio.bit_rate = audioStream.bit_rate
+      mediaInfo.audio.bit_rate = Number(audioStream.bit_rate)
     }
-    mediaInfo.nb_streams = jsonData.format.nb_streams
-    mediaInfo.duration = jsonData.format.duration
-    mediaInfo.size = jsonData.format.size
-    mediaInfo.start_time = jsonData.format.start_time
-    mediaInfo.bit_rate = jsonData.format.bit_rate
+    mediaInfo.nb_streams = Number(jsonData.streams.length)
+    mediaInfo.duration = Number(jsonData.format.duration)
+    mediaInfo.size = Number(jsonData.format.size)
+    mediaInfo.start_time = Number(jsonData.format.start_time)
+    mediaInfo.bit_rate = Number(jsonData.format.bit_rate)
     return mediaInfo
   }
 }

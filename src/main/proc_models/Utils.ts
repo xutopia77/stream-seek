@@ -2,60 +2,6 @@ import * as path from 'path'
 import * as fs from 'fs'
 import logger from './Logger'
 import * as DataTypes from '../../bridge/dataTypedef'
-// 定义解析文件名后的返回类型
-interface ParsedFilename {
-  sequence: string
-  startTime: string
-  endTime: string
-}
-
-// 解析文件名，提取序号、开始时间和结束时间
-const parse_filename_mi = (title: string | null): ParsedFilename | null => {
-  if (title === null) {
-    return null
-  }
-  const [sequence, startTime, endTimeWithExtension] = title.split('_')
-  if (endTimeWithExtension === undefined) {
-    logger.log(`parse_filename_mi err: ${title}`)
-    return null
-  }
-  const endTime = endTimeWithExtension.replace('.mp4', '')
-  return {
-    sequence,
-    startTime,
-    endTime
-  }
-}
-
-// 将时间字符串转换为秒数
-const parse_timestr_2_seconds = (timeStr: string): number => {
-  const year = parseInt(timeStr.slice(0, 4), 10)
-  const month = parseInt(timeStr.slice(4, 6), 10) - 1 // 月份从0开始
-  const day = parseInt(timeStr.slice(6, 8), 10)
-  const hour = parseInt(timeStr.slice(8, 10), 10)
-  const minute = parseInt(timeStr.slice(10, 12), 10)
-  const second = parseInt(timeStr.slice(12, 14), 10)
-  return new Date(year, month, day, hour, minute, second).getTime() / 1000
-}
-
-// 将秒数转换为时间字符串
-function parse_seconds_2_timestr(seconds: number): string {
-  const date = new Date(seconds * 1000) // 将秒转换为毫秒
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const secs = String(date.getSeconds()).padStart(2, '0')
-  return `${year}${month}${day}${hours}${minutes}${secs}`
-}
-
-// 工具类，包含解析文件名、时间字符串和秒数的方法
-class Util {
-  parse_filename_mi = parse_filename_mi
-  parse_timestr_2_seconds = parse_timestr_2_seconds
-  parse_seconds_2_timestr = parse_seconds_2_timestr
-}
 
 // 遍历文件夹类
 class TraversalFolder {
@@ -64,9 +10,10 @@ class TraversalFolder {
 
   // 递归遍历文件夹
   async traversal_folder(): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+    const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
     const folderPath = this.folder
     if (!folderPath) {
-      return { code: 1, status: 'folder is null', data: { folder: '', files: [] } }
+      return resp.err('folder is null')
     }
     try {
       const fileInfo: DataTypes.FileInfo[] = []
@@ -95,24 +42,18 @@ class TraversalFolder {
         }
       }
       await traverseRecursive(folderPath)
-      return { code: 0, status: 'success', data: { folder: folderPath, files: fileInfo } }
+      resp.success('success').data = { folder: folderPath, files: fileInfo }
+      return resp
     } catch (error) {
-      console.error('遍历文件夹时出错:', error)
-      return { code: 1, status: String(error), data: { folder: '', files: [] } }
+      console.error('traversal folder err:', error)
+      return resp.err(`traversal folder err: ${error}`)
     }
   }
 
   // 启动文件夹遍历
   async start(): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
     if (this.folder === null) {
-      return {
-        code: 1,
-        status: 'folder is null',
-        data: {
-          folder: '',
-          files: []
-        }
-      }
+      return new DataTypes.Resp<DataTypes.TraversalFolder>().err('folder is null')
     }
     return this.traversal_folder()
   }
@@ -136,8 +77,9 @@ class WorkQueue {
   }
 
   // 生成忙碌响应
-  makeBusyResponse = (): { code: number; status: string } => {
-    return { code: 1, status: 'busy' }
+  makeBusyResponse = (): DataTypes.Resp => {
+    const resp = new DataTypes.Resp()
+    return resp.err('busy')
   }
 
   // 添加任务到队列
@@ -162,13 +104,12 @@ class WorkQueue {
 }
 
 const workQueue = new WorkQueue()
-const util = new Util()
 
 interface WorkResp<T> {
   cmd: string
   data: T
 }
 
-export { util, workQueue }
+export { workQueue }
 export { TraversalFolder }
 export type { WorkResp }

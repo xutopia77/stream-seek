@@ -38,10 +38,9 @@ function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.S
 }
 
 async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
-  let resp: DataTypes.Resp<DataTypes.FrameInfo> = { code: 0, status: 'success' }
+  const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
   if (appStore?.curSltVideo === null || appStore?.curVideoInfo?.mediaInfo === null) {
-    resp = { code: 1, status: 'no video selected' }
-    return resp
+    return resp.err('no video selected')
   }
   const req: DataTypes.Req<DataTypes.Req_FrameInfo> = {
     cmd: 'get_key_frame_info',
@@ -50,8 +49,7 @@ async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<DataTypes.Resp<DataTypes
     }
   }
   if (appStore?.curVideoInfo?.frameInfo == null) {
-    resp = await ipcAPi.trigger_event(req)
-    return resp
+    return await ipcAPi.trigger_event(req)
   }
   return resp
 }

@@ -1,83 +1,32 @@
 import logger from './Logger.js'
-import { TraversalFolder, util, workQueue } from './Utils.js'
+import { TraversalFolder, workQueue } from './Utils.js'
 import appCfg from './AppCfg.js'
 import mediaProc from './MediaProcess.js'
 import * as path from 'path'
 import * as fs from 'fs'
 import { execFile } from 'child_process'
 import * as DataTypes from '../../bridge/dataTypedef'
-// 定义响应对象类型
-interface Response {
-  code: number
-  status: string | Error
-  data?: any
-}
-
-// 定义文件对象类型
-interface File {
-  src: string
-  title: string
-  size: number
-}
-
-// 定义请求信息对象类型
-interface RequestInfo {
-  req: {
-    data: {
-      folder: string
-    }
-  }
-  files: File[]
-}
-
-// 定义请求对象类型
-interface Request {
-  data: {
-    folder: string
-  }
-  cmd: string
-}
-
-// 将秒数转换为特定格式的时间字符串
-const parsetimeToTimeStr = (time: number): string => {
-  // 将秒数转换为 Date 对象
-  const date = new Date(time * 1000)
-
-  // 提取年、月、日、时、分、秒并格式化为两位数字
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  const second = String(date.getSeconds()).padStart(2, '0')
-
-  // 组合成 20250323140336 格式的字符串
-  const picTimeStr = `${year}${month}${day}${hour}${minute}${second}`
-  return picTimeStr
-}
 
 // 检查文件记录时间是否连续
-function check_record_time(files: File[]): void {
-  let lastStartTime: string | null = null
-  let lastEndTime: string | null = null
+function check_record_time(files: DataTypes.FileInfo[]): void {
+  // let lastStartTime: string = ''
+  let lastEndTime: string = ''
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
-    // 20250323140336
-    const { startTime, endTime } = util.parse_filename_mi(file.title)
-    if (lastStartTime === null) {
-      lastStartTime = startTime
-      lastEndTime = endTime
+    const parseRe = DataTypes.FileTools.parse_filename_mi(file.title)
+    if (parseRe == null) {
       continue
     }
-    const lastEndTimeSeconds = util.parse_timestr_2_seconds(lastEndTime)
-    const startTimeSeconds = util.parse_timestr_2_seconds(startTime)
+    const { startTime, endTime } = parseRe
+    const lastEndTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(lastEndTime)
+    const startTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(startTime)
     const timeDiff = Math.abs(startTimeSeconds - lastEndTimeSeconds)
     if (timeDiff > 1) {
       logger.log(
         `${i}file start time:${startTime} not continuous with ${i - 1}file end time ${lastEndTime}, diff seconds:${timeDiff}`
       )
     }
-    lastStartTime = startTime
+    // lastStartTime = startTime
     lastEndTime = endTime
   }
 }
@@ -87,13 +36,17 @@ async function file_classify(
   req: DataTypes.Req<DataTypes.Req_SearchFile>,
   files: DataTypes.FileInfo[]
 ): Promise<DataTypes.Resp> {
+  const resp = new DataTypes.Resp()
   const folder = req.data?.folder
   if (folder === undefined) {
-    return { code: 1, status: 'folder is undefined' }
+    return resp.err('folder is undefined')
   }
 
   // 计算文件信息
-  function calculateFilesInfo(files: File[]): { totalSize: number; totalCount: number } {
+  function calculateFilesInfo(files: DataTypes.FileInfo[]): {
+    totalSize: number
+    totalCount: number
+  } {
     // 计算媒体信息
     const filesInfo = {
       totalSize: 0,
@@ -112,8 +65,8 @@ async function file_classify(
   // 排序文件
   const folderpath = folder
   const sortFiles = files.slice().sort((a, b) => {
-    const startTimeA = util.parse_filename_mi(a.title)?.startTime
-    const startTimeB = util.parse_filename_mi(b.title)?.startTime
+    const startTimeA = DataTypes.FileTools.parse_filename_mi(a.title)?.startTime
+    const startTimeB = DataTypes.FileTools.parse_filename_mi(b.title)?.startTime
     if (startTimeA === undefined) {
       return 0
     }
@@ -126,9 +79,9 @@ async function file_classify(
   check_record_time(sortFiles)
 
   // 每 100 个文件一组进行分类
-  function groupFiles(files: File[]): File[][] {
+  function groupFiles(files: DataTypes.FileInfo[]): DataTypes.FileInfo[][] {
     const groupNum = 10
-    const groupedFiles: File[][] = []
+    const groupedFiles: DataTypes.FileInfo[][] = []
     for (let i = 0; i < files.length; i += groupNum) {
       groupedFiles.push(files.slice(i, i + groupNum))
     }
@@ -136,7 +89,10 @@ async function file_classify(
   }
 
   // 创建文件夹并移动文件
-  async function moveFilesToFolders(groupedFiles: File[][], baseDir: string): Promise<void> {
+  async function moveFilesToFolders(
+    groupedFiles: DataTypes.FileInfo[][],
+    baseDir: string
+  ): Promise<void> {
     for (let i = 0; i < groupedFiles.length; i++) {
       const group = groupedFiles[i]
       const folderName = path.join(baseDir, String(i + 1))
@@ -156,7 +112,7 @@ async function file_classify(
         }
       }
       for (const file of group) {
-        const sourcePath = file.src
+        const sourcePath = file.filePath
         const fileName = path.basename(sourcePath)
         const destinationPath = path.join(folderName, fileName)
         try {
@@ -179,37 +135,41 @@ async function file_classify(
   const files2resp = await traversalFolder2.start()
 
   if (files2resp.code === 0) {
-    const filesInfo2 = calculateFilesInfo(files2resp.data.files)
-    // 比较两个文件夹的信息
-    let bEqual = true
-    if (filesInfo.totalSize !== filesInfo2.totalSize) {
-      logger.log('two folder total size are not equal')
-      bEqual = false
-    }
-    if (filesInfo.totalCount !== filesInfo2.totalCount) {
-      logger.log('two folder total count are not equal')
-      bEqual = false
-    }
-    if (bEqual) {
-      logger.log(
-        `two folder are equal, file count ${filesInfo.totalCount}, size:${filesInfo.totalSize}B, ${filesInfo.totalSize / 1024 / 1024}MB, ${filesInfo.totalSize / 1024 / 1024 / 1024}GB`
-      )
-    } else {
-      logger.log(
-        `two folder are not equal, before file count ${filesInfo.totalCount}, size:${filesInfo.totalSize}B, ${filesInfo.totalSize / 1024 / 1024}MB, ${filesInfo.totalSize / 1024 / 1024 / 1024}GB`,
-        `, after file count ${filesInfo2.totalCount}, size:${filesInfo2.totalSize}B, ${filesInfo2.totalSize / 1024 / 1024}MB, ${filesInfo2.totalSize / 1024 / 1024 / 1024}GB`
-      )
+    if (files2resp.data?.files != null) {
+      const filesInfo2 = calculateFilesInfo(files2resp.data.files)
+      // 比较两个文件夹的信息
+      let bEqual = true
+      if (filesInfo.totalSize !== filesInfo2.totalSize) {
+        logger.log('two folder total size are not equal')
+        bEqual = false
+      }
+      if (filesInfo.totalCount !== filesInfo2.totalCount) {
+        logger.log('two folder total count are not equal')
+        bEqual = false
+      }
+      if (bEqual) {
+        logger.log(
+          `two folder are equal, file count ${filesInfo.totalCount}, size:${filesInfo.totalSize}B, ${filesInfo.totalSize / 1024 / 1024}MB, ${filesInfo.totalSize / 1024 / 1024 / 1024}GB`
+        )
+      } else {
+        logger.log(
+          `two folder are not equal, before file count ${filesInfo.totalCount}, size:${filesInfo.totalSize}B, ${filesInfo.totalSize / 1024 / 1024}MB, ${filesInfo.totalSize / 1024 / 1024 / 1024}GB`,
+          `, after file count ${filesInfo2.totalCount}, size:${filesInfo2.totalSize}B, ${filesInfo2.totalSize / 1024 / 1024}MB, ${filesInfo2.totalSize / 1024 / 1024 / 1024}GB`
+        )
+      }
     }
   }
-  return { code: 0, status: 'success' }
+  return resp.success('file classify success')
 }
 
-// 生成缩略图
-async function gen_thumbnail(req: Request): Promise<Response> {
+async function gen_thumbnail(
+  req: DataTypes.Req<DataTypes.Req_SearchFile>
+): Promise<DataTypes.Resp> {
   logger.log('gen_thumbnail')
+  const resp = new DataTypes.Resp()
   // 处理单个文件
-  async function process_single_file(file: File): Promise<Response> {
-    const filepath = file.src
+  async function process_single_file(file: DataTypes.FileInfo): Promise<DataTypes.Resp> {
+    const filepath = file.filePath
     const filename = file.title
 
     const thumbnail_dir = appCfg.thumbnail_dir
@@ -224,7 +184,7 @@ async function gen_thumbnail(req: Request): Promise<Response> {
       bExist = false
     }
     if (bExist) {
-      return { code: 0, status: 'folder exist' }
+      return resp.success('thumbnail exist')
     }
 
     // 先删除临时文件夹，再创建新文件夹
@@ -240,18 +200,24 @@ async function gen_thumbnail(req: Request): Promise<Response> {
       await fs.promises.mkdir(tmp_thubmbnail_dir, { recursive: true })
     } catch (error) {
       logger.log(`mkdir error ${error}`)
-      return { code: 1, status: `mkdir error ${error}` }
+      return resp.err(`mkdir error ${error}`)
     }
-
-    const { startTime, endTime } = util.parse_filename_mi(filename)
-    const startTimeSeconds = util.parse_timestr_2_seconds(startTime)
-    const endTimeSeconds = util.parse_timestr_2_seconds(endTime)
+    const parseRe = DataTypes.FileTools.parse_filename_mi(filename)
+    if (parseRe == null) {
+      return resp.err(`parse filename error ${filename}`)
+    }
+    const { startTime, endTime } = parseRe
+    const startTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(startTime)
+    const endTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(endTime)
     const duration = endTimeSeconds - startTimeSeconds
     let time = 0
     let bOver = true
     while (time <= duration) {
       const picTime = startTimeSeconds + time
-      const outputPath = path.join(tmp_thubmbnail_dir, `${parsetimeToTimeStr(picTime)}.jpg`)
+      const outputPath = path.join(
+        tmp_thubmbnail_dir,
+        `${DataTypes.FileTools.parsetimeToTimeStr(picTime)}.jpg`
+      )
       const width = 640 // 设置图片宽度
       const height = 480 // 设置图片高度
       const args = [
@@ -268,11 +234,11 @@ async function gen_thumbnail(req: Request): Promise<Response> {
 
       try {
         await new Promise((resolve, reject) => {
-          const child = execFile('ffmpeg', args, (error, stdout, stderr) => {
+          const child = execFile('ffmpeg', args, (error) => {
             if (error) {
               reject(error)
             } else {
-              resolve()
+              resolve(undefined)
             }
           })
           child.on('close', () => {
@@ -287,7 +253,7 @@ async function gen_thumbnail(req: Request): Promise<Response> {
       time += 10
     }
     if (!bOver) {
-      return { code: 1, status: `gen thumbnail error` }
+      return resp.err(`gen thumbnail error, ${filename}`)
     }
 
     // 移动文件到目标文件夹
@@ -295,33 +261,39 @@ async function gen_thumbnail(req: Request): Promise<Response> {
       await fs.promises.rename(tmp_thubmbnail_dir, file_thubmbnail_dir)
     } catch (error) {
       logger.log(`move file error, ${error}`)
-      return { code: 1, status: `move file error, ${error}` }
+      return resp.err(`move file error, ${error}`)
     }
-    return { code: 0, status: 'success' }
+    return resp.success('success')
   }
 
-  const folder = req.data.folder
+  const folder = req.data?.folder
+  if (folder === undefined) {
+    return resp.err('folder is undefined')
+  }
   const traversalFolder = new TraversalFolder()
   traversalFolder.type = 'search'
   traversalFolder.folder = folder
   const filesResp = await traversalFolder.start()
   if (filesResp.code !== 0) {
-    return { code: 1, status: filesResp.status }
+    return resp.err(filesResp.status)
   }
-  const files = filesResp.data.files
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]
-    await process_single_file(file)
+  if (filesResp.data?.files != null) {
+    const files = filesResp.data.files
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      await process_single_file(file)
+    }
   }
-  return { code: 0, status: 'success' }
+  return resp.success('success')
 }
 
 // 查询图片
-async function query_images(filepath: string): Promise<Response> {
+async function query_images(filepath: string): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+  const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
   const thumbnail_dir = appCfg.thumbnail_dir
   const file_thubmbnail_dir = path.join(thumbnail_dir, path.basename(filepath, '.mp4'))
   let bExist = true
-  // 检查文件夹是否存在
+  // 对应文件的缩略图存储在文件名对应的文件夹中， 文件夹不存在，返回错误
   try {
     await fs.promises.access(file_thubmbnail_dir)
   } catch (error) {
@@ -331,9 +303,10 @@ async function query_images(filepath: string): Promise<Response> {
     bExist = false
   }
   if (!bExist) {
-    return { code: 0, status: `folder not exist ${file_thubmbnail_dir}` }
+    return resp.err(`folder not exist ${file_thubmbnail_dir}`)
   }
 
+  // 开始遍历缩略图的文件夹
   const traversalFolder = new TraversalFolder()
   traversalFolder.type = 'search'
   traversalFolder.folder = file_thubmbnail_dir
@@ -341,34 +314,22 @@ async function query_images(filepath: string): Promise<Response> {
   if (response.code !== 0) {
     return response
   }
-
-  // 从文件名中获取时间
-  function getfileTimeFromeName(filename: string): string {
-    const parts = filename.split('.')
-    const timeStr = parts[0]
-    return timeStr
+  if (response.data?.files == null) {
+    return resp.err('not fund file')
   }
-
-  const files = response.data.files
-  const images: { filepath: string; time: string; indexTime: number }[] = []
-  let firstIndexTime = 0
-  if (files.length > 0) {
-    firstIndexTime = util.parse_timestr_2_seconds(getfileTimeFromeName(files[0].title))
-  }
-  for (let i = 0; i < files.length; i++) {
-    const fileItem = files[i]
-    const fileTimeStr = getfileTimeFromeName(fileItem.title)
-
-    images.push({
-      filepath: fileItem.src,
-      time: fileTimeStr,
-      indexTime: util.parse_timestr_2_seconds(fileTimeStr) - firstIndexTime
-    })
-  }
-  images.sort((a, b) => {
-    return a.time.localeCompare(b.time)
+  // 缩略图安装时间排序
+  response.data.files.sort((a, b) => {
+    const timeA = DataTypes.FileTools.parse_filename_mi(a.title)?.startTime
+    const timeB = DataTypes.FileTools.parse_filename_mi(b.title)?.startTime
+    if (timeA === undefined) {
+      return 0
+    }
+    if (timeB === undefined) {
+      return 0
+    }
+    return timeA.localeCompare(timeB)
   })
-  return { code: 0, status: 'success', data: { files: images } }
+  return response
 }
 
 // 开始切割视频
@@ -384,10 +345,13 @@ async function start_cut_video(
     .catch((error) => {
       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
     })
-  return { code: 0, status: 'success', bOver: false }
+  const resp = new DataTypes.Resp<string>()
+  resp.code = 0
+  resp.status = 'success'
+  resp.bOver = false
+  return resp
 }
 
-// 记录处理类
 class RecordsProc {
   async start_file_classify(
     req: DataTypes.Req<DataTypes.Req_SearchFile>,
@@ -395,9 +359,9 @@ class RecordsProc {
   ): Promise<DataTypes.Resp> {
     await file_classify(req, files)
     await this.start_gen_thumbnail(req)
-    return { code: 0, status: 'success' }
+    return new DataTypes.Resp().success('success')
   }
-  async start_gen_thumbnail(req: Request): Promise<Response> {
+  async start_gen_thumbnail(req: DataTypes.Req<DataTypes.Req_SearchFile>): Promise<DataTypes.Resp> {
     return await gen_thumbnail(req)
   }
   query_images = query_images

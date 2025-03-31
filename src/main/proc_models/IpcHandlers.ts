@@ -1,6 +1,6 @@
 import * as path from 'path'
 import * as fs from 'fs'
-import { dialog } from 'electron'
+import { dialog, IpcMainInvokeEvent } from 'electron'
 import mediaProc from './MediaProcess.js'
 import appCfg from './AppCfg.js'
 import logger from './Logger.js'
@@ -51,23 +51,20 @@ async function handle_open_folder(
         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
         logger.error('open folder err:', error)
       })
-    const resp: DataTypes.Resp<DataTypes.TraversalFolder> = {
-      code: 0,
-      status: 'success',
-      bOver: false,
-      data: { folder: folderPath }
-    }
+    const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
+    resp.success('success').data = { folder: folderPath }
+    resp.bOver = false
     logger.log('handle_open_folder', resp.status)
     return resp
   }
-  return { code: 0, status: 'canceled' }
+  return new DataTypes.Resp<DataTypes.TraversalFolder>().err('canceled')
 }
 
 async function handle_query_video(
   req: DataTypes.Req<DataTypes.Req_SearchFile>
 ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
   if (req.data == null) {
-    return { code: 1, status: 'req.data is null' }
+    return new DataTypes.Resp<DataTypes.TraversalFolder>().err('req.data is null')
   }
   const traversalFolder = new TraversalFolder()
   traversalFolder.type = null
@@ -96,16 +93,13 @@ async function handle_query_video(
       logger.error('open folder err:', error)
       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
     })
-
-  return { code: 0, status: 'success', bOver: false }
+  const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
+  resp.success('success').bOver = false
+  return resp
 }
 
 async function handle_video_event_detect(): Promise<DataTypes.Resp<DataTypes.FileEventInfo[][]>> {
-  const resp: DataTypes.Resp<DataTypes.FileEventInfo[][]> = {
-    code: 0,
-    status: 'success',
-    data: []
-  }
+  const resp = new DataTypes.Resp<DataTypes.FileEventInfo[][]>()
 
   const filePath =
     'D:/02_workspace/05_timeCapsule/02_stream_manager/stream_manager/src/main/proc_models/contour_records.json'
@@ -151,19 +145,14 @@ function getFilenameFromPath(filePath: string): string {
 async function handle_select_video(
   req: DataTypes.Req<DataTypes.Req_SltFile>
 ): Promise<DataTypes.Resp<DataTypes.SltMediaInfo>> {
+  const resp = new DataTypes.Resp<DataTypes.SltMediaInfo>()
   const video_path = req.data?.filepath
   if (video_path == null) {
-    return { code: 1, status: 'video_path is null' }
+    return resp.err('filepath is null')
   }
-  const filename = getFilenameFromPath(video_path)
-  const resp: DataTypes.Resp<DataTypes.SltMediaInfo> = {
-    code: 0,
-    status: 'success',
-    data: {
-      mediaInfo: undefined
-    }
-  }
+  // 先读取文件的项目信息
   {
+    const filename = getFilenameFromPath(video_path)
     const filePrjPath = make_file_prj_path(filename)
     if (fs.existsSync(filePrjPath)) {
       // 读取文件
@@ -226,21 +215,22 @@ async function handle_select_video(
 async function handle_save_prj(
   req: DataTypes.Req<DataTypes.Req_CutVideo>
 ): Promise<DataTypes.Resp> {
+  const resp = new DataTypes.Resp()
   if (req.data == null) {
-    return { code: 1, status: 'req.data is null' }
+    return resp.err('req.data is null')
   }
   const filePath = make_file_prj_path(req.data.filename)
   const data = JSON.stringify(req.data)
   try {
     fs.writeFileSync(filePath, data)
-    return { code: 0, status: 'success' }
+    return resp.success('success')
   } catch (error: unknown) {
-    return { code: 1, status: String(error) }
+    return resp.err(String(error))
   }
 }
 
 function handle_app_start(): DataTypes.Resp<DataTypes.Prj> {
-  const resp: DataTypes.Resp<DataTypes.Prj> = { code: 0, status: 'success', bOver: true }
+  const resp = new DataTypes.Resp<DataTypes.Prj>()
   const cfgPath = path.join(appCfg.appData, 'prj.json')
   let data = ''
   try {
@@ -263,11 +253,8 @@ function handle_app_start(): DataTypes.Resp<DataTypes.Prj> {
 async function handle_get_key_frame_info(
   req: DataTypes.Req<DataTypes.Req_FrameInfo>
 ): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
-  const resp: DataTypes.Resp<DataTypes.FrameInfo> = {
-    code: 0,
-    status: 'success',
-    bOver: false
-  }
+  const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
+  resp.bOver = false
   const filePath = req.data?.filepath
   if (filePath == null) {
     resp.code = 1
@@ -294,7 +281,8 @@ async function traversal_folder(
 ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
   const folderpath = req.data?.folder
   if (folderpath == null) {
-    return { code: 1, status: 'folderpath is null' }
+    const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
+    return resp.err('folderpath is null')
   }
   const traversalFolder = new TraversalFolder()
   traversalFolder.folder = folderpath
@@ -302,10 +290,7 @@ async function traversal_folder(
 }
 
 async function process_heart_beat(): Promise<DataTypes.Resp<DataTypes.HeartBeat>> {
-  const resp: DataTypes.Resp<DataTypes.HeartBeat> = {
-    code: 0,
-    status: 'success'
-  }
+  const resp = new DataTypes.Resp<DataTypes.HeartBeat>()
   const respData: DataTypes.HeartBeat = {
     time: '',
     appStatus: ''
@@ -342,14 +327,10 @@ async function process_heart_beat(): Promise<DataTypes.Resp<DataTypes.HeartBeat>
   return resp
 }
 
-function make_cmd_response<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<string> {
-  const response: DataTypes.Resp<string> = {
-    code: resp.code,
-    status: resp.status,
-    bOver: resp.bOver,
-    data: JSON.stringify(resp.data)
-  }
-  return response
+function make_cmd_response<T>(cmdResp: DataTypes.Resp<T>): DataTypes.Resp<string> {
+  const resp = new DataTypes.Resp<string>()
+  resp.success('success').data = JSON.stringify(cmdResp.data)
+  return resp
 }
 
 export class IpcHandlers {
@@ -409,13 +390,18 @@ export class IpcHandlers {
         logger.log(cmd, cmdReq)
         return make_cmd_response(await handle_query_video(cmdReq))
       }
-      default:
+      default: {
         console.log(`Unknown event: ${cmd}`)
-        return { code: 1, status: `Unknown event: ${cmd}` }
+        const resp = new DataTypes.Resp()
+        return resp.err(`Unknown event: ${cmd}`)
+      }
     }
   }
 
-  handle_event = async (event: string, ...args: string[]): Promise<DataTypes.Resp> => {
+  handle_event = async (event: IpcMainInvokeEvent, ...args: string[]): Promise<DataTypes.Resp> => {
+    if (!event) {
+      console.log(`event is null`)
+    }
     // console.log(`Handling event: ${event}`);
     const req: DataTypes.Req<string> = JSON.parse(args[0])
     if (req.cmd != 'heart_beat') {

@@ -3,8 +3,8 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
-import { IpcHandlers } from './proc_models/IpcHandlers.ts'
-import appCfg from './proc_models/AppCfg.ts'
+import { IpcHandlers } from './proc_models/IpcHandlers'
+import appCfg from './proc_models/AppCfg'
 const handlers = new IpcHandlers()
 
 function createWindow(): void {
@@ -74,6 +74,7 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', async (event) => {
+  console.log(event)
   console.log('app exit')
   // event.preventDefault()
   await appCfg.quiteApp()

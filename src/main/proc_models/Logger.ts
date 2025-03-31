@@ -1,5 +1,3 @@
-import * as path from 'path'
-
 class Logger {
   // 获取调用栈信息中的文件名和行号
   // getCallerInfo() {
@@ -30,7 +28,7 @@ class Logger {
   }
 
   // 封装 console.log 方法
-  log(...args: any[]): void {
+  log(...args: unknown[]): void {
     const timestamp = this.getTimestamp()
     // const callerInfo = this.getCallerInfo();
     // console.log(`[${timestamp}] [${callerInfo}]`, ...args);
@@ -38,19 +36,19 @@ class Logger {
   }
 
   // 封装 console.info 方法
-  info(...args: any[]): void {
+  info(...args: unknown[]): void {
     const timestamp = this.getTimestamp()
     console.info(`[${timestamp}]`, ...args)
   }
 
   // 封装 console.warn 方法
-  warn(...args: any[]): void {
+  warn(...args: unknown[]): void {
     const timestamp = this.getTimestamp()
     console.warn(`[${timestamp}]`, ...args)
   }
 
   // 封装 console.error 方法
-  error(...args: any[]): void {
+  error(...args: unknown[]): void {
     const timestamp = this.getTimestamp()
     console.error(`[${timestamp}]`, ...args)
   }

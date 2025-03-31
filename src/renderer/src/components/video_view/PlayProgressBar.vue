@@ -50,7 +50,6 @@ import MessageShow from '../util/MessageShow'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 const ipcAPi: IpcApi = new IpcApi()
 
-
 const mergedProgressBar = ref<HTMLElement | null>(null)
 const isDragging = ref<boolean>(false)
 const isMouseOver = ref<boolean>(false) // 新增：记录鼠标是否在进度条上
@@ -122,7 +121,7 @@ watch(
     (): number | undefined => appStore.curVideoInfo?.mediaInfo?.duration
   ],
   () => {
-    if( appStore.curVideoInfo?.mediaInfo?.duration == null) {
+    if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
       return
     }
     generateBarClips(appStore.barColorCfg, appStore.curVideoInfo?.mediaInfo?.duration)
