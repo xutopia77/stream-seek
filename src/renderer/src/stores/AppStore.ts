@@ -17,6 +17,7 @@ export type AppStore = {
   curViewModel: 'video' | 'thumbnail'
   func_nextFrame: (() => void) | null
   func_prevFrame: (() => void) | null
+  func_get_ele_video: (() => HTMLVideoElement | null) | null
   rightPanel: 'list' | 'workPanel'
   videoList: DataTypes.FileInfo[]
   curSltVideo: DataTypes.FileInfo | null
@@ -50,11 +51,13 @@ export const useAppStore = defineStore('app', {
       curTime: 0, // 当前播放时间
       videoStartTime: 0, // 播放开始的时间
       isPlay: false, // 播放状态
-      playbackRate: 1 // 播放速率
+      playbackRate: 1, // 播放速率
+      isStop: false
     },
     curViewModel: 'video', //当前视图模式 video, thumbnail
     func_nextFrame: null,
     func_prevFrame: null,
+    func_get_ele_video: null,
     // ------
     rightPanel: 'list', //list, workPanel
     videoList: [],

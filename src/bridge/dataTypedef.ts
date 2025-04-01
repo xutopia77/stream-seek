@@ -153,8 +153,9 @@ export interface Req_SearchFile {
 }
 
 // ======================== render
-export interface ClearSltInfoReq {
+export class ClearSltInfoReq {
   clearModel?: string
+  bNotClear_curSltVideo?: boolean
 }
 
 export interface BarColorCfg {

@@ -31,21 +31,19 @@ import { IpcApi } from '../utils/IpcApi'
 import util from '../utils/util'
 import { PlayReq } from '../utils/util'
 import { useAppStore } from '../stores/AppStore'
+import * as DataTypes from '../../../bridge/dataTypedef'
 // import MessageShow from './util/MessageShow'
 // 明确 IpcApi 实例的类型
 const ipcAPi: IpcApi = new IpcApi()
 // 明确 appStore 的类型
 const appStore = useAppStore()
 
-// 明确计算属性的类型
 let rightPanel = computed(() => appStore.rightPanel)
 
-// 明确计算属性的类型
 const viewModel = computed(() => {
   return appStore.curViewModel
 })
 
-// 明确视频元素引用的类型
 const videoRef = ref<HTMLVideoElement | null>(null)
 
 watch(
@@ -54,66 +52,25 @@ watch(
     if (newVal == null) {
       return
     }
-    util.clear_cur_slt_video_info(null)
-    await util.get_slt_video(ipcAPi, newVal)
-    if (newVal == null) {
-      return
-    }
-
     if (videoRef.value == null) {
-      console.log('video ref null')
-      return
+      return console.log('video ref null')
     }
+    const clearReq = new DataTypes.ClearSltInfoReq()
+    clearReq.bNotClear_curSltVideo = true
+    util.clear_cur_slt_video_info(clearReq)
+    await util.get_slt_video(ipcAPi, newVal)
     const playReq = new PlayReq(newVal.src)
     util.play_video(videoRef.value, playReq)
-  },
-  { deep: true }
+  }
 )
 
 watch(
   () => appStore.videoPlayCtrl.isPlay,
   () => {
     if (videoRef.value == null) {
-      console.log('video ref null')
-      return
+      return console.log('video ref null')
     }
-    if (!appStore.videoPlayCtrl.isPlay) {
-      videoRef.value.pause()
-      return
-    }
-    if (!(appStore.curSltVideo != null && appStore.curSltVideo.src != null)) {
-      // console.log('请选择视频文件1')
-      return
-    }
-    function convert_filepath_to_linux_style(filepath: string | null): string | null {
-      if (filepath == null) {
-        return null
-      }
-      return filepath.replace(/\\/g, '/')
-    }
-    let p1 = convert_filepath_to_linux_style(videoRef.value.src)
-    let p2 = convert_filepath_to_linux_style(appStore.curSltVideo.src)
-    // 再去掉p1，p2的前缀file:// 或者 file:///
-    if (p1?.startsWith('file:///')) {
-      p1 = p1.substring(8)
-    } else if (p1?.startsWith('file://')) {
-      p1 = p1.substring(7)
-    }
-    if (p2?.startsWith('file:///')) {
-      p2 = p2.substring(8)
-    } else if (p2?.startsWith('file://')) {
-      p2 = p2.substring(7)
-    }
-    if (p1 !== p2) {
-      if (videoRef.value == null) {
-        console.log('video ref null')
-        return
-      }
-      const playReq = new PlayReq(appStore.curSltVideo.src)
-      util.play_video(videoRef.value, playReq)
-    } else {
-      videoRef.value.play()
-    }
+    util.toggle_play(videoRef.value)
   }
 )
 
@@ -217,7 +174,7 @@ watch(
   () => appStore.videoPlayCtrl.isStop,
   (newValue) => {
     if (videoRef.value != null) {
-      if (newValue) {
+      if (newValue == true) {
         videoRef.value.pause()
       }
     }
@@ -227,6 +184,9 @@ watch(
 onBeforeMount(() => {
   appStore.func_nextFrame = nextFrame
   appStore.func_prevFrame = previousFrame
+  appStore.func_get_ele_video = (): HTMLVideoElement | null => {
+    return videoRef.value
+  }
 })
 onMounted(() => {
   if (videoRef.value == null) {

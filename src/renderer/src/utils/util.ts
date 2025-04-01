@@ -94,7 +94,9 @@ function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
   appStore.barColorCfg = []
   appStore.bShowKeyFrameInfo = false
   appStore.barSeekTime = 0
-  appStore.curSltVideo = null
+  if (!(req?.bNotClear_curSltVideo == true)) {
+    appStore.curSltVideo = null
+  }
 }
 
 function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void {
@@ -516,6 +518,46 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
   videoRef.addEventListener('canplay', onCanPlay)
 }
 
+function toggle_play(videoRef: HTMLVideoElement): void {
+  console.log('play video11111122222222')
+  // 首先判断是否有视频被选中
+  if (appStore.curSltVideo == null) {
+    console.log('请选择视频文件1')
+    return
+  }
+  if (!appStore.videoPlayCtrl.isPlay) {
+    videoRef.pause()
+    return
+  }
+
+  console.log('play video11111111111111111')
+  function convert_filepath_to_linux_style(filepath: string | null): string | null {
+    if (filepath == null) {
+      return null
+    }
+    return filepath.replace(/\\/g, '/')
+  }
+  let p1 = convert_filepath_to_linux_style(videoRef.src)
+  let p2 = convert_filepath_to_linux_style(appStore.curSltVideo.src)
+  // 再去掉p1，p2的前缀file:// 或者 file:///
+  if (p1?.startsWith('file:///')) {
+    p1 = p1.substring(8)
+  } else if (p1?.startsWith('file://')) {
+    p1 = p1.substring(7)
+  }
+  if (p2?.startsWith('file:///')) {
+    p2 = p2.substring(8)
+  } else if (p2?.startsWith('file://')) {
+    p2 = p2.substring(7)
+  }
+  if (p1 !== p2) {
+    const playReq = new PlayReq(appStore.curSltVideo.src)
+    util.play_video(videoRef, playReq)
+  } else {
+    videoRef.play()
+  }
+}
+
 class Util {
   updateKeyframeSplitInfo = updateKeyframeSplitInfo
   process_heartbeat = process_heartbeat
@@ -535,6 +577,7 @@ class Util {
   splitInfoCorrect = splitInfoCorrect
   stop_play = stop_play
   play_video = play_video
+  toggle_play = toggle_play
   setupVideoEventListeners = setupVideoEventListeners
   setAppStore(store): void {
     appStore = store

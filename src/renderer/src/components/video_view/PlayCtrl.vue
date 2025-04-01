@@ -47,12 +47,7 @@ import MessageShow from '../util/MessageShow'
 import util from '@renderer/utils/util'
 const appStore = useAppStore()
 
-// 切换播放/暂停状态
-const btnclk_toggle_play = (): void => {
-  const tmpValue = appStore.videoPlayCtrl
-  tmpValue.isPlay = !tmpValue.isPlay
-  appStore.videoPlayCtrl = tmpValue
-}
+
 
 // 改变播放倍速
 const changePlaybackRate = (): void => {}
@@ -105,6 +100,11 @@ function previousFrame(): void {
 
 function btnclk_stop_play(): void {
   util.stop_play()
+}
+
+// 切换播放/暂停状态
+const btnclk_toggle_play = (): void => {
+  appStore.videoPlayCtrl.isPlay = !appStore.videoPlayCtrl.isPlay
 }
 
 // ====================================
