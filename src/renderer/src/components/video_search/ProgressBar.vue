@@ -32,7 +32,7 @@ interface Clip {
 }
 
 // 定义 props 类型
-const props = defineProps<{
+defineProps<{
   clips: Clip[]
   height: number
 }>()
@@ -40,14 +40,19 @@ const props = defineProps<{
 const showTip = ref(false)
 const currentClip = ref<Clip | null>(null)
 
-const showTooltip = (clip: Clip) => {
+const showTooltip = (clip: Clip): void => {
   showTip.value = true
   currentClip.value = clip
 }
 
-const handleMouseOut = (event: MouseEvent, clip: Clip | null) => {
-  const tooltip = event.target.querySelector('.tooltip')
-  if (!tooltip || !tooltip.contains(event.relatedTarget)) {
+const handleMouseOut = (event: MouseEvent, clip: Clip | null): void => {
+  if (event.target == null) {
+    return
+  }
+  const tooltip = (event.target as Element).querySelector('.tooltip')
+  // 修改部分：先检查 event.relatedTarget 是否为 Node 类型
+  const relatedTarget = event.relatedTarget as Node | null
+  if (!tooltip || (relatedTarget && !tooltip.contains(relatedTarget))) {
     showTip.value = false
     currentClip.value = null
   }

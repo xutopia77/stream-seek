@@ -12,6 +12,7 @@
 import { ref, watch, onMounted } from 'vue'
 import '../../assets/common.css'
 import util from '../../utils/util'
+import * as DataTypes from '../../../../bridge/dataTypedef'
 import { IpcApi } from '../../utils/IpcApi'
 const ipcAPi: IpcApi = new IpcApi()
 import { useAppStore } from '../../stores/AppStore'
@@ -20,7 +21,6 @@ const appStore = useAppStore()
 // 定义缩略图对象的类型
 interface Thumbnail {
   src: string
-  time: number
   indexTime: number
   title: string
   checked: boolean
@@ -74,16 +74,15 @@ function updateThumbnailImages(): void {
   if (appStore.curVideoInfo === null) {
     return
   }
-  if (appStore.curVideoInfo.thumbnail === null) {
+  if (appStore.curVideoInfo.thumbnail == null) {
     return
   }
   for (let i = 0; i < appStore.curVideoInfo.thumbnail.length; i++) {
     let thumb = appStore.curVideoInfo.thumbnail[i]
     thumbnailImages.value.push({
-      src: thumb.filepath,
-      time: thumb.time,
-      indexTime: thumb.indexTime,
-      title: util.formatSecond2Time(thumb.indexTime),
+      src: thumb.filePath,
+      indexTime: DataTypes.FileTools.parse_timestr_2_seconds(thumb.title),
+      title: thumb.title,
       checked: false,
       btnName: '⬜'
     })
@@ -93,11 +92,11 @@ function updateThumbnailImages(): void {
 // 监听当前选中视频的变化
 watch(
   () => appStore.curSltVideo,
-  async (newVal: any, oldVal: any): Promise<void> => {
+  async (newVal: DataTypes.FileInfo | null, oldVal: DataTypes.FileInfo | null): Promise<void> => {
     if (newVal === oldVal) {
       return
     }
-    util.clear_cur_slt_video_info()
+    util.clear_cur_slt_video_info(null)
     await util.get_slt_video(ipcAPi, newVal)
     updateThumbnailImages()
     // playVideo(newVal.src)
@@ -107,7 +106,10 @@ watch(
 // 监听当前视频信息的缩略图变化
 watch(
   () => appStore.curVideoInfo?.thumbnail,
-  async (newVal: any, oldVal: any): Promise<void> => {
+  async (
+    newVal: DataTypes.FileInfo[] | undefined,
+    oldVal: DataTypes.FileInfo[] | undefined
+  ): Promise<void> => {
     if (newVal === oldVal) {
       return
     }

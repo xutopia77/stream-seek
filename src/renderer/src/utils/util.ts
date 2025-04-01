@@ -273,9 +273,14 @@ async function get_slt_video(ipcAPi: IpcApi, video: DataTypes.FileInfo | null): 
   if (response.code !== 0) {
     console.log('slect video failed')
   } else {
+    if (response.bOver == false) {
+      MessageShow.info(`正在处理...`)
+      return
+    }
     const respData: DataTypes.SltMediaInfo | undefined = response.data
     if (respData == undefined) {
       MessageShow.error(`获取视频信息失败: ${response.status}`)
+      console.log('slect video failed', response)
       return
     }
     appStore.curVideoInfo = respData

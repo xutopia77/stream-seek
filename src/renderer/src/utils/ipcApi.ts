@@ -31,7 +31,8 @@ export class IpcApi {
       }
     } catch (error) {
       console.error('err:', error)
-      return { code: 1, status: String(error) }
+      const resp = new DataTypes.Resp<R>()
+      return resp.err(String(error))
     }
   }
 }

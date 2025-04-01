@@ -29,7 +29,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 
 // 定义 interface
-interface MessageProps {
+export interface MessageProps {
   message: string
   type?: string
   duration?: number
@@ -38,7 +38,7 @@ interface MessageProps {
   plain?: boolean
   dangerouslyUseHTMLString?: boolean
   customClass?: string
-  customStyle?: Record<string, any>
+  customStyle?: Record<string, string | number>
   repeatNum?: number
 }
 
@@ -56,7 +56,7 @@ const iconMap = {
 }
 
 const iconComponent = computed(() => {
-  return iconMap[props.type]
+  return iconMap[props.type as keyof typeof iconMap] ?? ''
 })
 
 const iconClass = computed(() => {
@@ -78,7 +78,7 @@ const clearTimer = (): void => {
 }
 
 const startTimer = (): void => {
-  if (props.duration > 0) {
+  if (props.duration !== undefined && props.duration > 0) {
     setTimeout(() => {
       onClose()
     }, props.duration)

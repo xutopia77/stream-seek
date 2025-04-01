@@ -41,17 +41,17 @@ const startTime = ref<string>('00:00')
 const endDate = ref<string>('2025-03-25')
 const endTime = ref<string>('23:59')
 
-// 定义 computed 类型
-interface DisplayOptionComputed {
-  get(): string
-  set(newValue: string): void
-}
-const displayOption = computed<DisplayOptionComputed>({
+const displayOption = computed<string>({
   get() {
     return appStore.queryCtrl.displayOption
   },
   set(newValue) {
-    appStore.queryCtrl.displayOption = newValue
+    // Check if newValue is either "single" or "daily"
+    if (newValue === 'single' || newValue === 'daily') {
+      appStore.queryCtrl.displayOption = newValue
+    } else {
+      console.error(`Invalid value for displayOption: ${newValue}`)
+    }
   }
 })
 

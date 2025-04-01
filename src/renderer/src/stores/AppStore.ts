@@ -11,6 +11,7 @@ export type AppStore = {
     curTime: number
     videoStartTime: number
     isPlay: boolean
+    isStop: boolean
     playbackRate: number
   }
   curViewModel: 'video' | 'thumbnail'

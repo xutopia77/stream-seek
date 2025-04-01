@@ -146,6 +146,18 @@ async function handle_select_video(
   req: DataTypes.Req<DataTypes.Req_SltFile>
 ): Promise<DataTypes.Resp<DataTypes.SltMediaInfo>> {
   const resp = new DataTypes.Resp<DataTypes.SltMediaInfo>()
+  const respData: DataTypes.SltMediaInfo = {
+    mediaInfo: undefined,
+    thumbnail: undefined,
+    eventInfo: undefined
+  }
+  resp.data = respData
+  if (req.data == null) {
+    return resp.err('req.data is null')
+  }
+  if (resp.data == undefined) {
+    return resp.err('resp.data is null')
+  }
   const video_path = req.data?.filepath
   if (video_path == null) {
     return resp.err('filepath is null')
@@ -175,17 +187,13 @@ async function handle_select_video(
   // get media info
   {
     const mediaInfo = await mediaProc.getVideoInfo(video_path)
-    if (resp.data) {
-      resp.data.mediaInfo = mediaInfo
-    }
+    respData.mediaInfo = mediaInfo
   }
   {
     const thubResp = await recordsProc.query_images(video_path)
     // logger.info('handle_select_video', thubResp);
     if (thubResp.code == 0) {
-      if (resp.data != null) {
-        resp.data.thumbnail = thubResp.data?.files
-      }
+      respData.thumbnail = thubResp.data?.files
     }
   }
   {
@@ -202,9 +210,7 @@ async function handle_select_video(
     // 解析json数据
     try {
       const jsonData = JSON.parse(data)
-      if (resp.data != null) {
-        resp.data.eventInfo = jsonData
-      }
+      respData.eventInfo = jsonData
     } catch (error: unknown) {
       console.log('err parse json:', error)
     }

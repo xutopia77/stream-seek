@@ -1,8 +1,18 @@
 <template>
   <div class="play-ctrl">
     <!-- 播放/暂停按钮 -->
-    <button class="common-button" @click="togglePlay">
-      {{ appStore.videoPlayCtrl.isPlay ? '暂停' : '播放' }}
+    <button class="common-button btn-noborder" title="播放/暂停" @click="btnclk_toggle_play">
+      {{ appStore.videoPlayCtrl.isPlay ? '⏸' : '▶' }}
+    </button>
+    <!-- 文件切换 -->
+    <button class="common-button btn-noborder" title="上一个文件" @click="changeFile('previous')">
+      ⏮
+    </button>
+    <button class="common-button btn-noborder" title="停止播放" @click="btnclk_stop_play()">
+      ⏹
+    </button>
+    <button class="common-button btn-noborder" title="下一个文件" @click="changeFile('next')">
+      ⏭
     </button>
     <!-- 倍速选择 -->
     <select
@@ -20,35 +30,12 @@
     <!-- 播放时间 -->
     <span class="common-text" style="padding-right: 3px">{{ curTime }}/{{ videoDuration }}</span>
     <!-- 帧控制播放 -->
-    <button class="common-button" style="border: 0px" title="后退一帧" @click="previousFrame">
-      ◀️
-    </button>
-    <button class="common-button" style="border: 0px" title="前进一帧" @click="nextFrame">
-      ▶️
-    </button>
+    <button class="common-button btn-noborder" title="后退一帧" @click="previousFrame">◀️</button>
+    <button class="common-button btn-noborder" title="前进一帧" @click="nextFrame">▶️</button>
     <span class="common-text" style="padding-right: 3px; color: darkcyan">{{ frameInfo }}</span>
     <span class="common-text" style="padding-right: 3px; color: chocolate">{{ frameRate }}</span>
     <!-- 显示i帧 -->
-    <button class="common-button" style="border: 0px" title="显示关键帧" @click="showKeyFrame">
-      🔑
-    </button>
-    <!-- 文件切换 -->
-    <button
-      class="common-button"
-      style="border: 0px"
-      title="上一个文件"
-      @click="changeFile('previous')"
-    >
-      ⏮
-    </button>
-    <button
-      class="common-button"
-      style="border: 0px"
-      title="下一个文件"
-      @click="changeFile('next')"
-    >
-      ⏭
-    </button>
+    <button class="common-button btn-noborder" title="显示关键帧" @click="showKeyFrame">🔑</button>
   </div>
 </template>
 
@@ -61,7 +48,7 @@ import MessageShow from '../util/MessageShow'
 const appStore = useAppStore()
 
 // 切换播放/暂停状态
-const togglePlay = (): void => {
+const btnclk_toggle_play = (): void => {
   const tmpValue = appStore.videoPlayCtrl
   tmpValue.isPlay = !tmpValue.isPlay
   appStore.videoPlayCtrl = tmpValue
@@ -116,6 +103,10 @@ function previousFrame(): void {
   }
 }
 
+function btnclk_stop_play(): void {
+
+}
+
 // ====================================
 
 function showKeyFrame(): void {
@@ -164,6 +155,10 @@ function changeFile(flag: string): void {
 </script>
 
 <style scoped>
+.btn-noborder {
+  border: none;
+}
+
 .play-ctrl {
   height: 50px;
   width: 100%;
