@@ -44,7 +44,7 @@ import { computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 import '../../assets/common.css'
 import MessageShow from '../util/MessageShow'
-// import util from '../../utils/util.js'
+import util from '@renderer/utils/util'
 const appStore = useAppStore()
 
 // 切换播放/暂停状态
@@ -104,7 +104,7 @@ function previousFrame(): void {
 }
 
 function btnclk_stop_play(): void {
-
+  util.stop_play()
 }
 
 // ====================================

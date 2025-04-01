@@ -90,15 +90,11 @@ function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
 
   // 全部清除
   clear_videoPlayCtrl()
-  if (appStore) {
-    appStore.curVideoInfo = null
-    appStore.barColorCfg = []
-    if (appStore.curVideoInfo !== null) {
-      // appStore.curVideoInfo.frameInfo = null
-    }
-    appStore.bShowKeyFrameInfo = false
-    appStore.barSeekTime = 0
-  }
+  appStore.curVideoInfo = null
+  appStore.barColorCfg = []
+  appStore.bShowKeyFrameInfo = false
+  appStore.barSeekTime = 0
+  appStore.curSltVideo = null
 }
 
 function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void {
@@ -364,6 +360,162 @@ function process_heartbeat(resp: DataTypes.Resp<DataTypes.HeartBeat>): void {
   }
 }
 
+function calculateCurFrameIdx(curTime: number): number {
+  if (appStore?.curVideoInfo === null) return 0
+  if (appStore?.curVideoInfo?.mediaInfo === null) return 0
+  const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+  if (frameRate === undefined) return 0
+  const frame = Math.floor(curTime * frameRate)
+  return frame
+}
+
+const formatTime = (time: number): string => {
+  const hours = Math.floor(time / 3600)
+  const minutes = Math.floor((time % 3600) / 60)
+  const seconds = Math.floor(time % 60)
+  const milliseconds = Math.floor((time - Math.floor(time)) * 1000)
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
+}
+
+function getFilenameFromPath(filePath: string | null | undefined): string {
+  if (filePath == null || filePath === '') return ''
+  const parts = filePath.split(/[\\/]/)
+  const fileName = parts[parts.length - 1]
+  return fileName
+}
+
+function makeSplitInfo(): DataTypes.SplitInfo {
+  // 进度条的分段信息，黄色表示是关键帧
+  const sqlitInfo: DataTypes.SplitInfo = {
+    startTime: 0,
+    endTime: 0,
+    duration: 0,
+    percent: 0,
+    color: 'green', //yellow
+    currentTime: 0,
+    isDelete: false,
+    frameIdx: 0,
+    frameNum: 0
+  }
+  return sqlitInfo
+}
+
+function splitInfoCorrect(splitInfos: DataTypes.SplitInfo[], videoDuration: number): void {
+  // 把开始时间，结束时间，颜色确定后，再矫正一些关键信息
+  for (let i = 0; i < splitInfos.length; i++) {
+    const splitInfo = splitInfos[i]
+    splitInfo.currentTime = splitInfo.startTime
+    splitInfo.percent = (splitInfo.startTime / videoDuration) * 100
+    splitInfo.duration = splitInfo.endTime - splitInfo.startTime
+    splitInfo.frameIdx = util.calculateCurFrameIdx(splitInfo.startTime)
+    splitInfo.frameNum = util.calculateCurFrameIdx(splitInfo.duration)
+  }
+  splitInfos.sort((a, b) => a.percent - b.percent)
+}
+
+function stop_play(): void {
+  if (appStore.videoPlayCtrl.isPlay == false && appStore.videoPlayCtrl.isStop == true) {
+    return
+  }
+  console.log('stop_play')
+  clear_cur_slt_video_info(null)
+}
+
+export class PlayReq {
+  src: string
+  onPlayCbk?: () => void
+  beforePlayCbk?: () => void
+  constructor(src: string) {
+    this.src = src
+  }
+}
+
+// 封装视频事件监听函数
+function setupVideoEventListeners(videoRef: HTMLVideoElement, bRemoveEvent: boolean = false): void {
+  // 监听视频加载元数据事件，获取视频总时长
+  const onLoadedMetadata = (): void => {
+    // appStore.videoPlayCtrl.duration 要废弃了
+    // appStore.videoPlayCtrl.duration = videoRef.value.duration
+    // 获取视频的起始时间
+    appStore.videoPlayCtrl.videoStartTime = 0
+  }
+  videoRef.addEventListener('loadedmetadata', onLoadedMetadata)
+
+  // 监听视频时间更新事件，更新当前播放时间
+  const onTimeUpdate = (): void => {
+    if (videoRef != null) {
+      if (appStore.videoPlayCtrl.videoStartTime == 0) {
+        appStore.videoPlayCtrl.videoStartTime = videoRef.currentTime
+      }
+      if (appStore.thumbSeekTime != 0) {
+        videoRef.currentTime = appStore.thumbSeekTime
+        appStore.thumbSeekTime = 0
+      }
+      // 减去起始时间，得到从视频起始点开始的播放时间
+      appStore.videoPlayCtrl.curTime = videoRef.currentTime - appStore.videoPlayCtrl.videoStartTime
+    }
+  }
+  videoRef.addEventListener('timeupdate', onTimeUpdate)
+
+  // 监听视频播放事件，更新播放状态
+  const onPlay = (): void => {
+    appStore.videoPlayCtrl.isPlay = true
+  }
+
+  // 监听视频暂停事件，更新播放状态
+  const onPause = (): void => {
+    appStore.videoPlayCtrl.isPlay = false
+  }
+  videoRef.addEventListener('pause', onPause)
+
+  if (bRemoveEvent) {
+    videoRef.removeEventListener('loadedmetadata', onLoadedMetadata)
+    videoRef.removeEventListener('timeupdate', onTimeUpdate)
+    videoRef.removeEventListener('play', onPlay)
+    videoRef.removeEventListener('pause', onPause)
+  }
+}
+
+function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
+  if (videoRef == null) {
+    console.log('video ref null')
+    return
+  }
+  if (appStore.curViewModel != 'video') {
+    return
+  }
+  videoRef.pause()
+  appStore.videoPlayCtrl.curSrc = req.src
+  appStore.videoPlayCtrl.isPlay = true
+  videoRef.load()
+
+  setupVideoEventListeners(videoRef, true)
+  // 监听 canplay 事件
+  const onCanPlay = (): void => {
+    if (videoRef == null) {
+      MessageShow.error('video ref null')
+      return
+    }
+    appStore.videoPlayCtrl.curTime = 0
+    if (videoRef.duration != appStore.curVideoInfo?.mediaInfo?.duration) {
+      console.log(
+        `video duration not equal appStore.duration: ${videoRef.duration} != ${appStore.curVideoInfo?.mediaInfo?.duration}`
+      )
+    }
+    if (req.beforePlayCbk != null) {
+      req.beforePlayCbk()
+      console.log(`video can play1111 ${appStore.videoPlayCtrl.curTime}`)
+    }
+    console.log(`video can play ${appStore.videoPlayCtrl.curTime}`)
+    // videoRef.value.currentTime = appStore.videoPlayCtrl.curTime
+    videoRef.play()
+    setupVideoEventListeners(videoRef)
+    // 移除监听器，避免重复触发
+    videoRef.removeEventListener('canplay', onCanPlay)
+  }
+  videoRef.addEventListener('canplay', onCanPlay)
+}
+
 class Util {
   updateKeyframeSplitInfo = updateKeyframeSplitInfo
   process_heartbeat = process_heartbeat
@@ -376,59 +528,14 @@ class Util {
   getKeyFrameInfo = getKeyFrameInfo
   clear_cur_slt_video_info = clear_cur_slt_video_info
   make_prj_info = make_prj_info
-
-  calculateCurFrameIdx(curTime: number): number {
-    if (appStore?.curVideoInfo === null) return 0
-    if (appStore?.curVideoInfo?.mediaInfo === null) return 0
-    const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
-    if (frameRate === undefined) return 0
-    const frame = Math.floor(curTime * frameRate)
-    return frame
-  }
-
-  formatTime = (time: number): string => {
-    const hours = Math.floor(time / 3600)
-    const minutes = Math.floor((time % 3600) / 60)
-    const seconds = Math.floor(time % 60)
-    const milliseconds = Math.floor((time - Math.floor(time)) * 1000)
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
-  }
-
-  getFilenameFromPath(filePath: string | null | undefined): string {
-    if (filePath == null || filePath === '') return ''
-    const parts = filePath.split(/[\\/]/)
-    const fileName = parts[parts.length - 1]
-    return fileName
-  }
-
-  makeSplitInfo(): DataTypes.SplitInfo {
-    // 进度条的分段信息，黄色表示是关键帧
-    const sqlitInfo: DataTypes.SplitInfo = {
-      startTime: 0,
-      endTime: 0,
-      duration: 0,
-      percent: 0,
-      color: 'green', //yellow
-      currentTime: 0,
-      isDelete: false,
-      frameIdx: 0,
-      frameNum: 0
-    }
-    return sqlitInfo
-  }
-
-  splitInfoCorrect(splitInfos: DataTypes.SplitInfo[], videoDuration: number): void {
-    // 把开始时间，结束时间，颜色确定后，再矫正一些关键信息
-    for (let i = 0; i < splitInfos.length; i++) {
-      const splitInfo = splitInfos[i]
-      splitInfo.currentTime = splitInfo.startTime
-      splitInfo.percent = (splitInfo.startTime / videoDuration) * 100
-      splitInfo.duration = splitInfo.endTime - splitInfo.startTime
-      splitInfo.frameIdx = util.calculateCurFrameIdx(splitInfo.startTime)
-      splitInfo.frameNum = util.calculateCurFrameIdx(splitInfo.duration)
-    }
-    splitInfos.sort((a, b) => a.percent - b.percent)
-  }
+  calculateCurFrameIdx = calculateCurFrameIdx
+  formatTime = formatTime
+  getFilenameFromPath = getFilenameFromPath
+  makeSplitInfo = makeSplitInfo
+  splitInfoCorrect = splitInfoCorrect
+  stop_play = stop_play
+  play_video = play_video
+  setupVideoEventListeners = setupVideoEventListeners
   setAppStore(store): void {
     appStore = store
   }

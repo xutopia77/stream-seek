@@ -7,9 +7,9 @@ export type AppStore = {
   serverUrlPrefix: string
   curOpenedFolder: string
   videoPlayCtrl: {
-    curSrc: string
+    curSrc: string // 当前播放视频地址
     curTime: number
-    videoStartTime: number
+    videoStartTime: number //视频文件的开始时间可能不是从0开始的，所以需要记录一下
     isPlay: boolean
     isStop: boolean
     playbackRate: number

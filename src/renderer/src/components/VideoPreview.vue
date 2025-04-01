@@ -29,8 +29,9 @@ import PlayCtrl from './video_view/PlayCtrl.vue'
 import { ref, onMounted, watch, onBeforeMount, computed, onUnmounted } from 'vue'
 import { IpcApi } from '../utils/IpcApi'
 import util from '../utils/util'
+import { PlayReq } from '../utils/util'
 import { useAppStore } from '../stores/AppStore'
-import MessageShow from './util/MessageShow'
+// import MessageShow from './util/MessageShow'
 // 明确 IpcApi 实例的类型
 const ipcAPi: IpcApi = new IpcApi()
 // 明确 appStore 的类型
@@ -47,60 +48,9 @@ const viewModel = computed(() => {
 // 明确视频元素引用的类型
 const videoRef = ref<HTMLVideoElement | null>(null)
 
-// 定义 playVideo 函数的参数和返回值类型
-interface PlayVideoReq {
-  onPlayCbk?: () => void
-  beforePlayCbk?: () => void
-}
-const playVideo = (src: string, req: PlayVideoReq | null): void => {
-  if (videoRef.value == null) {
-    console.log('video ref null')
-    return
-  }
-  if (appStore.curViewModel != 'video') {
-    return
-  }
-  videoRef.value.pause()
-  appStore.videoPlayCtrl.curSrc = src
-  appStore.videoPlayCtrl.isPlay = true
-  videoRef.value.load()
-
-  const removeEventListeners = setupVideoEventListeners()
-  if (removeEventListeners != null) {
-    removeEventListeners()
-  }
-  // 监听 canplay 事件
-  const onCanPlay = (): void => {
-    if (videoRef.value == null) {
-      MessageShow.error('video ref null')
-      return
-    }
-    appStore.videoPlayCtrl.curTime = 0
-    if (videoRef.value.duration != appStore.curVideoInfo?.mediaInfo?.duration) {
-      console.log(
-        `video duration not equal appStore.duration: ${videoRef.value.duration} != ${appStore.curVideoInfo?.mediaInfo?.duration}`
-      )
-    }
-    if (req?.beforePlayCbk != null) {
-      req.beforePlayCbk()
-      console.log(`video can play1111 ${appStore.videoPlayCtrl.curTime}`)
-    }
-    console.log(`video can play ${appStore.videoPlayCtrl.curTime}`)
-    // videoRef.value.currentTime = appStore.videoPlayCtrl.curTime
-    videoRef.value.play()
-    setupVideoEventListeners()
-    // 移除监听器，避免重复触发
-    videoRef.value.removeEventListener('canplay', onCanPlay)
-  }
-  videoRef.value.addEventListener('canplay', onCanPlay)
-}
-
 watch(
   () => appStore.curSltVideo,
-  async (newVal, oldVal) => {
-    if (newVal === oldVal) {
-      return
-    }
+  async (newVal) => {
     if (newVal == null) {
       return
     }
@@ -109,108 +59,63 @@ watch(
     if (newVal == null) {
       return
     }
-    playVideo(newVal.src, null)
+
+    if (videoRef.value == null) {
+      console.log('video ref null')
+      return
+    }
+    const playReq = new PlayReq(newVal.src)
+    util.play_video(videoRef.value, playReq)
   },
   { deep: true }
 )
 
 watch(
   () => appStore.videoPlayCtrl.isPlay,
-  (newVal, oldVal) => {
-    if (newVal === oldVal) {
+  () => {
+    if (videoRef.value == null) {
+      console.log('video ref null')
       return
     }
-    if (videoRef.value != null) {
-      if (!appStore.videoPlayCtrl.isPlay) {
-        videoRef.value.pause()
-      } else {
-        if (!(appStore.curSltVideo != null && appStore.curSltVideo.src != null)) {
-          MessageShow.error('请选择视频文件')
-          return
-        }
-        function convert_filepath_to_linux_style(filepath: string | null): string | null {
-          if (filepath == null) {
-            return null
-          }
-          return filepath.replace(/\\/g, '/')
-        }
-        let p1 = convert_filepath_to_linux_style(videoRef.value.src)
-        let p2 = convert_filepath_to_linux_style(appStore.curSltVideo.src)
-        // 再去掉p1，p2的前缀file:// 或者 file:///
-        if (p1?.startsWith('file:///')) {
-          p1 = p1.substring(8)
-        } else if (p1?.startsWith('file://')) {
-          p1 = p1.substring(7)
-        }
-        if (p2?.startsWith('file:///')) {
-          p2 = p2.substring(8)
-        } else if (p2?.startsWith('file://')) {
-          p2 = p2.substring(7)
-        }
-        if (p1 !== p2) {
-          playVideo(appStore.curSltVideo.src, null)
-        } else {
-          videoRef.value.play()
-        }
+    if (!appStore.videoPlayCtrl.isPlay) {
+      videoRef.value.pause()
+      return
+    }
+    if (!(appStore.curSltVideo != null && appStore.curSltVideo.src != null)) {
+      // console.log('请选择视频文件1')
+      return
+    }
+    function convert_filepath_to_linux_style(filepath: string | null): string | null {
+      if (filepath == null) {
+        return null
       }
+      return filepath.replace(/\\/g, '/')
+    }
+    let p1 = convert_filepath_to_linux_style(videoRef.value.src)
+    let p2 = convert_filepath_to_linux_style(appStore.curSltVideo.src)
+    // 再去掉p1，p2的前缀file:// 或者 file:///
+    if (p1?.startsWith('file:///')) {
+      p1 = p1.substring(8)
+    } else if (p1?.startsWith('file://')) {
+      p1 = p1.substring(7)
+    }
+    if (p2?.startsWith('file:///')) {
+      p2 = p2.substring(8)
+    } else if (p2?.startsWith('file://')) {
+      p2 = p2.substring(7)
+    }
+    if (p1 !== p2) {
+      if (videoRef.value == null) {
+        console.log('video ref null')
+        return
+      }
+      const playReq = new PlayReq(appStore.curSltVideo.src)
+      util.play_video(videoRef.value, playReq)
     } else {
-      console.log('video ref null')
+      videoRef.value.play()
     }
   }
 )
-
-// 封装视频事件监听函数，并明确返回值类型
-const setupVideoEventListeners = (): (() => void) | null => {
-  if (videoRef.value == null) {
-    return null
-  }
-  // 监听视频加载元数据事件，获取视频总时长
-  const onLoadedMetadata = (): void => {
-    // appStore.videoPlayCtrl.duration 要废弃了
-    // appStore.videoPlayCtrl.duration = videoRef.value.duration
-    // 获取视频的起始时间
-    appStore.videoPlayCtrl.videoStartTime = 0
-  }
-  videoRef.value.addEventListener('loadedmetadata', onLoadedMetadata)
-
-  // 监听视频时间更新事件，更新当前播放时间
-  const onTimeUpdate = (): void => {
-    if (videoRef.value != null) {
-      if (appStore.videoPlayCtrl.videoStartTime == 0) {
-        appStore.videoPlayCtrl.videoStartTime = videoRef.value.currentTime
-      }
-      if (appStore.thumbSeekTime != 0) {
-        videoRef.value.currentTime = appStore.thumbSeekTime
-        appStore.thumbSeekTime = 0
-      }
-      // 减去起始时间，得到从视频起始点开始的播放时间
-      appStore.videoPlayCtrl.curTime =
-        videoRef.value.currentTime - appStore.videoPlayCtrl.videoStartTime
-    }
-  }
-  videoRef.value.addEventListener('timeupdate', onTimeUpdate)
-
-  // 监听视频播放事件，更新播放状态
-  const onPlay = (): void => {
-    appStore.videoPlayCtrl.isPlay = true
-  }
-
-  // 监听视频暂停事件，更新播放状态
-  const onPause = (): void => {
-    appStore.videoPlayCtrl.isPlay = false
-  }
-  videoRef.value.addEventListener('pause', onPause)
-
-  return () => {
-    if (videoRef.value == null) {
-      return
-    }
-    videoRef.value.removeEventListener('loadedmetadata', onLoadedMetadata)
-    videoRef.value.removeEventListener('timeupdate', onTimeUpdate)
-    videoRef.value.removeEventListener('play', onPlay)
-    videoRef.value.removeEventListener('pause', onPause)
-  }
-}
 
 function nextFrame(): void {
   if (videoRef.value != null) {
@@ -243,25 +148,25 @@ function previousFrame(): void {
 // 防止刚切换过来，videoRef为空，导致没有开始播放，所以等待videoRef不为空后再播放
 watch(
   () => videoRef.value,
-  (newVal, oldVal) => {
-    if (newVal === oldVal) {
-      return
-    }
+  (newVal) => {
     if (newVal == null) {
       return
     }
     if (appStore.curSltVideo?.src != null) {
-      playVideo(appStore.curSltVideo.src, null)
+      if (videoRef.value == null) {
+        console.log('video ref null')
+        return
+      }
+      const playReq = new PlayReq(appStore.curSltVideo.src)
+      util.play_video(videoRef.value, playReq)
     }
   }
 )
 
+// 播放模式，video or thumbnail
 watch(
   () => appStore.curViewModel,
-  (newVal, oldVal) => {
-    if (newVal === oldVal) {
-      return
-    }
+  (newVal) => {
     if (newVal === 'video') {
       if (appStore.curSltVideo == null) {
         return
@@ -271,13 +176,18 @@ watch(
       }
 
       if (appStore.curSltVideo?.src != null) {
-        playVideo(appStore.curSltVideo.src, null)
+        if (videoRef.value == null) {
+          console.log('video ref null')
+          return
+        }
+        const playReq = new PlayReq(appStore.curSltVideo.src)
+        util.play_video(videoRef.value, playReq)
       }
     } else if (newVal === 'thumbnail') {
-      const removeEventListeners = setupVideoEventListeners()
-      if (removeEventListeners != null) {
-        removeEventListeners()
-      }
+      // const removeEventListeners = setupVideoEventListeners()
+      // if (removeEventListeners != null) {
+      //   removeEventListeners()
+      // }
       util.clear_cur_slt_video_info({ clearModel: 'changeToThumbnail' })
     } else {
       console.log('unsupported view model:', newVal)
@@ -287,10 +197,7 @@ watch(
 
 watch(
   () => appStore.videoPlayCtrl.playbackRate,
-  (newVal, oldVal) => {
-    if (newVal === oldVal) {
-      return
-    }
+  () => {
     if (videoRef.value != null) {
       videoRef.value.playbackRate = appStore.videoPlayCtrl.playbackRate
     }
@@ -299,12 +206,20 @@ watch(
 
 watch(
   () => appStore.barSeekTime,
-  (newValue, oldValue) => {
-    if (newValue === oldValue) {
-      return
-    }
+  (newValue) => {
     if (videoRef.value != null) {
       videoRef.value.currentTime = newValue + appStore.videoPlayCtrl.videoStartTime
+    }
+  }
+)
+
+watch(
+  () => appStore.videoPlayCtrl.isStop,
+  (newValue) => {
+    if (videoRef.value != null) {
+      if (newValue) {
+        videoRef.value.pause()
+      }
     }
   }
 )
@@ -314,14 +229,19 @@ onBeforeMount(() => {
   appStore.func_prevFrame = previousFrame
 })
 onMounted(() => {
-  setupVideoEventListeners()
+  if (videoRef.value == null) {
+    console.log('video ref null')
+    return
+  }
+  util.setupVideoEventListeners(videoRef.value)
 })
 
 onUnmounted(() => {
-  const removeEventListeners = setupVideoEventListeners()
-  if (removeEventListeners != null) {
-    removeEventListeners()
+  if (videoRef.value == null) {
+    console.log('video ref null')
+    return
   }
+  util.setupVideoEventListeners(videoRef.value, true)
   util.clear_cur_slt_video_info(null)
 })
 </script>
