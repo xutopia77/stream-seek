@@ -10,6 +10,8 @@
       >
         <button class="common-button menu-button" @click="openFolder">打开文件夹</button>
         <button class="common-button menu-button" @click="btnclk_save_project">保存项目</button>
+        <button class="common-button menu-button" @click="btnclk_clean_project">清理项目</button>
+        <button class="common-button menu-button" @click="btnclk_clean_work">清理工程</button>
         <button class="common-button menu-button" :disabled="true" @click="exitApp">退出</button>
       </div>
     </div>
@@ -68,7 +70,6 @@ const appStore = useAppStore()
 import { IpcApi } from '../utils/IpcApi'
 import MessageShow from './util/MessageShow'
 import * as DataTypes from '../../../bridge/dataTypedef'
-const ipcAPi: IpcApi = new IpcApi()
 
 // 控制下拉菜单是否显示
 const isDropdownOpen = ref<{ home: boolean; video: boolean; view: boolean }>({
@@ -99,7 +100,50 @@ const toggleDropdown = (event: MouseEvent, menu: string): void => {
 // 打开文件的处理函数
 const btnclk_save_project = (): void => {
   isDropdownOpen.value.home = false
-  util.save_project(ipcAPi)
+  util.save_project()
+}
+
+function btnclk_clean_project(): void {
+  if (appStore.curSltVideo == null) return MessageShow.error('请先选择一个视频')
+  const confirmDelete = confirm(`确定要清理 ${appStore.curSltVideo.title} 项目吗？`)
+  if (!confirmDelete) {
+    return
+  }
+  const reqFiles: DataTypes.FileInfo[] = []
+  reqFiles.push(appStore.curSltVideo)
+  util
+    .clean_project(reqFiles)
+    .then((resp) => {
+      if (resp.code == 0) {
+        MessageShow.success('清理成功')
+      } else {
+        MessageShow.error(resp.status)
+      }
+    })
+    .catch((error) => {
+      MessageShow.error(error)
+    })
+  MessageShow.info('清理中...')
+}
+
+function btnclk_clean_work(): void {
+  const confirmDelete = confirm(`确定要清理整个工程吗？`)
+  if (!confirmDelete) {
+    return
+  }
+  util
+    .clean_work()
+    .then((resp) => {
+      if (resp.code == 0) {
+        MessageShow.success('清理成功')
+      } else {
+        MessageShow.error(resp.status)
+      }
+    })
+    .catch((error) => {
+      MessageShow.error(error)
+    })
+  MessageShow.info('清理中...')
 }
 
 // 打开文件夹的处理函数
@@ -107,7 +151,7 @@ const openFolder = async (): Promise<void> => {
   const req: DataTypes.Req = {
     cmd: 'open_folder'
   }
-  const response: DataTypes.Resp<DataTypes.TraversalFolder> = await ipcAPi.trigger_event(req)
+  const response: DataTypes.Resp<DataTypes.TraversalFolder> = await IpcApi.trigger_event(req)
   if (response.code != 0) {
     console.log('打开文件夹失败')
   } else {

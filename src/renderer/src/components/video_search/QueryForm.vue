@@ -30,9 +30,7 @@ import { ref, computed } from 'vue'
 import { IpcApi } from '../../utils/IpcApi'
 import { useAppStore } from '../../stores/AppStore'
 import MessageShow from '../util/MessageShow'
-// 明确 IpcApi 实例的类型
-const ipcAPi: IpcApi = new IpcApi()
-// 明确 appStore 的类型
+import * as DataTypes from '../../../../bridge/dataTypedef'
 const appStore = useAppStore()
 
 // 明确 ref 变量的类型
@@ -57,35 +55,35 @@ const displayOption = computed<string>({
 
 // 定义 handleQuery 函数的返回值类型
 const handleQuery = async (): Promise<void> => {
-  // emits('query', {
-  //   startDate: startDate.value,
-  //   startTime: startTime.value,
-  //   endDate: endDate.value,
-  //   endTime: endTime.value,
-  //   displayOption: displayOption.value
-  // })
-
-  let req = {
+  // let req = {
+  //   cmd: 'query_video',
+  //   data: {
+  //     type: 'search',
+  //     folder: appStore.curOpenedFolder,
+  //     startDate: startDate.value,
+  //     startTime: startTime.value,
+  //     endDate: endDate.value,
+  //     endTime: endTime.value
+  //   }
+  // }
+  const req: DataTypes.Req<DataTypes.Req_TraversalFolder> = {
     cmd: 'query_video',
     data: {
       type: 'search',
       folder: appStore.curOpenedFolder,
-      startDate: startDate.value,
-      startTime: startTime.value,
-      endDate: endDate.value,
-      endTime: endTime.value
+      startTime: `${startDate.value} ${startTime.value}`,
+      endTime: `${endDate.value} ${endTime.value}`
     }
   }
-  const response: { code: number; status: string; bOver?: boolean } = await ipcAPi.trigger_event(
-    JSON.stringify(req)
-  )
+  const response: DataTypes.Resp<DataTypes.TraversalFolder> = await IpcApi.trigger_event(req)
   if (response.code != 0) {
     console.log(response)
     MessageShow.error(`查询失败:${response.status}`)
-    return
   } else {
-    if (response.bOver != null && response.bOver == false) {
-      MessageShow.success(`后台执行中...`)
+    if (response.bOver == false) {
+      MessageShow.info(`后台执行中...`)
+    } else {
+      MessageShow.success(`查询成功`)
     }
   }
 }

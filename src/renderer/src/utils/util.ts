@@ -37,7 +37,7 @@ function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.S
   return frameSplitInfo
 }
 
-async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
+async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
   const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
   if (appStore?.curSltVideo === null || appStore?.curVideoInfo?.mediaInfo === null) {
     return resp.err('no video selected')
@@ -49,7 +49,7 @@ async function getKeyFrameInfo(ipcAPi: IpcApi): Promise<DataTypes.Resp<DataTypes
     }
   }
   if (appStore?.curVideoInfo?.frameInfo == null) {
-    return await ipcAPi.trigger_event(req)
+    return await IpcApi.trigger_event(req)
   }
   return resp
 }
@@ -232,7 +232,7 @@ function processVideoEvent(events: DataTypes.FileEventInfo[][]): void {
   }
 }
 
-async function get_slt_video(ipcAPi: IpcApi, video: DataTypes.FileInfo | null): Promise<void> {
+async function get_slt_video(video: DataTypes.FileInfo | null): Promise<void> {
   function processSplitInfo(): void {
     if (appStore?.curVideoInfo?.splitInfo != null) {
       // 从后台已经获取到了信息，就不用再处理了
@@ -267,7 +267,7 @@ async function get_slt_video(ipcAPi: IpcApi, video: DataTypes.FileInfo | null): 
       filepath: video.filePath
     }
   }
-  const response: DataTypes.Resp<DataTypes.SltMediaInfo> = await ipcAPi.trigger_event(req)
+  const response: DataTypes.Resp<DataTypes.SltMediaInfo> = await IpcApi.trigger_event(req)
   if (response.code !== 0) {
     console.log('slect video failed')
   } else {
@@ -310,7 +310,7 @@ async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
   return prjInfo
 }
 
-const save_project = async (ipcAPi: IpcApi): Promise<void> => {
+const save_project = async (): Promise<void> => {
   const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
   if (prjInfo == null) {
     MessageShow.success(`当前没有选择视频文件`)
@@ -320,7 +320,7 @@ const save_project = async (ipcAPi: IpcApi): Promise<void> => {
     cmd: 'save_prj',
     data: prjInfo
   }
-  const response = await ipcAPi.trigger_event(req)
+  const response = await IpcApi.trigger_event(req)
   if (response.code !== 0) {
     MessageShow.success(`保存失败: ${response.status}`)
   } else {
@@ -558,6 +558,23 @@ function toggle_play(videoRef: HTMLVideoElement): void {
   }
 }
 
+async function clean_work(): Promise<DataTypes.Resp> {
+  const req: DataTypes.Req<DataTypes.Req_ClearWork> = {
+    cmd: 'clean_work'
+  }
+  return IpcApi.trigger_event(req)
+}
+
+async function clean_project(files: DataTypes.FileInfo[]): Promise<DataTypes.Resp> {
+  const req: DataTypes.Req<DataTypes.Req_ClearWork> = {
+    cmd: 'clean_work',
+    data: {
+      files: files
+    }
+  }
+  return IpcApi.trigger_event(req)
+}
+
 class Util {
   updateKeyframeSplitInfo = updateKeyframeSplitInfo
   process_heartbeat = process_heartbeat
@@ -579,6 +596,8 @@ class Util {
   play_video = play_video
   toggle_play = toggle_play
   setupVideoEventListeners = setupVideoEventListeners
+  clean_project = clean_project
+  clean_work = clean_work
   setAppStore(store): void {
     appStore = store
   }

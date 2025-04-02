@@ -61,7 +61,7 @@ async function handle_open_folder(
 }
 
 async function handle_query_video(
-  req: DataTypes.Req<DataTypes.Req_SearchFile>
+  req: DataTypes.Req<DataTypes.Req_TraversalFolder>
 ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
   if (req.data == null) {
     return new DataTypes.Resp<DataTypes.TraversalFolder>().err('req.data is null')
@@ -335,7 +335,13 @@ async function process_heart_beat(): Promise<DataTypes.Resp<DataTypes.HeartBeat>
 
 function make_cmd_response<T>(cmdResp: DataTypes.Resp<T>): DataTypes.Resp<string> {
   const resp = new DataTypes.Resp<string>()
-  resp.success('success').data = JSON.stringify(cmdResp.data)
+  for (const key in cmdResp) {
+    if (key == 'data') {
+      continue
+    }
+    resp[key] = cmdResp[key]
+  }
+  resp.data = JSON.stringify(cmdResp.data)
   return resp
 }
 
@@ -392,7 +398,7 @@ export class IpcHandlers {
         logger.log(cmd, req)
         return make_cmd_response(await handle_app_start())
       case 'query_video': {
-        const cmdReq = convertCmdRequest<DataTypes.Req_SearchFile>(req)
+        const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
         logger.log(cmd, cmdReq)
         return make_cmd_response(await handle_query_video(cmdReq))
       }

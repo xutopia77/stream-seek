@@ -48,7 +48,6 @@ const appStore = useAppStore()
 import '../../assets/common.css'
 import util from '../../utils/util.js'
 import { IpcApi } from '../../utils/IpcApi'
-const ipcAPi: IpcApi = new IpcApi()
 import MessageShow from '../util/MessageShow'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 
@@ -207,7 +206,7 @@ const exportVideoRecord = async (): Promise<void> => {
     cmd: 'cut_video',
     data: prjInfo
   }
-  const response = await ipcAPi.trigger_event(req)
+  const response = await IpcApi.trigger_event(req)
   if (response.code === 1001) {
     return
   }

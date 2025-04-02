@@ -13,8 +13,7 @@ import { ref, watch, onMounted } from 'vue'
 import '../../assets/common.css'
 import util from '../../utils/util'
 import * as DataTypes from '../../../../bridge/dataTypedef'
-import { IpcApi } from '../../utils/IpcApi'
-const ipcAPi: IpcApi = new IpcApi()
+// import { IpcApi } from '../../utils/IpcApi'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
 
@@ -97,7 +96,7 @@ watch(
       return
     }
     util.clear_cur_slt_video_info(null)
-    await util.get_slt_video(ipcAPi, newVal)
+    await util.get_slt_video(newVal)
     updateThumbnailImages()
     // playVideo(newVal.src)
   }

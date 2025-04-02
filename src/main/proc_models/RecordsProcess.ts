@@ -176,7 +176,7 @@ async function gen_thumbnail(
     const file_thubmbnail_dir = path.join(thumbnail_dir, path.basename(filepath, '.mp4'))
 
     let bExist = true
-    // 检查文件夹是否存在
+    // 检查对应的文件的缩略图是否已经存在
     try {
       await fs.promises.access(file_thubmbnail_dir)
     } catch (error) {
@@ -194,7 +194,6 @@ async function gen_thumbnail(
       await fs.promises.rm(tmp_thubmbnail_dir, { recursive: true })
     } catch (error) {
       if (!error) console.log(error)
-      // 文件夹不存在，无需处理
     }
     try {
       await fs.promises.mkdir(tmp_thubmbnail_dir, { recursive: true })
@@ -221,10 +220,12 @@ async function gen_thumbnail(
       const width = 640 // 设置图片宽度
       const height = 480 // 设置图片高度
       const args = [
+        '-v',
+        'error',
         '-ss',
         time.toString(),
         '-i',
-        file.src,
+        filepath,
         '-vframes',
         '1',
         '-s',
@@ -279,15 +280,22 @@ async function gen_thumbnail(
   }
   if (filesResp.data?.files != null) {
     const files = filesResp.data.files
+    const fileNum = files.length
+    let curProcIdx = 0
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       await process_single_file(file)
+      curProcIdx += 1
+      const interval = fileNum > 200 ? 1 : 10
+      const curProcPercent = Math.floor((curProcIdx / fileNum) * 100)
+      if (curProcPercent % interval === 0) {
+        logger.log(`gen thumbnail ${curProcPercent}% ${curProcIdx}/${fileNum}`)
+      }
     }
   }
   return resp.success('success')
 }
 
-// 查询图片
 async function query_images(filepath: string): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
   const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
   const thumbnail_dir = appCfg.thumbnail_dir

@@ -1,7 +1,13 @@
 <template>
   <div class="video-list common-scrollbar">
     <ul>
-      <li v-for="(video, index) in videoList" :key="index" @click="playVideo(video)">
+      <!-- 修改部分：添加动态类名 -->
+      <li
+        v-for="(video, index) in videoList"
+        :key="index"
+        :class="{ selected: video === appStore.curSltVideo }"
+        @click="playVideo(video)"
+      >
         <span class="common-text">{{ `${index + 1}:${video.title}` }}</span>
       </li>
     </ul>
@@ -16,15 +22,7 @@ import '../../assets/common.css'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 const videoList = computed<DataTypes.FileInfo[]>(() => appStore.videoList)
 
-onBeforeMount(() => {
-  // const videoList = ref([
-  //   {
-  //     title: '00_20250313113251_20250313114420.mp4',
-  //     src: 'file://D:/02_workspace/05_timeCapsule/01_stream_manager_ui/stream_manager_ui/src/data/00_20250313113251_20250313114420.mp4'
-  //   }
-  // ])
-  // appStore.setData('videoList', videoList.value)
-})
+onBeforeMount(() => {})
 
 const playVideo = (video: DataTypes.FileInfo): void => {
   appStore.curSltVideo = video
@@ -77,5 +75,11 @@ const playVideo = (video: DataTypes.FileInfo): void => {
 .video-list li:active {
   background-color: #094771;
   /* 鼠标点击背景色 */
+}
+
+/* 修改部分：添加选中样式 */
+.video-list li.selected {
+  background-color: #094771; /* VSCode 选中项背景色 */
+  color: white; /* VSCode 选中项文字颜色 */
 }
 </style>

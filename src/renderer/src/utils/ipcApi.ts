@@ -14,7 +14,9 @@ import * as DataTypes from '../../../bridge/dataTypedef'
 
 export class IpcApi {
   // 为函数添加返回类型注解
-  async trigger_event<T = string, R = string>(req: DataTypes.Req<T>): Promise<DataTypes.Resp<R>> {
+  static async trigger_event<T = string, R = string>(
+    req: DataTypes.Req<T>
+  ): Promise<DataTypes.Resp<R>> {
     const sendReq: DataTypes.Req<string> = {
       ...req,
       data: req.data ? JSON.stringify(req.data) : undefined

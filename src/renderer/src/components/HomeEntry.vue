@@ -17,7 +17,6 @@ import util from '../utils/util.js'
 import ToastMessage from './util/ToastMessage.vue'
 import { IpcApi } from '../utils/IpcApi'
 import MessageShow from './util/MessageShow'
-const ipcAPi: IpcApi = new IpcApi()
 import * as DataTypes from '../../../bridge/dataTypedef'
 
 // 启动一个定时器，周期性trigger_event
@@ -26,7 +25,7 @@ function startTimer(): void {
     const req: DataTypes.Req = {
       cmd: 'heart_beat'
     }
-    ipcAPi
+    IpcApi
       .trigger_event<string, DataTypes.HeartBeat>(req)
       .then((response: DataTypes.Resp<DataTypes.HeartBeat>) => {
         util.process_heartbeat(response)
@@ -44,7 +43,7 @@ async function updatePrj(prj: DataTypes.Prj): Promise<void> {
       cmd: 'traversal_folder',
       data: { folder: prj.lastOpenedFolder }
     }
-    const response: DataTypes.Resp<DataTypes.TraversalFolder> = await ipcAPi.trigger_event(req)
+    const response: DataTypes.Resp<DataTypes.TraversalFolder> = await IpcApi.trigger_event(req)
     if (response.code === 0) {
       appStore.curOpenedFolder = prj.lastOpenedFolder
       util.folder_file_proc(response)
@@ -72,7 +71,7 @@ onBeforeMount(async () => {
   const req: DataTypes.Req = {
     cmd: 'app_start'
   }
-  const response: DataTypes.Resp<DataTypes.Prj> = await ipcAPi.trigger_event(req)
+  const response: DataTypes.Resp<DataTypes.Prj> = await IpcApi.trigger_event(req)
   if (response.code !== 0) {
     MessageShow.error(`启动失败`)
     return

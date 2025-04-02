@@ -44,11 +44,10 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
-import { IpcApi } from '../../utils/IpcApi'
+// import { IpcApi } from '../../utils/IpcApi'
 import util from '../../utils/util.js'
 import MessageShow from '../util/MessageShow'
 import * as DataTypes from '../../../../bridge/dataTypedef'
-const ipcAPi: IpcApi = new IpcApi()
 
 const mergedProgressBar = ref<HTMLElement | null>(null)
 const isDragging = ref<boolean>(false)
@@ -142,7 +141,7 @@ async function processShowKeyInfo(): Promise<void> {
   ) {
     return
   }
-  const response = await util.getKeyFrameInfo(ipcAPi)
+  const response = await util.getKeyFrameInfo()
   if (response.code != 0) {
     MessageShow.error(`get key frame info err:${response.status}`)
   } else {

@@ -27,15 +27,12 @@ import ThumbnailView from './video_view/ThumbnailView.vue'
 import PlayProgressBar from './video_view/PlayProgressBar.vue'
 import PlayCtrl from './video_view/PlayCtrl.vue'
 import { ref, onMounted, watch, onBeforeMount, computed, onUnmounted } from 'vue'
-import { IpcApi } from '../utils/IpcApi'
+// import { IpcApi } from '../utils/IpcApi'
 import util from '../utils/util'
 import { PlayReq } from '../utils/util'
 import { useAppStore } from '../stores/AppStore'
 import * as DataTypes from '../../../bridge/dataTypedef'
 // import MessageShow from './util/MessageShow'
-// 明确 IpcApi 实例的类型
-const ipcAPi: IpcApi = new IpcApi()
-// 明确 appStore 的类型
 const appStore = useAppStore()
 
 let rightPanel = computed(() => appStore.rightPanel)
@@ -58,7 +55,7 @@ watch(
     const clearReq = new DataTypes.ClearSltInfoReq()
     clearReq.bNotClear_curSltVideo = true
     util.clear_cur_slt_video_info(clearReq)
-    await util.get_slt_video(ipcAPi, newVal)
+    await util.get_slt_video(newVal)
     const playReq = new PlayReq(newVal.src)
     util.play_video(videoRef.value, playReq)
   }

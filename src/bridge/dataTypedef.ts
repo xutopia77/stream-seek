@@ -109,6 +109,9 @@ export interface HeartBeat {
 
 export interface Req_TraversalFolder {
   folder: string
+  type?: string
+  startTime?: string //2025-03-25 12:00:00
+  endTime?: string //2025-03-25 12:59:59
 }
 
 export interface TraversalFolder {
@@ -150,6 +153,10 @@ export interface Req_SltFile {
 
 export interface Req_SearchFile {
   folder: string
+}
+
+export interface Req_ClearWork {
+  files?: FileInfo[]
 }
 
 // ======================== render
