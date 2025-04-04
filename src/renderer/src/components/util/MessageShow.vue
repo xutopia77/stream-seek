@@ -1,7 +1,6 @@
 <template>
   <div
     v-show="visible"
-    ref="messageRef"
     :class="[
       'my-message',
       { ['my-message-' + type]: type },
@@ -20,7 +19,7 @@
     <p v-if="!dangerouslyUseHTMLString" class="my-message-content">
       {{ message }}
     </p>
-    <p v-else class="my-message-content" v-html="message" />
+    <p v-else class="my-message-content">{{ message }}</p>
     <i v-if="showClose" class="my-message-close-btn" @click.stop="close"></i>
   </div>
 </template>
@@ -31,7 +30,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 // 定义 interface
 export interface MessageProps {
   message: string
-  type?: string
+  type?: 'success' | 'warning' | 'info' | 'error'
   duration?: number
   showClose?: boolean
   center?: boolean
@@ -45,8 +44,7 @@ export interface MessageProps {
 const props = defineProps<MessageProps>()
 
 const visible = ref(true)
-const messageRef = ref(null)
-let timer = null
+let timer: ReturnType<typeof setTimeout> | null = null
 
 const iconMap = {
   success: 'my-message-icon-success',
@@ -79,7 +77,7 @@ const clearTimer = (): void => {
 
 const startTimer = (): void => {
   if (props.duration !== undefined && props.duration > 0) {
-    setTimeout(() => {
+    timer = setTimeout(() => {
       onClose()
     }, props.duration)
   }
@@ -99,17 +97,12 @@ watch(
 </script>
 
 <style scoped>
-/* 基本样式 */
 .my-message {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
   padding: 6px 6px;
   border-radius: 4px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 9999;
   display: flex;
+  margin-bottom: 10px; /* 增加消息之间的间距 */
 }
 
 .my-message-content {
