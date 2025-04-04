@@ -360,6 +360,44 @@ async function start_cut_video(
   return resp
 }
 
+async function start_sync_work(
+  req: DataTypes.Req<DataTypes.Req_SyncWork>
+): Promise<DataTypes.Resp> {
+  const resp = new DataTypes.Resp()
+  if (req.data?.folder === undefined) {
+    return resp.err('folder is undefined')
+  }
+
+  const traversalFolder = new TraversalFolder()
+  traversalFolder.type = null
+  traversalFolder.folder = req.data?.folder
+  traversalFolder
+    .start()
+    .then((resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+      if (resp.data?.files != null) {
+        logger.log('traversal folder:', resp.status, resp.data.files?.length)
+        recordsProc
+          .start_file_classify(req, resp.data.files)
+          .then((resp: DataTypes.Resp) => {
+            logger.log('handle_query_video after classify:', resp)
+            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+          })
+          .catch((error: unknown) => {
+            logger.error('open folder err:', error)
+            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+          })
+      } else {
+        logger.log('traversal folder:', resp.status)
+        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+      }
+    })
+    .catch((error: unknown) => {
+      logger.error('open folder err:', error)
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+    })
+  return resp.success('success')
+}
+
 class RecordsProc {
   async start_file_classify(
     req: DataTypes.Req<DataTypes.Req_SearchFile>,
@@ -374,6 +412,7 @@ class RecordsProc {
   }
   query_images = query_images
   start_cut_video = start_cut_video
+  start_sync_work = start_sync_work
 }
 
 const recordsProc = new RecordsProc()

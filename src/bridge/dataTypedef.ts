@@ -165,6 +165,9 @@ export interface Req_SearchFile {
 export interface Req_ClearWork {
   files?: FileInfo[]
 }
+export interface Req_SyncWork {
+  folder: string
+}
 
 // ======================== render
 export class ClearSltInfoReq {

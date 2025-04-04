@@ -55,17 +55,6 @@ const displayOption = computed<string>({
 
 // 定义 handleQuery 函数的返回值类型
 const handleQuery = async (): Promise<void> => {
-  // let req = {
-  //   cmd: 'query_video',
-  //   data: {
-  //     type: 'search',
-  //     folder: appStore.curOpenedFolder,
-  //     startDate: startDate.value,
-  //     startTime: startTime.value,
-  //     endDate: endDate.value,
-  //     endTime: endTime.value
-  //   }
-  // }
   const req: DataTypes.Req<DataTypes.Req_TraversalFolder> = {
     cmd: 'query_video',
     data: {

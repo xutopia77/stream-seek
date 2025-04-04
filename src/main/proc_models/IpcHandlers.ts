@@ -443,6 +443,11 @@ export class IpcHandlers {
         const cmdReq = convertCmdRequest<DataTypes.Req_ClearWork>(req)
         return make_cmd_response(await handle_clean_work(cmdReq))
       }
+      case 'sync_work': {
+        const cmdReq = convertCmdRequest<DataTypes.Req_SyncWork>(req)
+        logger.log(cmdReq)
+        return make_cmd_response(await recordsProc.start_sync_work(cmdReq))
+      }
       default: {
         console.log(`Unknown event: ${cmd}`)
         const resp = new DataTypes.Resp()
