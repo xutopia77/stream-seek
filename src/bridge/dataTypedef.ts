@@ -10,6 +10,13 @@ export interface SplitInfo {
   frameNum: number
 }
 
+export interface BarClip {
+  percent: number
+  width: number
+  color: string
+  tip: string
+}
+
 export interface FileEventInfo {
   time: number
   area: number
@@ -163,12 +170,6 @@ export interface Req_ClearWork {
 export class ClearSltInfoReq {
   clearModel?: string
   bNotClear_curSltVideo?: boolean
-}
-
-export interface BarColorCfg {
-  startTime: number
-  endTime: number
-  color: string
 }
 
 // ========================

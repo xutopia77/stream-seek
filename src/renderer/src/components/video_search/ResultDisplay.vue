@@ -7,7 +7,7 @@
           v-for="(dateLabel, index) in dateLabels"
           :key="index"
           class="date-label"
-          :style="{ left: `${dateLabel.left}%` }"
+          :style="{ left: `${dateLabel.percent}%` }"
         >
           {{ dateLabel.date }}
         </div>
@@ -21,22 +21,12 @@
         </div>
       </div>
     </div>
-    <!-- <ul id="event-list">
-        <li v-for="(clip, index) in filteredClips" :key="index" :style="{ color: clip.color }">
-          {{
-            displayOption === 'single'
-              ? `${clip.date} ${clip.start} - ${clip.end}`
-              : `${clip.start} - ${clip.end}`
-          }}
-        </li>
-        <li v-if="filteredClips.length === 0">未找到符合条件的录像片段。</li>
-      </ul> -->
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import ProgressBar from './ProgressBar.vue' // 引入新组件
+import ProgressBar from './ProgressBar.vue'
 import '../../assets/common.css'
 
 import { useAppStore } from '../../stores/AppStore'
@@ -48,18 +38,17 @@ interface Clip {
   start: string
   end: string
   tip: string
-  left?: number
+  percent?: number
   width?: number
   color?: string
 }
 
 // 定义 DateLabel 类型
 interface DateLabel {
-  left: number
+  percent: number
   date: string
 }
 
-// 定义 groupedClips 类型
 type GroupedClips = Record<string, Clip[]>
 
 const allClips = ref<Clip[]>([
@@ -110,12 +99,12 @@ const handleQuery1 = (queryData: {
     clip: Clip,
     totalWidth: number,
     start: number
-  ): { left: number; width: number } => {
+  ): { percent: number; width: number } => {
     const clipStart = new Date(`${clip.date}T${clip.start}`).getTime()
     const clipEnd = new Date(`${clip.date}T${clip.end}`).getTime()
-    const left = ((clipStart - start) / totalWidth) * 100
+    const percent = ((clipStart - start) / totalWidth) * 100
     const width = ((clipEnd - clipStart) / totalWidth) * 100
-    return { left, width }
+    return { percent, width }
   }
 
   // 如果显示选项为 'single'，则按单时间轴模式处理
@@ -130,14 +119,14 @@ const handleQuery1 = (queryData: {
     const dateLabelsObj: Record<string, DateLabel> = {}
     // 为过滤后的片段添加样式信息
     const clipsWithStyles = filtered.map((clip) => {
-      const { left, width } = getLeftAndWidth(clip, totalWidth, startDateTime.getTime())
+      const { percent, width } = getLeftAndWidth(clip, totalWidth, startDateTime.getTime())
       const color = colors[colorIndex % colors.length]
       colorIndex++
 
       if (!dateLabelsObj[clip.date]) {
-        dateLabelsObj[clip.date] = { left, date: clip.date }
+        dateLabelsObj[clip.date] = { percent, date: clip.date }
       }
-      return { ...clip, left, width, color }
+      return { ...clip, percent, width, color }
     })
     // 更新过滤后的片段数据
     filteredClips.value = clipsWithStyles
@@ -156,10 +145,10 @@ const handleQuery1 = (queryData: {
     const groupedClipsWithStyles: GroupedClips = {}
     for (const date in grouped) {
       groupedClipsWithStyles[date] = grouped[date].map((clip) => {
-        const { left, width } = getLeftAndWidth(clip, 86400000, new Date(`${date}T00:00`).getTime())
+        const { percent, width } = getLeftAndWidth(clip, 86400000, new Date(`${date}T00:00`).getTime())
         const color = colors[colorIndex % colors.length]
         colorIndex++
-        return { ...clip, left, width, color }
+        return { ...clip, percent, width, color }
       })
     }
     // 更新分组后的片段数据
@@ -171,104 +160,6 @@ const handleQuery1 = (queryData: {
 
 handleQuery1()
 
-/**
- * 处理查询请求的函数
- * @param {Object} queryData - 查询数据对象，包含开始日期、开始时间、结束日期、结束时间和显示选项
- */
-const handleQuery = (queryData: {
-  startDate: string
-  startTime: string
-  endDate: string
-  endTime: string
-  displayOption: string
-}) => {
-  // 从查询数据中解构出开始日期、开始时间、结束日期、结束时间和显示选项
-  const { startDate, startTime, endDate, endTime, displayOption: option } = queryData
-  // 更新显示选项的值
-  // 这里 displayOption 是计算属性，不能直接赋值，需要确保 appStore 里对应属性可修改
-  // displayOption.value = option;
-
-  // 创建开始日期和结束日期的 Date 对象
-  const startDateTime = new Date(`${startDate}T${startTime}`)
-  const endDateTime = new Date(`${endDate}T${endTime}`)
-
-  // 根据开始和结束时间过滤所有录像片段
-  const filtered = allClips.value.filter((clip) => {
-    const clipStart = new Date(`${clip.date}T${clip.start}`)
-    const clipEnd = new Date(`${clip.date}T${clip.end}`)
-    return clipStart >= startDateTime && clipEnd <= endDateTime
-  })
-
-  // 定义一组颜色，用于为每个录像片段分配不同的颜色
-  const colors = ['#FF5733', '#33FF57', '#5733FF', '#FF33E0', '#33E0FF']
-  // 颜色索引，用于循环选择颜色
-  let colorIndex = 0
-
-  /**
-   * 计算录像片段在时间轴上的位置和宽度
-   * @param {Object} clip - 录像片段对象
-   * @param {number} totalWidth - 时间轴的总宽度（毫秒）
-   * @param {number} start - 时间轴的起始时间（毫秒）
-   * @returns {Object} - 包含位置和宽度的对象
-   */
-  const getLeftAndWidth = (
-    clip: Clip,
-    totalWidth: number,
-    start: number
-  ): { left: number; width: number } => {
-    const clipStart = new Date(`${clip.date}T${clip.start}`).getTime()
-    const clipEnd = new Date(`${clip.date}T${clip.end}`).getTime()
-    const left = ((clipStart - start) / totalWidth) * 100
-    const width = ((clipEnd - clipStart) / totalWidth) * 100
-    return { left, width }
-  }
-
-  // 如果显示选项为 'single'，则按单时间轴模式处理
-  if (displayOption.value === 'single') {
-    // 计算单时间轴的总宽度
-    const totalWidth = 86400000 * Math.ceil((endDateTime - startDateTime) / 86400000)
-    // 用于存储日期标签的对象
-    const dateLabelsObj: Record<string, DateLabel> = {}
-    // 为过滤后的片段添加样式信息
-    const clipsWithStyles = filtered.map((clip) => {
-      const { left, width } = getLeftAndWidth(clip, totalWidth, startDateTime.getTime())
-      const color = colors[colorIndex % colors.length]
-      colorIndex++
-
-      if (!dateLabelsObj[clip.date]) {
-        dateLabelsObj[clip.date] = { left, date: clip.date }
-      }
-      return { ...clip, left, width, color }
-    })
-    // 更新过滤后的片段数据
-    filteredClips.value = clipsWithStyles
-    // 更新日期标签数据
-    dateLabels.value = Object.values(dateLabelsObj)
-  } else {
-    // 按分组时间轴模式处理
-    const grouped: GroupedClips = {}
-    filtered.forEach((clip) => {
-      if (!grouped[clip.date]) {
-        grouped[clip.date] = []
-      }
-      grouped[clip.date].push(clip)
-    })
-
-    const groupedClipsWithStyles: GroupedClips = {}
-    for (const date in grouped) {
-      groupedClipsWithStyles[date] = grouped[date].map((clip) => {
-        const { left, width } = getLeftAndWidth(clip, 86400000, new Date(`${date}T00:00`).getTime())
-        const color = colors[colorIndex % colors.length]
-        colorIndex++
-        return { ...clip, left, width, color }
-      })
-    }
-    // 更新分组后的片段数据
-    groupedClips.value = groupedClipsWithStyles
-    // 更新过滤后的片段数据
-    filteredClips.value = Object.values(groupedClipsWithStyles).flat()
-  }
-}
 </script>
 
 <style scoped>

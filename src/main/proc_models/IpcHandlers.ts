@@ -98,6 +98,43 @@ async function handle_query_video(
   return resp
 }
 
+async function handle_clean_work(
+  req: DataTypes.Req<DataTypes.Req_ClearWork>
+): Promise<DataTypes.Resp> {
+  const resp = new DataTypes.Resp()
+  if (req.data?.files == null) {
+    console.log('clean all work')
+    const thumbnailDir = appCfg.thumbnail_dir
+    if (fs.existsSync(thumbnailDir)) {
+      for (const file of fs.readdirSync(thumbnailDir)) {
+        const filePath = path.join(thumbnailDir, file)
+        await fs.promises.rm(filePath, { recursive: true })
+      }
+    }
+    const filePrjDir = appCfg.file_prj_dir
+    if (fs.existsSync(filePrjDir)) {
+      for (const file of fs.readdirSync(filePrjDir)) {
+        const filePath = path.join(filePrjDir, file)
+        await fs.promises.rm(filePath, { recursive: true })
+      }
+    }
+    return resp.success('success')
+  }
+
+  for (const item of req.data.files) {
+    const filename = item.title
+    const filePrjPath = make_file_prj_path(filename)
+    if (fs.existsSync(filePrjPath)) {
+      await fs.promises.rm(filePrjPath)
+    }
+    const thumbnailDir = path.join(appCfg.thumbnail_dir, filename)
+    if (fs.existsSync(thumbnailDir)) {
+      await fs.promises.rm(thumbnailDir, { recursive: true })
+    }
+  }
+  return resp.success('success')
+}
+
 async function handle_video_event_detect(): Promise<DataTypes.Resp<DataTypes.FileEventInfo[][]>> {
   const resp = new DataTypes.Resp<DataTypes.FileEventInfo[][]>()
 
@@ -401,6 +438,10 @@ export class IpcHandlers {
         const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
         logger.log(cmd, cmdReq)
         return make_cmd_response(await handle_query_video(cmdReq))
+      }
+      case 'clean_work': {
+        const cmdReq = convertCmdRequest<DataTypes.Req_ClearWork>(req)
+        return make_cmd_response(await handle_clean_work(cmdReq))
       }
       default: {
         console.log(`Unknown event: ${cmd}`)

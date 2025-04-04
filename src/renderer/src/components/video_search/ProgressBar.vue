@@ -5,7 +5,7 @@
       :key="index"
       class="progress-bar"
       :style="{
-        left: `${clip.left}%`,
+        left: `${clip.percent}%`,
         width: `${clip.width}%`,
         backgroundColor: clip.color
       }"
@@ -25,10 +25,10 @@ import { defineProps, ref } from 'vue'
 
 // 定义 clip 类型接口
 interface Clip {
-  left: number
+  percent: number
   width: number
   color: string
-  tip?: string // tip 字段可能不存在，所以用可选类型
+  tip?: string
 }
 
 // 定义 props 类型

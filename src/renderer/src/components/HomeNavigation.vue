@@ -15,21 +15,6 @@
         <button class="common-button menu-button" :disabled="true" @click="exitApp">退出</button>
       </div>
     </div>
-    <div class="menu-item dropdown" @click="toggleDropdown($event, 'video')">
-      <span class="common-text">编辑</span>
-      <div
-        ref="dropdownMenuRefVideo"
-        class="dropdown-menu"
-        :class="{ show: isDropdownOpen['video'] }"
-      >
-        <button class="common-button menu-button" :disabled="true" @click="openVideo">打开</button>
-        <button class="common-button menu-button" :disabled="true" @click="deleteVideo">
-          删除
-        </button>
-        <button class="common-button menu-button" :disabled="true" @click="playVideo">播放</button>
-        <button class="common-button menu-button" :disabled="true" @click="editVideo">剪辑</button>
-      </div>
-    </div>
     <div class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
       <span class="common-text">视图</span>
       <div
@@ -166,26 +151,6 @@ const openFolder = async (): Promise<void> => {
 // 退出应用的处理函数
 const exitApp = (): void => {
   isDropdownOpen.value.home = false
-}
-
-// 打开视频的处理函数
-const openVideo = (): void => {
-  isDropdownOpen.value.video = false
-}
-
-// 删除视频的处理函数
-const deleteVideo = (): void => {
-  isDropdownOpen.value.video = false
-}
-
-// 播放视频的处理函数
-const playVideo = (): void => {
-  isDropdownOpen.value.video = false
-}
-
-// 剪辑视频的处理函数
-const editVideo = (): void => {
-  isDropdownOpen.value.video = false
 }
 
 // 显示文件列表的处理函数

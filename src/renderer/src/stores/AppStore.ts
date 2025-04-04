@@ -22,7 +22,6 @@ export type AppStore = {
   videoList: DataTypes.FileInfo[]
   curSltVideo: DataTypes.FileInfo | null
   curVideoInfo: DataTypes.SltMediaInfo | null
-  barColorCfg: DataTypes.BarColorCfg[]
   //   videoSplitInfo: any[]
   bShowKeyFrameInfo: boolean
   barSeekTime: number
@@ -32,6 +31,8 @@ export type AppStore = {
   queryCtrl: {
     displayOption: 'single' | 'daily'
   }
+  // ================
+  barColorDictionary: ['#FF5733', '#33FF57', '#5733FF', '#FF33E0', '#33E0FF']
 }
 
 export const useAppStore = defineStore('app', {
@@ -63,13 +64,6 @@ export const useAppStore = defineStore('app', {
     videoList: [],
     curSltVideo: null, // 当前选中的视频
     curVideoInfo: null, // 当前选中的视频信息
-    // progress bar
-    barColorCfg: [
-      { startTime: 0, endTime: 10, color: 'green' },
-      { startTime: 10, endTime: 20, color: '#555' },
-      { startTime: 20, endTime: 30, color: 'orange' },
-      { startTime: 30, endTime: Infinity, color: 'red' }
-    ],
     // ------ 视频切分信息
     // videoSplitInfo: [],
     bShowKeyFrameInfo: false, // 是否显示关键帧信息
@@ -83,7 +77,9 @@ export const useAppStore = defineStore('app', {
     // queryInfo: null,
     queryCtrl: {
       displayOption: 'daily' //single, daily
-    }
+    },
+    // ==============
+    barColorDictionary: ['#FF5733', '#33FF57', '#5733FF', '#FF33E0', '#33E0FF']
   }),
   actions: {
     setData(key: string, value: string): void {

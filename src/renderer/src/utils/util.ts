@@ -91,7 +91,6 @@ function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
   // 全部清除
   clear_videoPlayCtrl()
   appStore.curVideoInfo = null
-  appStore.barColorCfg = []
   appStore.bShowKeyFrameInfo = false
   appStore.barSeekTime = 0
   if (!(req?.bNotClear_curSltVideo == true)) {
@@ -167,14 +166,14 @@ function process_work_response(workRespose: DataTypes.WorkResp): void {
   }
 }
 
-function processVideoEvent(events: DataTypes.FileEventInfo[][]): void {
-  const videoEvent = events
+function processVideoEvent(videoEvent: DataTypes.FileEventInfo[][]): void {
   const colorSegments: { startTime: number; endTime: number; color: string }[] = []
   let startTime = 0
   const barBaseColor = '#555'
   let lastColor = barBaseColor
 
-  let eventInTimePoint: { area: number; time: number; distance: number }[] = []
+  let eventInTimePoint: DataTypes.FileEventInfo[] = []
+  // 首先把二维数组中每个数组的最大值取出来，变成一维数组
   for (const event of videoEvent) {
     if (event.length === 0) {
       continue
@@ -227,9 +226,7 @@ function processVideoEvent(events: DataTypes.FileEventInfo[][]): void {
     }
   }
   colorSegments.push({ startTime: startTime, endTime: Infinity, color: lastColor })
-  if (appStore) {
-    appStore.barColorCfg = colorSegments
-  }
+  // [todo] 事件的数据暂时不处理
 }
 
 async function get_slt_video(video: DataTypes.FileInfo | null): Promise<void> {
@@ -411,6 +408,7 @@ function splitInfoCorrect(splitInfos: DataTypes.SplitInfo[], videoDuration: numb
     splitInfo.duration = splitInfo.endTime - splitInfo.startTime
     splitInfo.frameIdx = util.calculateCurFrameIdx(splitInfo.startTime)
     splitInfo.frameNum = util.calculateCurFrameIdx(splitInfo.duration)
+    // splitInfo.color = colors[i % colors.length]
   }
   splitInfos.sort((a, b) => a.percent - b.percent)
 }
@@ -575,7 +573,63 @@ async function clean_project(files: DataTypes.FileInfo[]): Promise<DataTypes.Res
   return IpcApi.trigger_event(req)
 }
 
+function update_bar_clips(): DataTypes.BarClip[] {
+  const barClips: DataTypes.BarClip[] = []
+
+  if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+    return barClips
+  }
+  if (appStore.curVideoInfo?.splitInfo == null) {
+    return barClips
+  }
+
+  interface timeSplitInfo {
+    startTime: number
+    endTime: number
+  }
+  const timeSplitInfo: timeSplitInfo[] = appStore.curVideoInfo.splitInfo.map((item) => {
+    return {
+      startTime: item.startTime,
+      endTime: item.endTime
+    }
+  })
+  if (timeSplitInfo.length <= 1) {
+    return barClips
+  }
+
+  const duration = appStore.curVideoInfo.mediaInfo.duration
+  for (let i = 0; i < timeSplitInfo.length; i++) {
+    const config = timeSplitInfo[i]
+    const startTime = config.startTime
+    const endTime = config.endTime
+    const startPercentage = (startTime / duration) * 100
+    const endPercentage = (endTime / duration) * 100
+    const width = endPercentage - startPercentage
+    barClips.push({
+      percent: startPercentage,
+      width: width,
+      color: appStore.barColorDictionary[i % appStore.barColorDictionary.length],
+      tip: `Start: ${startTime.toFixed(3)}, End: ${endTime === duration ? 'End' : endTime.toFixed(3)}`
+    })
+  }
+  // for (const config of timeSplitInfo) {
+  //   const startTime = Math.min(config.startTime, duration)
+  //   const endTime = config.endTime === Infinity ? duration : Math.min(config.endTime, duration)
+  //   const startPercentage = (startTime / duration) * 100
+  //   const endPercentage = (endTime / duration) * 100
+  //   const width = endPercentage - startPercentage
+  //   barClips.push({
+  //     percent: startPercentage,
+  //     width: width,
+  //     color: config.color,
+  //     tip: `Start: ${startTime.toFixed(3)}, End: ${endTime === duration ? 'End' : endTime.toFixed(3)}`
+  //   })
+  // }
+  return barClips
+}
+
 class Util {
+  update_bar_clips = update_bar_clips
   updateKeyframeSplitInfo = updateKeyframeSplitInfo
   process_heartbeat = process_heartbeat
   save_project = save_project

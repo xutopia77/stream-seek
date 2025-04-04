@@ -6,18 +6,19 @@
       class="merged-progress-bar"
       tabindex="0"
       @mousedown="onProgressBarMouseDown"
-      @mousemove="onProgressBarMouseMove"
+      @keydown="onProgressBarKeyDown"
+    >
+    <!-- @mousemove="onProgressBarMouseMove"
       @mouseup="onProgressBarMouseUp"
       @mouseleave="onProgressBarMouseLeave"
       @mouseenter="onProgressBarMouseEnter"
-      @keydown="onProgressBarKeyDown"
-    >
+       -->
       <div
         v-for="(clip, index) in barClips"
         :key="index"
         class="progress-bar-clip"
         :style="{
-          left: `${clip.left}%`,
+          left: `${clip.percent}%`,
           width: `${clip.width}%`,
           backgroundColor: clip.color
         }"
@@ -85,45 +86,20 @@ let videoSplitInfo = computed(() => {
   return resp
 })
 
-interface BarClip {
-  left: number
-  width: number
-  color: string
-  tip: string
-}
-
 // 生成进度条片段数据
-const barClips = ref<BarClip[]>([])
-const generateBarClips = (barColorCfg: DataTypes.BarColorCfg[], duration: number): void => {
-  const clips: BarClip[] = []
-  for (const config of barColorCfg) {
-    const startTime = Math.min(config.startTime, duration)
-    const endTime = config.endTime === Infinity ? duration : Math.min(config.endTime, duration)
-    const startPercentage = (startTime / duration) * 100
-    const endPercentage = (endTime / duration) * 100
-    const width = endPercentage - startPercentage
-    clips.push({
-      left: startPercentage,
-      width: width,
-      color: config.color,
-      tip: `Start: ${startTime.toFixed(3)}, End: ${endTime === duration ? 'End' : endTime.toFixed(3)}`
-    })
-  }
-  barClips.value = clips
-}
-
+const barClips = ref<DataTypes.BarClip[]>([])
 // 监听 barColorCfg 和 curSltVideo 的变化
 watch(
   [
-    (): DataTypes.BarColorCfg[] => appStore.barColorCfg,
     (): DataTypes.FileInfo | null => appStore.curSltVideo,
-    (): number | undefined => appStore.curVideoInfo?.mediaInfo?.duration
+    (): number | undefined => appStore.curVideoInfo?.mediaInfo?.duration,
+    (): DataTypes.SplitInfo[] | undefined => appStore.curVideoInfo?.splitInfo
   ],
   () => {
     if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
       return
     }
-    generateBarClips(appStore.barColorCfg, appStore.curVideoInfo?.mediaInfo?.duration)
+    barClips.value = util.update_bar_clips()
   }
 )
 
@@ -159,14 +135,14 @@ watch(
 
 // tooltip 相关
 const showTip = ref<boolean>(false)
-const currentClip = ref<BarClip>()
+const currentClip = ref<DataTypes.BarClip>()
 
-const showTooltip = (clip: BarClip): void => {
+const showTooltip = (clip: DataTypes.BarClip): void => {
   showTip.value = true
   currentClip.value = clip
 }
 
-const handleMouseOut = (event: MouseEvent, clip: BarClip): void => {
+const handleMouseOut = (event: MouseEvent, clip: DataTypes.BarClip): void => {
   const tooltip = (event.target as HTMLElement).querySelector('.tooltip')
   if (!tooltip || !tooltip.contains(event.relatedTarget as Node)) {
     showTip.value = false
@@ -191,37 +167,37 @@ const onProgressBarMouseDown = (event: MouseEvent): void => {
   }
 }
 
-// 处理进度条鼠标移动事件
-const onProgressBarMouseMove = (event: MouseEvent): void => {
-  if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
-    return
-  }
-  if (isDragging.value) {
-    const rect = mergedProgressBar.value?.getBoundingClientRect()
-    if (rect) {
-      const clickX = event.clientX - rect.left
-      const progress = (clickX / rect.width) * appStore.curVideoInfo?.mediaInfo.duration
-      seekVideo(progress)
-    }
-  }
-}
+// // 处理进度条鼠标移动事件
+// const onProgressBarMouseMove = (event: MouseEvent): void => {
+//   if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+//     return
+//   }
+//   if (isDragging.value) {
+//     const rect = mergedProgressBar.value?.getBoundingClientRect()
+//     if (rect) {
+//       const clickX = event.clientX - rect.left
+//       const progress = (clickX / rect.width) * appStore.curVideoInfo?.mediaInfo.duration
+//       seekVideo(progress)
+//     }
+//   }
+// }
 
-// 处理进度条鼠标抬起事件
-const onProgressBarMouseUp = (): void => {
-  isDragging.value = false
-}
+// // 处理进度条鼠标抬起事件
+// const onProgressBarMouseUp = (): void => {
+//   isDragging.value = false
+// }
 
-// 处理进度条鼠标进入事件
-const onProgressBarMouseEnter = (): void => {
-  isMouseOver.value = true
-  mergedProgressBar.value?.focus() // 使进度条获取焦点
-}
+// // 处理进度条鼠标进入事件
+// const onProgressBarMouseEnter = (): void => {
+//   isMouseOver.value = true
+//   mergedProgressBar.value?.focus() // 使进度条获取焦点
+// }
 
-// 处理进度条鼠标离开事件
-const onProgressBarMouseLeave = (): void => {
-  isDragging.value = false
-  isMouseOver.value = false
-}
+// // 处理进度条鼠标离开事件
+// const onProgressBarMouseLeave = (): void => {
+//   isDragging.value = false
+//   isMouseOver.value = false
+// }
 
 // 处理进度条键盘按下事件
 const onProgressBarKeyDown = (event: KeyboardEvent): void => {
@@ -247,7 +223,7 @@ onMounted(() => {
   if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
     return
   }
-  generateBarClips(appStore.barColorCfg, appStore.curVideoInfo?.mediaInfo?.duration)
+  barClips.value = util.update_bar_clips()
 })
 </script>
 

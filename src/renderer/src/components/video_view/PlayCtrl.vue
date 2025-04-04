@@ -36,6 +36,22 @@
     <span class="common-text" style="padding-right: 3px; color: chocolate">{{ frameRate }}</span>
     <!-- 显示i帧 -->
     <button class="common-button btn-noborder" title="显示关键帧" @click="showKeyFrame">🔑</button>
+    <div class="right-area-ctrl">
+      <button
+        class="common-button btn-noborder"
+        title="显示文件列表"
+        @click="btnclk_chg_panel('list')"
+      >
+        🛢️
+      </button>
+      <button
+        class="common-button btn-noborder"
+        title="显示文件处理"
+        @click="btnclk_chg_panel('workPanel')"
+      >
+        🛠️
+      </button>
+    </div>
   </div>
 </template>
 
@@ -46,8 +62,6 @@ import '../../assets/common.css'
 import MessageShow from '../util/MessageShow'
 import util from '@renderer/utils/util'
 const appStore = useAppStore()
-
-
 
 // 改变播放倍速
 const changePlaybackRate = (): void => {}
@@ -75,7 +89,7 @@ function genFrame(): string {
   const frameRate = appStore.curVideoInfo.mediaInfo.video.frame_rate
   const frameCount = Math.floor(appStore.curVideoInfo.mediaInfo.video.nb_frames)
   const frame = Math.floor(curTime * frameRate)
-  return `${frame}/${frameCount}`
+  return `${frame}/${frameCount}f`
 }
 let frameInfo = computed(() => genFrame())
 
@@ -152,6 +166,10 @@ function changeFile(flag: string): void {
     appStore.curSltVideo = appStore.videoList[curVideoIdx + 1]
   }
 }
+
+function btnclk_chg_panel(model: string): void {
+  appStore.rightPanel = model as 'list' | 'workPanel'
+}
 </script>
 
 <style scoped>
@@ -168,5 +186,8 @@ function changeFile(flag: string): void {
   align-items: center;
   background-color: #252526;
   /* VSCode 侧边栏背景色 */
+}
+.right-area-ctrl {
+  margin-left: auto;
 }
 </style>
