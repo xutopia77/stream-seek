@@ -12,7 +12,7 @@
         <button class="common-button menu-button" @click="btnclk_save_project">保存项目</button>
         <button class="common-button menu-button" @click="btnclk_clean_project">清理项目</button>
         <button class="common-button menu-button" @click="btnclk_clean_work">清理工程</button>
-        <button class="common-button menu-button" :disabled="true" @click="exitApp">退出</button>
+        <button class="common-button menu-button" @click="exitApp">退出</button>
       </div>
     </div>
     <div class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
@@ -151,6 +151,7 @@ const openFolder = async (): Promise<void> => {
 // 退出应用的处理函数
 const exitApp = (): void => {
   isDropdownOpen.value.home = false
+  window.close()
 }
 
 // 显示文件列表的处理函数

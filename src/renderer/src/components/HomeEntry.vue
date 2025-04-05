@@ -3,7 +3,6 @@
     <HomeNavigation />
     <!-- <VideoPreview /> -->
     <router-view class="page-view" />
-    <ToastMessage />
   </div>
 </template>
 
@@ -12,21 +11,19 @@
 import HomeNavigation from './HomeNavigation.vue'
 import { useAppStore } from '../stores/AppStore'
 const appStore = useAppStore()
-import { onBeforeMount, watch } from 'vue'
+import { onBeforeMount, onMounted, watch } from 'vue'
 import util from '../utils/util.js'
-import ToastMessage from './util/ToastMessage.vue'
 import { IpcApi } from '../utils/IpcApi'
 import MessageShow from './util/MessageShow'
 import * as DataTypes from '../../../bridge/dataTypedef'
-
+import router from '../router/router'
 // 启动一个定时器，周期性trigger_event
 function startTimer(): void {
   setInterval(() => {
     const req: DataTypes.Req = {
       cmd: 'heart_beat'
     }
-    IpcApi
-      .trigger_event<string, DataTypes.HeartBeat>(req)
+    IpcApi.trigger_event<string, DataTypes.HeartBeat>(req)
       .then((response: DataTypes.Resp<DataTypes.HeartBeat>) => {
         util.process_heartbeat(response)
       })
@@ -83,6 +80,10 @@ onBeforeMount(async () => {
   }
   updatePrj(respData)
 })
+
+onMounted(() => {
+  router.push('/')
+})
 </script>
 
 <style scoped>
@@ -93,7 +94,7 @@ onBeforeMount(async () => {
   padding: 0;
 }
 .page-view {
-  height: 100%;
+  height: calc(100% - 30px);
   width: 100%;
   margin: 0;
   padding: 0;

@@ -44,7 +44,7 @@ class AppCfg implements AppCfgInterface {
   }
 
   constructor() {
-    this.appData = 'D:/02_workspace/05_timeCapsule/02_stream_manager/record-manager/appData'
+    this.appData = './appData'
   }
 
   async init(): Promise<void> {

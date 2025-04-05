@@ -3,7 +3,7 @@ import MyMessage from './MessageShow.vue'
 import type { MessageProps } from './MessageShow.vue'
 
 // 创建一个全局的消息容器
-const messageContainer = document.createElement('div')
+const messageContainer = document.createElement('div') as HTMLElement // 类型断言为 HTMLElement
 messageContainer.style.position = 'fixed'
 messageContainer.style.top = '20px'
 messageContainer.style.left = '50%'
@@ -12,7 +12,7 @@ messageContainer.style.zIndex = '9999'
 document.body.appendChild(messageContainer)
 
 // 记录当前消息的数量
-let messageCount = 0;
+let messageCount = 0
 
 const MessageShow = (options: MessageProps): void => {
   const { message, type = 'info', duration = 2000, ...rest } = options
@@ -27,20 +27,22 @@ const MessageShow = (options: MessageProps): void => {
         onDestroy: () => {
           app.unmount()
           container.remove()
-          messageCount--;
+          messageCount--
           // 重新计算剩余消息的位置
-          const messages = messageContainer.children;
+          const messages = messageContainer.children
           for (let i = 0; i < messages.length; i++) {
-            messages[i].style.top = `${i * (parseInt(getComputedStyle(messages[i]).height) + 10)}px`;
+            // 将 messages[i] 类型断言为 HTMLElement
+            const messageElement = messages[i] as HTMLElement
+            messageElement.style.top = `${i * (parseInt(getComputedStyle(messageElement).height) + 10)}px`
           }
         }
       })
   })
   app.mount(container)
   // 设置每个消息的位置
-  container.style.top = `${messageCount * (30 + 10)}px`; // 30 是消息的大致高度，10 是间距
+  container.style.top = `${messageCount * (30 + 10)}px` // 30 是消息的大致高度，10 是间距
   messageContainer.appendChild(container)
-  messageCount++;
+  messageCount++
 }
 
 MessageShow.success = (options: string | MessageProps): void => {

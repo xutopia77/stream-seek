@@ -13,7 +13,7 @@ function createWindow(): void {
     width: 1280,
     height: 720,
     show: false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false, // hidden menu bar
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -27,12 +27,14 @@ function createWindow(): void {
     mainWindow.show()
   })
 
-  mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools() //debug_model open dev tools
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+
+  mainWindow.setMenu(null) // hide menu bar
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
