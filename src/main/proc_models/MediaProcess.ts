@@ -120,11 +120,11 @@ async function make_split_info(
     keyFrameSplitInfo = kResp.data?.frames
   }
   if (!keyFrameSplitInfo || keyFrameSplitInfo.length === 0) {
-    console.log('getFrameInfo err: ', keyFrameSplitInfo)
+    logger.log('getFrameInfo err: ', keyFrameSplitInfo)
     return resp.err('getFrameInfo err')
   }
   if (!splitInfo || splitInfo.length === 0) {
-    console.log('cut video req: ', req)
+    logger.log('cut video req: ', req)
     return resp.err('splitInfo is null')
   }
   splitInfo.sort((a, b) => a.startTime - b.startTime)
@@ -287,7 +287,7 @@ async function cutVideo(
     if (!cutSplitInfo) {
       return resp.err('make_split_info err')
     }
-    console.log('splitCutInfo: ', cutSplitInfo)
+    logger.log('splitCutInfo: ', cutSplitInfo)
     if (cutSplitInfo.length === 0) {
       return resp
     }
@@ -323,7 +323,7 @@ async function cutVideo(
       }
       distFilename = path.join(distFolderPath, distFilename)
       const cmd = `${appCfg.ffmpegExe} -i ${filepath} -v error -ss ${item.startTime} -to ${item.endTime} -c copy ${distFilename}`
-      console.log(cmd)
+      logger.log(cmd)
       await new Promise((resolve, reject) => {
         exec(cmd, (error) => {
           if (error) {
@@ -389,7 +389,7 @@ async function cutVideo(
   //   const filesTxtPath = path.join(distFolderPath, 'files.txt')
   //   await fs.promises.writeFile(filesTxtPath, filesTxt)
   //   const concatCmd = `${appCfg.ffmpegExe} -v error -f concat -safe 0 -i ${filesTxtPath} -c copy -reset_timestamps 1 ${distFilename}`
-  //   console.log(concatCmd)
+  //   logger.log(concatCmd)
   //   await new Promise((resolve, reject) => {
   //     exec(concatCmd, (error, stdout, stderr) => {
   //       if (error) {
@@ -495,8 +495,6 @@ class MediaProcess {
     return mediaInfo
   }
 }
-
-console.log('MediaProcess.ts loaded')
 
 const mediaProc = new MediaProcess()
 export default mediaProc

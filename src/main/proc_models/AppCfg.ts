@@ -6,6 +6,16 @@ import logger from './Logger'
 
 // 初始化应用配置的函数
 async function initApp(appCfg: AppCfg): Promise<void> {
+  const isDev = process.env.NODE_ENV === 'development'
+  const appPath = app.getAppPath()
+  appCfg.appDir = path.join(appPath, '../../')
+  if (isDev) {
+    appCfg.appDir = appPath
+  }
+
+  appCfg.appData = path.join(appCfg.appDir, 'appData')
+  logger.log('appData:', appCfg.appData)
+
   if (!fs.existsSync(appCfg.appData)) {
     fs.mkdirSync(appCfg.appData)
   }
@@ -21,8 +31,6 @@ async function initApp(appCfg: AppCfg): Promise<void> {
   if (!fs.existsSync(appCfg.file_prj_dir)) {
     fs.mkdirSync(appCfg.file_prj_dir)
   }
-  const isDev = process.env.NODE_ENV === 'development'
-  const appPath = app.getAppPath()
   appCfg.ffmpegExe = path.join(appPath, '../assets/bin/ffmpeg.exe')
   appCfg.ffprobeExe = path.join(appPath, '../assets/bin/ffprobe.exe')
   if (isDev) {
@@ -45,6 +53,7 @@ class AppCfg {
   }
 
   folderClassifyNum: number = 10
+  appDir: string = ''
 
   constructor() {
     this.appData = './appData'

@@ -302,6 +302,14 @@ async function get_slt_video(video: DataTypes.FileInfo | null): Promise<void> {
       util.processVideoEvent(respData.eventInfo?.events)
     }
     processSplitInfo()
+    {
+      const thumbs = respData.thumbnail
+      if (thumbs != null) {
+        for (const item of thumbs) {
+          item.src = `file://${item.filePath}`
+        }
+      }
+    }
   }
 }
 

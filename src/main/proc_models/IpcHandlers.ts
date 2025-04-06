@@ -401,57 +401,58 @@ export class IpcHandlers {
     switch (cmd) {
       case 'get_key_frame_info': {
         const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
-        logger.log(cmd, cmdReq.data?.filepath)
+        logger.log(`cmd:${cmd}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_get_key_frame_info(cmdReq))
       }
       case 'open_folder': {
-        logger.log(cmd, req)
+        logger.log(`cmd:${cmd}, ${req}`)
         return make_cmd_response(await handle_open_folder(this.mainWindow!, req))
       }
       case 'traversal_folder': {
         const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
-        logger.log(cmd, cmdReq.data?.folder)
+        logger.log(`cmd:${cmd}, ${cmdReq.data?.folder}`)
         return make_cmd_response(await traversal_folder(cmdReq))
       }
       case 'slt_video_event': {
-        logger.log(cmd, req)
+        logger.log(`cmd:${cmd}, ${req}`)
         return make_cmd_response(await handle_video_event_detect())
       }
       case 'save_prj': {
         const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
-        logger.log(`${cmd}, ${cmdReq.data?.filepath}`)
+        logger.log(`cmd:${cmd}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_save_prj(cmdReq))
       }
       case 'cut_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
-        logger.log(`${cmd}, ${cmdReq.data?.filepath}`)
+        logger.log(`cmd:${cmd}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
       }
       case 'slt_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
-        logger.log(cmd, cmdReq.data?.filepath)
+        logger.log(`cmd:${cmd}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_select_video(cmdReq))
       }
       case 'app_start':
-        logger.log(cmd, req)
+        logger.log(`cmd:${cmd}`)
         return make_cmd_response(await handle_app_start())
       case 'query_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
-        logger.log(cmd, cmdReq)
+        logger.log(`cmd:${cmd}, ${cmdReq}`)
         return make_cmd_response(await handle_query_video(cmdReq))
       }
       case 'clean_work': {
         const cmdReq = convertCmdRequest<DataTypes.Req_ClearWork>(req)
+        logger.log(`cmd:${cmd}, files len:${cmdReq.data?.files?.length}`)
         return make_cmd_response(await handle_clean_work(cmdReq))
       }
       case 'sync_work': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SyncWork>(req)
-        logger.log(cmdReq)
+        logger.log(`cmd:${cmd}, ${cmdReq.data?.folder}`)
         return make_cmd_response(await recordsProc.start_sync_work(cmdReq))
       }
       case 'sync_trash': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SyncTrash>(req)
-        logger.log(cmdReq)
+        logger.log(`cmd:${cmd}, ${cmdReq.data?.folder}`)
         return make_cmd_response(await recordsProc.start_sync_trash(cmdReq))
       }
       default: {

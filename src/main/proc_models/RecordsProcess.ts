@@ -7,6 +7,19 @@ import * as fs from 'fs'
 import { execFile } from 'child_process'
 import * as DataTypes from '../../bridge/dataTypedef'
 
+async function checkFileExists(filePath: string): Promise<boolean> {
+  try {
+    // 尝试访问文件
+    await fs.promises.access(filePath, fs.constants.F_OK)
+    return true
+  } catch (error) {
+    if (!error) {
+      logger.log('access error:', error)
+    }
+    return false
+  }
+}
+
 // 检查文件记录时间是否连续
 function check_record_time(files: DataTypes.FileInfo[]): void {
   // let lastStartTime: string = ''
@@ -98,10 +111,13 @@ async function file_classify(
         const destinationPath = path.join(folderName, fileName)
         try {
           // 移动文件
+          const fileExists = await checkFileExists(destinationPath)
           await fs.promises.rename(sourcePath, destinationPath)
-          logger.log(`move ${sourcePath} to ${destinationPath} success`)
+          if (!fileExists) {
+            logger.log(`move ${sourcePath} to ${destinationPath} success`)
+          }
         } catch (renameError) {
-          console.error(`移动文件 ${sourcePath} 到 ${destinationPath} 时出错:`, renameError)
+          console.error(`move ${sourcePath} to ${destinationPath} error:`, renameError)
         }
       }
     }
@@ -350,7 +366,6 @@ async function start_cut_video(
   mediaProc
     .cutVideo(req)
     .then((resp) => {
-      console.log('cutVideo resp: ', resp)
       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
     })
     .catch((error) => {

@@ -25,7 +25,7 @@ class TraversalFolder {
           if (stats.isDirectory()) {
             // 判断目录的名称，如果目录的名称是trash，则跳过
             if (file === '.trash') {
-              logger.log(`traversal skip: ${filePath}`)
+              // logger.log(`traversal skip: ${filePath}`)
               continue
             }
             await traverseRecursive(filePath)
