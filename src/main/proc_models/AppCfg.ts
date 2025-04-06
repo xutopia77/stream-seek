@@ -21,10 +21,14 @@ async function initApp(appCfg: AppCfg): Promise<void> {
   if (!fs.existsSync(appCfg.file_prj_dir)) {
     fs.mkdirSync(appCfg.file_prj_dir)
   }
+  const isDev = process.env.NODE_ENV === 'development'
   const appPath = app.getAppPath()
-  appCfg.ffmpegExe = path.join(appPath, 'assets/bin/ffmpeg.exe')
-  appCfg.ffprobeExe = path.join(appPath, 'assets/bin/ffprobe.exe')
-  logger.log('appPath11111111111111111111111:', appPath)
+  appCfg.ffmpegExe = path.join(appPath, '../assets/bin/ffmpeg.exe')
+  appCfg.ffprobeExe = path.join(appPath, '../assets/bin/ffprobe.exe')
+  if (isDev) {
+    appCfg.ffmpegExe = path.join(appPath, 'assets/bin/ffmpeg.exe')
+    appCfg.ffprobeExe = path.join(appPath, 'assets/bin/ffprobe.exe')
+  }
 }
 
 // 定义 AppCfg 类
@@ -46,7 +50,6 @@ class AppCfg {
 
   async initCfg(): Promise<void> {
     try {
-      logger.log('appData111111111111111111111:', this.appData)
       await initApp(this)
     } catch (error) {
       logger.error('initCfg error:', error)

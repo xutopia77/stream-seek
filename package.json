@@ -48,6 +48,29 @@
     "electronDownload": {
       "cache": "C:\\Users\\xutop\\AppData\\Local\\electron\\Cache"
     },
-    "asar": true
+    "files": [
+      "!.vscode/**/*",
+      "!doc/**/*",
+      "!src/**/*",
+      "!assets/**/*",
+      "!appData/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "assets",
+        "to": "resources/assets"
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
   }
 }
