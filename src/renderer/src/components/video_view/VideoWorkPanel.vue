@@ -202,6 +202,12 @@ const exportVideoRecord = async (): Promise<void> => {
     MessageShow.error(`no project info`)
     return
   }
+  if (appStore.curSltVideo == null) {
+    MessageShow.info('请先选择一个视频')
+    return
+  }
+  util.stop_play()
+
   const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
     cmd: 'cut_video',
     data: prjInfo
@@ -213,7 +219,11 @@ const exportVideoRecord = async (): Promise<void> => {
   if (response.code !== 0) {
     MessageShow.success(`剪辑失败: ${response.status}`)
   } else {
-    MessageShow.success(response.bOver === false ? '后台运行' : `剪辑成功`)
+    if (response.bOver === false) {
+      MessageShow.info(`正在处理...`)
+    } else {
+      MessageShow.success(`剪辑成功`)
+    }
   }
 }
 </script>

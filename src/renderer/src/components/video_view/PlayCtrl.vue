@@ -101,23 +101,39 @@ let frameRate = computed(() => {
 })
 
 function nextFrame(): void {
+  if (appStore.curVideoInfo == null) {
+    MessageShow.info('请先选择一个视频')
+    return
+  }
   if (appStore.func_nextFrame) {
     appStore.func_nextFrame()
   }
 }
 
 function previousFrame(): void {
+  if (appStore.curVideoInfo == null) {
+    MessageShow.info('请先选择一个视频')
+    return
+  }
   if (appStore.func_prevFrame) {
     appStore.func_prevFrame()
   }
 }
 
 function btnclk_stop_play(): void {
+  if (appStore.curSltVideo == null) {
+    MessageShow.info('请先选择一个视频')
+    return
+  }
   util.stop_play()
 }
 
 // 切换播放/暂停状态
 const btnclk_toggle_play = (): void => {
+  if (appStore.curSltVideo == null) {
+    MessageShow.info('请先选择一个视频')
+    return
+  }
   appStore.videoPlayCtrl.isPlay = !appStore.videoPlayCtrl.isPlay
 }
 

@@ -130,6 +130,11 @@ export interface Req_CutVideo {
   fileInfo: SltMediaInfo
   filepath: string
   filename: string
+  baseFolder: string
+}
+
+export interface Resp_CutVideo {
+  traversalResp?: Resp<TraversalFolder>
 }
 
 export interface Frame {

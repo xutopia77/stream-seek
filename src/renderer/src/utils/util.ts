@@ -127,18 +127,32 @@ function process_work_response(workRespose: DataTypes.WorkResp): void {
   const cmd = workRespose.cmd
 
   const response = JSON.parse(workRespose.data)
-  const showCtx = `命令:${cmd} 执行结果: ${response.status}`
-  if (response.code !== 0) {
-    MessageShow.error(showCtx)
-  } else {
-    MessageShow.success(showCtx)
-  }
+  // const showCtx = `命令:${cmd} 执行结果: ${response.status}`
+  // if (response.code !== 0) {
+  //   MessageShow.error(showCtx)
+  // } else {
+  //   MessageShow.success(showCtx)
+  // }
 
   // console.log('process_work_response', cmd, response)
   switch (cmd) {
     case 'open_folder':
       console.log('open folder', response)
       util.folder_file_proc(response)
+      if (response.code !== 0) {
+        MessageShow.error(`打开文件夹失败: ${response.status}`)
+      } else {
+        MessageShow.success(`打开文件夹成功: ${response.status}`)
+      }
+      break
+    case 'traversal_folder':
+      {
+        console.log('traversal folder', response)
+        util.folder_file_proc(response)
+        if (response.code !== 0) {
+          MessageShow.error(`更新文件夹: ${response.status}`)
+        }
+      }
       break
     case 'query_video':
       if (appStore) {
@@ -149,7 +163,12 @@ function process_work_response(workRespose: DataTypes.WorkResp): void {
       if (response.code !== 0) {
         MessageShow.error(`视频裁剪失败: ${response.status}`)
       } else {
-        MessageShow.info(`视频裁剪完成:${response.status}`)
+        MessageShow.success(`视频裁剪完成:${response.status}`)
+        const respData: DataTypes.Resp_CutVideo = response.data
+        if (respData.traversalResp != null) {
+          console.log('update file list', respData.traversalResp)
+          util.folder_file_proc(respData.traversalResp)
+        }
       }
       break
     case 'get_key_frame_info':
@@ -302,7 +321,8 @@ async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
   const prjInfo: DataTypes.Req_CutVideo = {
     fileInfo: appStore.curVideoInfo,
     filepath: appStore.curSltVideo?.filePath || '',
-    filename: util.getFilenameFromPath(appStore.curSltVideo?.filePath || '')
+    filename: util.getFilenameFromPath(appStore.curSltVideo?.filePath || ''),
+    baseFolder: appStore.curOpenedFolder || ''
   }
   return prjInfo
 }

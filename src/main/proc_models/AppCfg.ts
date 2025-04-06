@@ -1,21 +1,11 @@
 import * as path from 'path'
 import * as fs from 'fs'
-
-// 定义 AppCfg 类的接口
-interface AppCfgInterface {
-  appData: string
-  thumbnail_dir: string
-  file_prj_dir: string
-  prj: {
-    name: string
-    version: string
-  }
-  init(): Promise<void>
-  quiteApp(): Promise<void>
-}
+import { app } from 'electron'
+import { console } from 'inspector'
+import logger from './Logger'
 
 // 初始化应用配置的函数
-async function initApp(appCfg: AppCfgInterface): Promise<void> {
+async function initApp(appCfg: AppCfg): Promise<void> {
   if (!fs.existsSync(appCfg.appData)) {
     fs.mkdirSync(appCfg.appData)
   }
@@ -31,13 +21,20 @@ async function initApp(appCfg: AppCfgInterface): Promise<void> {
   if (!fs.existsSync(appCfg.file_prj_dir)) {
     fs.mkdirSync(appCfg.file_prj_dir)
   }
+  const appPath = app.getAppPath()
+  appCfg.ffmpegExe = path.join(appPath, 'assets/bin/ffmpeg.exe')
+  appCfg.ffprobeExe = path.join(appPath, 'assets/bin/ffprobe.exe')
+  logger.log('appPath11111111111111111111111:', appPath)
 }
 
 // 定义 AppCfg 类
-class AppCfg implements AppCfgInterface {
+class AppCfg {
   appData: string
   thumbnail_dir: string = ''
   file_prj_dir: string = ''
+  trashFolder: string = '.trash'
+  ffmpegExe: string = ''
+  ffprobeExe: string = ''
   prj = {
     name: 'stream_manager',
     version: '0.0.1'
@@ -47,8 +44,13 @@ class AppCfg implements AppCfgInterface {
     this.appData = './appData'
   }
 
-  async init(): Promise<void> {
-    return await initApp(this)
+  async initCfg(): Promise<void> {
+    try {
+      logger.log('appData111111111111111111111:', this.appData)
+      await initApp(this)
+    } catch (error) {
+      logger.error('initCfg error:', error)
+    }
   }
 
   async quiteApp(): Promise<void> {

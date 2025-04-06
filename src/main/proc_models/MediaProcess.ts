@@ -4,11 +4,11 @@ import { exec, execSync } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as DataTypes from '../../bridge/dataTypedef'
-
+import { TraversalFolder } from './Utils.js'
 // 获取帧信息
 async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
   return new Promise((resolve, reject) => {
-    const cmd = `ffprobe -v error -i ${filepath} -skip_frame nokey -select_streams v -show_frames -show_entries frame=pict_type,pts_time -of json`
+    const cmd = `${appCfg.ffprobeExe} -v error -i ${filepath} -skip_frame nokey -select_streams v -show_frames -show_entries frame=pict_type,pts_time -of json`
     exec(cmd, (error, stdout, stderr) => {
       if (error) {
         reject({ code: 1, status: error })
@@ -47,6 +47,7 @@ async function make_split_info(
     }
 
     const splitCutInfo: CutSplitInfo[] = []
+    // ------ process splitInfo
     for (let i = 0; i < splitInfo.length; i++) {
       const item = splitInfo[i]
       const startTime = item.startTime
@@ -94,6 +95,7 @@ async function make_split_info(
   const splitInfo = req.data.fileInfo.splitInfo
   let keyFrameSplitInfo = req.data.fileInfo?.frameInfo?.frames
   if (!keyFrameSplitInfo || keyFrameSplitInfo.length === 0) {
+    logger.log('getFrameInfo: ', req.data.filepath)
     const kResp = await getFrameInfo(req.data.filepath)
     if (kResp.code !== 0) {
       console.log('getFrameInfo err: ', kResp)
@@ -150,12 +152,16 @@ interface CutSplitInfo {
 
 async function cutVideo(
   req: DataTypes.Req<DataTypes.Req_CutVideo>
-): Promise<DataTypes.Resp<string>> {
-  const resp = new DataTypes.Resp()
+): Promise<DataTypes.Resp<DataTypes.Resp_CutVideo>> {
+  const resp = new DataTypes.Resp<DataTypes.Resp_CutVideo>()
   if (!req.data?.filepath) {
     return resp.err('filepath is null')
   }
+  if (!req.data?.baseFolder || req.data?.baseFolder.length === 0) {
+    return resp.err('baseFolder is null')
+  }
   const filepath = req.data.filepath
+  const baseFolder = req.data.baseFolder
 
   function makeDistFileName(
     filepath: string,
@@ -187,6 +193,30 @@ async function cutVideo(
     return distFilename
   }
 
+  async function clean_tmp_folder(folderPath: string): Promise<string> {
+    try {
+      await fs.promises.access(folderPath, fs.constants.F_OK)
+      // 文件夹存在，先删除文件夹，再创建新文件夹
+      try {
+        await fs.promises.rm(folderPath, { recursive: true })
+        await fs.promises.mkdir(folderPath, { recursive: true })
+      } catch (rmErr) {
+        console.error('remove dir err:', rmErr)
+        return `remove dir err: ${rmErr}`
+      }
+    } catch (err) {
+      if (err) {
+        console.error('dir not exist:', folderPath)
+      }
+      try {
+        await fs.promises.mkdir(folderPath, { recursive: true })
+      } catch (mkdirErr) {
+        console.error('create dir err:', mkdirErr)
+        return `create dir err: ${mkdirErr}`
+      }
+    }
+    return ''
+  }
   //------ make cut split info
   let cutSplitInfo: CutSplitInfo[] = []
   {
@@ -203,31 +233,11 @@ async function cutVideo(
       return resp
     }
   }
-
   const distFolderPath = path.join(appCfg.appData, 'video_cut_tmp')
   //------ make cut destination folder
-  {
-    try {
-      await fs.promises.access(distFolderPath, fs.constants.F_OK)
-      // 文件夹存在，先删除文件夹，再创建新文件夹
-      try {
-        await fs.promises.rm(distFolderPath, { recursive: true })
-        await fs.promises.mkdir(distFolderPath, { recursive: true })
-      } catch (rmErr) {
-        console.error('remove dir err:', rmErr)
-        return resp.err(String(rmErr))
-      }
-    } catch (err) {
-      if (err) {
-        console.error('dir not exist:', distFolderPath)
-      }
-      try {
-        await fs.promises.mkdir(distFolderPath, { recursive: true })
-      } catch (mkdirErr) {
-        console.error('create dir err:', mkdirErr)
-        return resp.err(String(mkdirErr))
-      }
-    }
+  const respStr = await clean_tmp_folder(distFolderPath)
+  if (respStr.length > 0) {
+    return resp.err(respStr)
   }
 
   const splitFilepath: string[] = []
@@ -240,7 +250,7 @@ async function cutVideo(
         return resp.err('makeDistFileName err')
       }
       distFilename = path.join(distFolderPath, distFilename)
-      const cmd = `ffmpeg -i ${filepath} -v error -ss ${item.startTime} -to ${item.endTime} -c copy ${distFilename}`
+      const cmd = `${appCfg.ffmpegExe} -i ${filepath} -v error -ss ${item.startTime} -to ${item.endTime} -c copy ${distFilename}`
       console.log(cmd)
       await new Promise((resolve, reject) => {
         exec(cmd, (error) => {
@@ -255,6 +265,70 @@ async function cutVideo(
     }
   }
 
+  //------ process video after cut
+  {
+    // 1 make trash folder
+    const trashFolderPath = path.join(baseFolder, '.trash')
+    {
+      try {
+        await fs.promises.access(trashFolderPath, fs.constants.F_OK)
+      } catch (err) {
+        if (err) {
+          console.error('trash dir not exist:', trashFolderPath)
+          await fs.promises.mkdir(trashFolderPath, { recursive: true })
+        }
+      }
+      try {
+        await fs.promises.access(trashFolderPath, fs.constants.F_OK)
+      } catch (err) {
+        if (err) {
+          console.error('trash dir not exist:', trashFolderPath)
+          return resp.err('trash dir not exist')
+        }
+      }
+      // 1 move the cut video to the dist folder
+      for (const item of splitFilepath) {
+        const filename = path.basename(item)
+        const distFilename = path.join(baseFolder, filename)
+        await fs.promises.rename(item, distFilename)
+        logger.info(`move cut video: ${item}, move to ${distFilename}`)
+      }
+      // 2 delete original video
+      {
+        const filename = path.basename(filepath)
+        const distFilename = path.join(trashFolderPath, filename)
+
+        try {
+          await fs.promises.access(filepath, fs.constants.F_OK)
+        } catch (err) {
+          if (err) {
+            console.error('original video not exist:', filepath)
+          }
+          return resp.err('original video not exist')
+        }
+        // 删除原视频文件
+        // 移动原视频文件到.trash文件夹
+        try {
+          await fs.promises.rename(filepath, distFilename)
+        } catch (err) {
+          console.error('move original video err:', err)
+          return resp.err('move original video err')
+        }
+        logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
+      }
+    }
+  }
+  //------ traversal folder after cut
+  {
+    const traversalFolder = new TraversalFolder()
+    traversalFolder.folder = baseFolder
+    const traversalResp: DataTypes.Resp<DataTypes.TraversalFolder> = await traversalFolder.start()
+    const respData: DataTypes.Resp_CutVideo = {
+      traversalResp: traversalResp
+    }
+    resp.data = respData
+  }
+
   // //------ 把splitFilepath中记录的文件全部放到txt中，然后使用ffmpeg -f concat -safe 0 -i files.txt -c copy output.mp4合并文件
   // {
   //   let filesTxt = ''
@@ -265,7 +339,7 @@ async function cutVideo(
   //   const distFilename = path.join(distFolderPath, 'output.mp4')
   //   const filesTxtPath = path.join(distFolderPath, 'files.txt')
   //   await fs.promises.writeFile(filesTxtPath, filesTxt)
-  //   const concatCmd = `ffmpeg -v error -f concat -safe 0 -i ${filesTxtPath} -c copy -reset_timestamps 1 ${distFilename}`
+  //   const concatCmd = `${appCfg.ffmpegExe} -v error -f concat -safe 0 -i ${filesTxtPath} -c copy -reset_timestamps 1 ${distFilename}`
   //   console.log(concatCmd)
   //   await new Promise((resolve, reject) => {
   //     exec(concatCmd, (error, stdout, stderr) => {
@@ -293,7 +367,7 @@ class MediaProcess {
   async getVideoInfo(filePath: string): Promise<DataTypes.MediaInfo> {
     // let video_path = 'D:/02_workspace/05_timeCapsule/01_stream_manager_ui/stream_manager_ui/src/data/00_20250310042708_20250310051906.mp4'
     const video_path = filePath
-    const cmd = `ffprobe -v error -of json -show_format -show_streams ${video_path}`
+    const cmd = `${appCfg.ffprobeExe} -v error -of json -show_format -show_streams ${video_path}`
     const output = execSync(cmd).toString()
     const jsonData = JSON.parse(output)
 

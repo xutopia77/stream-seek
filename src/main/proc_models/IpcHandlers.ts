@@ -424,6 +424,7 @@ export class IpcHandlers {
       }
       case 'cut_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
+        logger.log(`${cmd}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
       }
       case 'slt_video': {

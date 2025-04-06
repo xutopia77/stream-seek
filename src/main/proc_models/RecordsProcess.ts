@@ -235,7 +235,7 @@ async function gen_thumbnail(
 
       try {
         await new Promise((resolve, reject) => {
-          const child = execFile('ffmpeg', args, (error) => {
+          const child = execFile(`${appCfg.ffmpegExe}`, args, (error) => {
             if (error) {
               reject(error)
             } else {
@@ -343,7 +343,7 @@ async function query_images(filepath: string): Promise<DataTypes.Resp<DataTypes.
 // 开始切割视频
 async function start_cut_video(
   req: DataTypes.Req<DataTypes.Req_CutVideo>
-): Promise<DataTypes.Resp<string>> {
+): Promise<DataTypes.Resp<DataTypes.Resp_CutVideo>> {
   mediaProc
     .cutVideo(req)
     .then((resp) => {
@@ -353,7 +353,7 @@ async function start_cut_video(
     .catch((error) => {
       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
     })
-  const resp = new DataTypes.Resp<string>()
+  const resp = new DataTypes.Resp<DataTypes.Resp_CutVideo>()
   resp.code = 0
   resp.status = 'success'
   resp.bOver = false
