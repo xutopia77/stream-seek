@@ -37,12 +37,11 @@ async function file_classify(
   files: DataTypes.FileInfo[]
 ): Promise<DataTypes.Resp> {
   const resp = new DataTypes.Resp()
-  const folder = req.data?.folder
-  if (folder === undefined) {
+  const folderpath = req.data?.folder
+  if (folderpath === undefined) {
     return resp.err('folder is undefined')
   }
 
-  // 计算文件信息
   function calculateFilesInfo(files: DataTypes.FileInfo[]): {
     totalSize: number
     totalCount: number
@@ -60,27 +59,9 @@ async function file_classify(
     return filesInfo
   }
 
-  const filesInfo = calculateFilesInfo(files)
-
-  // 排序文件
-  const folderpath = folder
-  const sortFiles = files.slice().sort((a, b) => {
-    const startTimeA = DataTypes.FileTools.parse_filename_mi(a.title)?.startTime
-    const startTimeB = DataTypes.FileTools.parse_filename_mi(b.title)?.startTime
-    if (startTimeA === undefined) {
-      return 0
-    }
-    if (startTimeB === undefined) {
-      return 0
-    }
-    return startTimeA.localeCompare(startTimeB)
-  })
-
-  check_record_time(sortFiles)
-
-  // 每 100 个文件一组进行分类
   function groupFiles(files: DataTypes.FileInfo[]): DataTypes.FileInfo[][] {
-    const groupNum = 10
+    // 每 100 个文件一组进行分类
+    const groupNum = appCfg.folderClassifyNum
     const groupedFiles: DataTypes.FileInfo[][] = []
     for (let i = 0; i < files.length; i += groupNum) {
       groupedFiles.push(files.slice(i, i + groupNum))
@@ -88,8 +69,8 @@ async function file_classify(
     return groupedFiles
   }
 
-  // 创建文件夹并移动文件
   async function moveFilesToFolders(
+    // 创建文件夹并移动文件
     groupedFiles: DataTypes.FileInfo[][],
     baseDir: string
   ): Promise<void> {
@@ -118,6 +99,7 @@ async function file_classify(
         try {
           // 移动文件
           await fs.promises.rename(sourcePath, destinationPath)
+          logger.log(`move ${sourcePath} to ${destinationPath} success`)
         } catch (renameError) {
           console.error(`移动文件 ${sourcePath} 到 ${destinationPath} 时出错:`, renameError)
         }
@@ -125,10 +107,31 @@ async function file_classify(
     }
   }
 
+  const filesInfo = calculateFilesInfo(files)
+
+  // 根据文件名中的时间戳进行排序
+  const sortFiles = files.slice().sort((a, b) => {
+    const startTimeA = DataTypes.FileTools.parse_filename_mi(a.title)?.startTime
+    const startTimeB = DataTypes.FileTools.parse_filename_mi(b.title)?.startTime
+    if (startTimeA === undefined) {
+      return 0
+    }
+    if (startTimeB === undefined) {
+      return 0
+    }
+    return startTimeA.localeCompare(startTimeB)
+  })
+
+  // 目前仅仅是检查文件名中的时间戳是否连续
+  check_record_time(sortFiles)
+
   const baseDir = folderpath
+  // 文件分组
   const groupedFiles = groupFiles(sortFiles)
+  // 安装分组结果移动文件夹
   await moveFilesToFolders(groupedFiles, baseDir)
 
+  // 仅仅是 检查分组后的文件夹和分组前的文件夹的信息是否相同
   const traversalFolder2 = new TraversalFolder()
   traversalFolder2.type = 'search'
   traversalFolder2.folder = folderpath
@@ -373,19 +376,56 @@ async function start_sync_work(
   traversalFolder.folder = req.data?.folder
   traversalFolder
     .start()
-    .then((resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+    .then(async (resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
       if (resp.data?.files != null) {
         logger.log('traversal folder:', resp.status, resp.data.files?.length)
-        recordsProc
-          .start_file_classify(req, resp.data.files)
-          .then((resp: DataTypes.Resp) => {
-            logger.log('handle_query_video after classify:', resp)
-            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-          })
-          .catch((error: unknown) => {
-            logger.error('open folder err:', error)
-            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
-          })
+        const resp_classify = await recordsProc.start_file_classify(req, resp.data.files)
+        if (resp_classify.code !== 0) {
+          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+          return
+        }
+        const resp_genThumb = await recordsProc.start_gen_thumbnail(req)
+        if (resp_genThumb.code !== 0) {
+          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+          return
+        }
+        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+      } else {
+        logger.log('traversal folder:', resp.status)
+        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+      }
+    })
+    .catch((error: unknown) => {
+      logger.error('open folder err:', error)
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+    })
+  return resp.success('success')
+}
+
+async function start_sync_trash(
+  req: DataTypes.Req<DataTypes.Req_SyncTrash>
+): Promise<DataTypes.Resp> {
+  const resp = new DataTypes.Resp()
+  if (req.data?.folder === undefined) {
+    return resp.err('folder is undefined')
+  }
+  req.data.folder = path.join(req.data.folder, appCfg.trashFolder)
+  const traversalFolder = new TraversalFolder()
+  traversalFolder.type = null
+  traversalFolder.folder = req.data.folder
+  traversalFolder
+    .start()
+    .then(async (resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+      if (resp.data?.files != null) {
+        logger.log(
+          `traversal folder ${traversalFolder.folder} : ${resp.status}, ${resp.data.files?.length}`
+        )
+        const resp_classify = await recordsProc.start_file_classify(req, resp.data.files)
+        if (resp_classify.code !== 0) {
+          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+          return
+        }
+        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
       } else {
         logger.log('traversal folder:', resp.status)
         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
@@ -399,20 +439,12 @@ async function start_sync_work(
 }
 
 class RecordsProc {
-  async start_file_classify(
-    req: DataTypes.Req<DataTypes.Req_SearchFile>,
-    files: DataTypes.FileInfo[]
-  ): Promise<DataTypes.Resp> {
-    await file_classify(req, files)
-    await this.start_gen_thumbnail(req)
-    return new DataTypes.Resp().success('success')
-  }
-  async start_gen_thumbnail(req: DataTypes.Req<DataTypes.Req_SearchFile>): Promise<DataTypes.Resp> {
-    return await gen_thumbnail(req)
-  }
+  start_gen_thumbnail = gen_thumbnail
+  start_file_classify = file_classify
   query_images = query_images
   start_cut_video = start_cut_video
   start_sync_work = start_sync_work
+  start_sync_trash = start_sync_trash
 }
 
 const recordsProc = new RecordsProc()

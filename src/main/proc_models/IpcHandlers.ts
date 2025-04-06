@@ -449,6 +449,11 @@ export class IpcHandlers {
         logger.log(cmdReq)
         return make_cmd_response(await recordsProc.start_sync_work(cmdReq))
       }
+      case 'sync_trash': {
+        const cmdReq = convertCmdRequest<DataTypes.Req_SyncTrash>(req)
+        logger.log(cmdReq)
+        return make_cmd_response(await recordsProc.start_sync_trash(cmdReq))
+      }
       default: {
         console.log(`Unknown event: ${cmd}`)
         const resp = new DataTypes.Resp()

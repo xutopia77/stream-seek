@@ -9,6 +9,7 @@
     </div>
     <hr style="height: 1px; background-color: var(--common-page-text-color)" />
     <button class="common-button" type="button" @click="btnclk_sync_work">创建工程</button>
+    <button class="common-button" type="button" @click="btnclk_sync_trash">整理回收站</button>
   </div>
 </template>
 
@@ -39,6 +40,25 @@ async function btnclk_sync_work(): Promise<void> {
       MessageShow.info('后台执行中...')
     } else {
       MessageShow.success('创建工程成功')
+    }
+  }
+}
+
+async function btnclk_sync_trash(): Promise<void> {
+  const req: DataTypes.Req<DataTypes.Req_SyncTrash> = {
+    cmd: 'sync_trash',
+    data: {
+      folder: appStore.curOpenedFolder
+    }
+  }
+  const response = await IpcApi.trigger_event(req)
+  if (response.code !== 0) {
+    MessageShow.error(`整理回收站: ${response.status}`)
+  } else {
+    if (response.bOver === false) {
+      MessageShow.info('后台执行中...')
+    } else {
+      MessageShow.success('整理回收站成功')
     }
   }
 }

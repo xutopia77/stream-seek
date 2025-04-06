@@ -173,6 +173,9 @@ export interface Req_ClearWork {
 export interface Req_SyncWork {
   folder: string
 }
+export interface Req_SyncTrash {
+  folder: string
+}
 
 // ======================== render
 export class ClearSltInfoReq {

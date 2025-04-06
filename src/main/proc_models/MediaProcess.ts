@@ -38,10 +38,10 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 async function make_split_info(
   req: DataTypes.Req<DataTypes.Req_CutVideo>
 ): Promise<DataTypes.Resp<CutSplitInfo[]>> {
-  const processSplitInKeyFrame = (
+  function processSplitInKeyFrame(
     splitInfo: CutSplitInfo[],
     keyFrameSplitInfo: DataTypes.Frame[]
-  ): CutSplitInfo[] => {
+  ): CutSplitInfo[] {
     const makeSartTime = (t: number): number => {
       return t < 0.0001 ? 0 : t - 0.0001
     }
@@ -87,18 +87,34 @@ async function make_split_info(
   }
 
   const resp = new DataTypes.Resp<CutSplitInfo[]>()
-
   if (req.data?.fileInfo === undefined) {
     return resp.err('fileInfo is null')
   }
 
   const splitInfo = req.data.fileInfo.splitInfo
   let keyFrameSplitInfo = req.data.fileInfo?.frameInfo?.frames
+
+  if (splitInfo?.length === 1) {
+    const splitItemInfo = splitInfo[0]
+    if (splitItemInfo.isDelete !== true) {
+      return resp.success('success')
+    }
+    if (splitItemInfo.percent !== 100) {
+      logger.warn(`you cut a video but not cut all, please check it: ${req.data.filepath}`)
+    }
+    const respData = {
+      startTime: splitItemInfo.startTime,
+      endTime: splitItemInfo.endTime
+    }
+    resp.success('success').data = [respData]
+    return resp
+  }
+
   if (!keyFrameSplitInfo || keyFrameSplitInfo.length === 0) {
     logger.log('getFrameInfo: ', req.data.filepath)
     const kResp = await getFrameInfo(req.data.filepath)
     if (kResp.code !== 0) {
-      console.log('getFrameInfo err: ', kResp)
+      logger.error('getFrameInfo err: ', kResp)
       return resp.err('getFrameInfo err')
     }
     keyFrameSplitInfo = kResp.data?.frames
@@ -162,6 +178,8 @@ async function cutVideo(
   }
   const filepath = req.data.filepath
   const baseFolder = req.data.baseFolder
+  const trashFolderPath = path.join(baseFolder, '.trash')
+  const distFolderPath = path.join(appCfg.appData, 'video_cut_tmp')
 
   function makeDistFileName(
     filepath: string,
@@ -217,12 +235,53 @@ async function cutVideo(
     }
     return ''
   }
+  async function make_trash_folder(folderPath: string): Promise<string> {
+    try {
+      await fs.promises.access(folderPath, fs.constants.F_OK)
+    } catch (err) {
+      if (err) {
+        await fs.promises.mkdir(folderPath, { recursive: true })
+      }
+    }
+    try {
+      await fs.promises.access(folderPath, fs.constants.F_OK)
+    } catch (err) {
+      if (err) {
+        logger.error('trash dir not exist:', folderPath)
+        return `trash dir not exist: ${folderPath}`
+      }
+    }
+    return ''
+  }
+
+  async function traversalFolderByFolder(
+    baseFolder: string
+  ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+    const traversalFolder = new TraversalFolder()
+    traversalFolder.folder = baseFolder
+    const traversalResp: DataTypes.Resp<DataTypes.TraversalFolder> = await traversalFolder.start()
+    return traversalResp
+  }
+
+  //------ make or check trash folder
+  const resp_str = await make_trash_folder(trashFolderPath)
+  if (resp_str.length > 0) {
+    return resp.err(resp_str)
+  }
+  //------ make cut destination folder
+  const respStr = await clean_tmp_folder(distFolderPath)
+  if (respStr.length > 0) {
+    return resp.err(respStr)
+  }
   //------ make cut split info
   let cutSplitInfo: CutSplitInfo[] = []
   {
     const makeResp: DataTypes.Resp<CutSplitInfo[]> = await make_split_info(req)
-    if (makeResp.code !== 0 || makeResp.data === undefined) {
+    if (makeResp.code !== 0) {
       return resp.err(makeResp.status)
+    }
+    if (makeResp.data === undefined) {
+      return resp
     }
     cutSplitInfo = makeResp.data
     if (!cutSplitInfo) {
@@ -233,11 +292,24 @@ async function cutVideo(
       return resp
     }
   }
-  const distFolderPath = path.join(appCfg.appData, 'video_cut_tmp')
-  //------ make cut destination folder
-  const respStr = await clean_tmp_folder(distFolderPath)
-  if (respStr.length > 0) {
-    return resp.err(respStr)
+
+  //------ cut single video
+  if (cutSplitInfo.length === 1) {
+    // if( req.data?.fileInfo.splitInfo === 0.0001) {
+    const filename = path.basename(filepath)
+    const distFilename = path.join(trashFolderPath, filename)
+    try {
+      await fs.promises.rename(filepath, distFilename)
+    } catch (err) {
+      console.error('move original video err:', err)
+      return resp.err('move original video err')
+    }
+    logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
+    const respData: DataTypes.Resp_CutVideo = {
+      traversalResp: await traversalFolderByFolder(baseFolder)
+    }
+    resp.data = respData
+    return resp
   }
 
   const splitFilepath: string[] = []
@@ -267,64 +339,41 @@ async function cutVideo(
 
   //------ process video after cut
   {
-    // 1 make trash folder
-    const trashFolderPath = path.join(baseFolder, '.trash')
+    // 1 move the cut video to the dist folder
+    for (const item of splitFilepath) {
+      const filename = path.basename(item)
+      const distFilename = path.join(baseFolder, filename)
+      await fs.promises.rename(item, distFilename)
+      logger.info(`move cut video: ${item}, move to ${distFilename}`)
+    }
+    // 2 delete original video
     {
-      try {
-        await fs.promises.access(trashFolderPath, fs.constants.F_OK)
-      } catch (err) {
-        if (err) {
-          console.error('trash dir not exist:', trashFolderPath)
-          await fs.promises.mkdir(trashFolderPath, { recursive: true })
-        }
-      }
-      try {
-        await fs.promises.access(trashFolderPath, fs.constants.F_OK)
-      } catch (err) {
-        if (err) {
-          console.error('trash dir not exist:', trashFolderPath)
-          return resp.err('trash dir not exist')
-        }
-      }
-      // 1 move the cut video to the dist folder
-      for (const item of splitFilepath) {
-        const filename = path.basename(item)
-        const distFilename = path.join(baseFolder, filename)
-        await fs.promises.rename(item, distFilename)
-        logger.info(`move cut video: ${item}, move to ${distFilename}`)
-      }
-      // 2 delete original video
-      {
-        const filename = path.basename(filepath)
-        const distFilename = path.join(trashFolderPath, filename)
+      const filename = path.basename(filepath)
+      const distFilename = path.join(trashFolderPath, filename)
 
-        try {
-          await fs.promises.access(filepath, fs.constants.F_OK)
-        } catch (err) {
-          if (err) {
-            console.error('original video not exist:', filepath)
-          }
-          return resp.err('original video not exist')
+      try {
+        await fs.promises.access(filepath, fs.constants.F_OK)
+      } catch (err) {
+        if (err) {
+          console.error('original video not exist:', filepath)
         }
-        // 删除原视频文件
-        // 移动原视频文件到.trash文件夹
-        try {
-          await fs.promises.rename(filepath, distFilename)
-        } catch (err) {
-          console.error('move original video err:', err)
-          return resp.err('move original video err')
-        }
-        logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
+        return resp.err('original video not exist')
       }
+      // 删除原视频文件
+      // 移动原视频文件到.trash文件夹
+      try {
+        await fs.promises.rename(filepath, distFilename)
+      } catch (err) {
+        console.error('move original video err:', err)
+        return resp.err('move original video err')
+      }
+      logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
     }
   }
   //------ traversal folder after cut
   {
-    const traversalFolder = new TraversalFolder()
-    traversalFolder.folder = baseFolder
-    const traversalResp: DataTypes.Resp<DataTypes.TraversalFolder> = await traversalFolder.start()
     const respData: DataTypes.Resp_CutVideo = {
-      traversalResp: traversalResp
+      traversalResp: await traversalFolderByFolder(baseFolder)
     }
     resp.data = respData
   }

@@ -44,6 +44,8 @@ class AppCfg {
     version: '0.0.1'
   }
 
+  folderClassifyNum: number = 10
+
   constructor() {
     this.appData = './appData'
   }
