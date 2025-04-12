@@ -162,6 +162,7 @@ function process_work_response(workRespose: DataTypes.WorkResp): void {
     case 'cut_video':
       if (response.code !== 0) {
         MessageShow.error(`视频裁剪失败: ${response.status}`)
+        console.log('cut video failed', response)
       } else {
         MessageShow.success(`视频裁剪完成:${response.status}`)
         const respData: DataTypes.Resp_CutVideo = response.data
@@ -285,7 +286,7 @@ async function get_slt_video(video: DataTypes.FileInfo | null): Promise<void> {
   }
   const response: DataTypes.Resp<DataTypes.SltMediaInfo> = await IpcApi.trigger_event(req)
   if (response.code !== 0) {
-    console.log('slect video failed')
+    console.log('slect video failed', response)
   } else {
     if (response.bOver == false) {
       MessageShow.info(`正在处理...`)
@@ -451,6 +452,7 @@ function stop_play(): void {
 
 export class PlayReq {
   src: string
+  playStartTimeSec?: number
   onPlayCbk?: () => void
   beforePlayCbk?: () => void
   constructor(src: string) {
@@ -462,9 +464,6 @@ export class PlayReq {
 function setupVideoEventListeners(videoRef: HTMLVideoElement, bRemoveEvent: boolean = false): void {
   // 监听视频加载元数据事件，获取视频总时长
   const onLoadedMetadata = (): void => {
-    // appStore.videoPlayCtrl.duration 要废弃了
-    // appStore.videoPlayCtrl.duration = videoRef.value.duration
-    // 获取视频的起始时间
     appStore.videoPlayCtrl.videoStartTime = 0
   }
   videoRef.addEventListener('loadedmetadata', onLoadedMetadata)
@@ -472,13 +471,9 @@ function setupVideoEventListeners(videoRef: HTMLVideoElement, bRemoveEvent: bool
   // 监听视频时间更新事件，更新当前播放时间
   const onTimeUpdate = (): void => {
     if (videoRef != null) {
-      if (appStore.videoPlayCtrl.videoStartTime == 0) {
-        appStore.videoPlayCtrl.videoStartTime = videoRef.currentTime
-      }
-      if (appStore.thumbSeekTime != 0) {
-        videoRef.currentTime = appStore.thumbSeekTime
-        appStore.thumbSeekTime = 0
-      }
+      // if (appStore.videoPlayCtrl.videoStartTime == 0) {
+      //   appStore.videoPlayCtrl.videoStartTime = videoRef.currentTime
+      // }
       // 减去起始时间，得到从视频起始点开始的播放时间
       appStore.videoPlayCtrl.curTime = videoRef.currentTime - appStore.videoPlayCtrl.videoStartTime
     }
@@ -487,8 +482,9 @@ function setupVideoEventListeners(videoRef: HTMLVideoElement, bRemoveEvent: bool
 
   // 监听视频播放事件，更新播放状态
   const onPlay = (): void => {
-    appStore.videoPlayCtrl.isPlay = true
+    console.log(`on play ${videoRef.currentTime}`)
   }
+  videoRef.addEventListener('play', onPlay)
 
   // 监听视频暂停事件，更新播放状态
   const onPause = (): void => {
@@ -504,6 +500,15 @@ function setupVideoEventListeners(videoRef: HTMLVideoElement, bRemoveEvent: bool
   }
 }
 
+function set_video_cur_time(videoRef: HTMLVideoElement, curTime: number): void {
+  if (videoRef == null) {
+    console.log('video ref null')
+    return
+  }
+  console.log(`set video cur time ${curTime}`)
+  videoRef.currentTime = curTime + appStore.videoPlayCtrl.videoStartTime
+}
+
 function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
   if (videoRef == null) {
     console.log('video ref null')
@@ -514,7 +519,6 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
   }
   videoRef.pause()
   appStore.videoPlayCtrl.curSrc = req.src
-  appStore.videoPlayCtrl.isPlay = true
   videoRef.load()
 
   setupVideoEventListeners(videoRef, true)
@@ -532,20 +536,24 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
     }
     if (req.beforePlayCbk != null) {
       req.beforePlayCbk()
-      console.log(`video can play1111 ${appStore.videoPlayCtrl.curTime}`)
     }
-    console.log(`video can play ${appStore.videoPlayCtrl.curTime}`)
-    // videoRef.value.currentTime = appStore.videoPlayCtrl.curTime
     videoRef.play()
     setupVideoEventListeners(videoRef)
     // 移除监听器，避免重复触发
     videoRef.removeEventListener('canplay', onCanPlay)
+    if (req.playStartTimeSec != null) {
+      appStore.barSeekTime = req.playStartTimeSec
+    }
+    console.log(`video can play seek ${req.playStartTimeSec}`)
   }
   videoRef.addEventListener('canplay', onCanPlay)
+
+  videoRef.addEventListener('error', () => {
+    console.log(`video err: ${videoRef.error?.message}`)
+  })
 }
 
 function toggle_play(videoRef: HTMLVideoElement): void {
-  console.log('play video11111122222222')
   // 首先判断是否有视频被选中
   if (appStore.curSltVideo == null) {
     console.log('请选择视频文件1')
@@ -656,7 +664,29 @@ function update_bar_clips(): DataTypes.BarClip[] {
   return barClips
 }
 
+function update_thumbnail_images(thumbnailImages: DataTypes.Thumbnail[]): void {
+  if (appStore.curVideoInfo === null) {
+    return
+  }
+  if (appStore.curVideoInfo.thumbnail == null) {
+    console.log('cur video thumbnail null')
+    return
+  }
+  for (let i = 0; i < appStore.curVideoInfo.thumbnail.length; i++) {
+    const thumb = appStore.curVideoInfo.thumbnail[i]
+    thumbnailImages.push({
+      src: thumb.filePath,
+      indexTime: DataTypes.FileTools.parse_timestr_2_seconds(thumb.title),
+      title: thumb.title,
+      checked: false,
+      btnName: '⬜'
+    })
+  }
+}
+
 class Util {
+  set_video_cur_time = set_video_cur_time
+  update_thumbnail_images = update_thumbnail_images
   update_bar_clips = update_bar_clips
   updateKeyframeSplitInfo = updateKeyframeSplitInfo
   process_heartbeat = process_heartbeat

@@ -62,23 +62,22 @@ import '../../assets/common.css'
 import MessageShow from '../util/MessageShow'
 import util from '@renderer/utils/util'
 const appStore = useAppStore()
+import * as DataTypes from '../../../../bridge/dataTypedef'
 
 // 改变播放倍速
 const changePlaybackRate = (): void => {}
 
-// 这里把秒变成为时分秒的形式
-const formatTime = (time: number): string => {
-  const hours = Math.floor(time / 3600)
-  const minutes = Math.floor((time % 3600) / 60)
-  const seconds = Math.floor(time % 60)
-  const milliseconds = Math.floor((time - Math.floor(time)) * 1000)
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
-}
-let curTime = computed(() => formatTime(appStore.videoPlayCtrl.curTime))
+let curTime = computed(() => {
+  let str = '00:00:00.000'
+  str = DataTypes.Utils.time_2_msec_str(appStore.videoPlayCtrl.curTime)
+  return str
+})
 let videoDuration = computed(() => {
-  if (appStore.curVideoInfo == null) return '00:00:00.000'
-  if (appStore.curVideoInfo.mediaInfo == null) return '00:00:00.000'
-  return formatTime(appStore.curVideoInfo.mediaInfo.duration)
+  let str = '00:00:00.000'
+  if (appStore.curVideoInfo?.mediaInfo != null) {
+    str = DataTypes.Utils.time_2_msec_str(appStore.curVideoInfo.mediaInfo.duration)
+  }
+  return str
 })
 // let videoDuration = computed(() => formatTime(appStore.curVideoInfo?.mediaInfo.duration))
 

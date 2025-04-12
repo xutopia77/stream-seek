@@ -13,6 +13,7 @@
 import * as DataTypes from '../../../bridge/dataTypedef'
 
 export class IpcApi {
+  static cseq: number = 0
   // 为函数添加返回类型注解
   static async trigger_event<T = string, R = string>(
     req: DataTypes.Req<T>
@@ -21,8 +22,11 @@ export class IpcApi {
       ...req,
       data: req.data ? JSON.stringify(req.data) : undefined
     }
+    sendReq.cseq = this.cseq++
     const reqStr = JSON.stringify(sendReq)
-    // console.log(`Arguments: ${reqStr}`)
+    if( sendReq.cmd== "slt_video"){
+      console.log(`Arguments: ${reqStr}`)
+    }
     try {
       const response = await window.electron.ipcRenderer.invoke('render_event', reqStr)
       return {

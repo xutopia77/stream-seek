@@ -5,7 +5,7 @@ import mediaProc from './MediaProcess.js'
 import appCfg from './AppCfg.js'
 import logger from './Logger.js'
 import recordsProc from './RecordsProcess.js'
-import { TraversalFolder, workQueue } from './Utils.js'
+import { TraversalFolder, workQueue, Util } from './Utils.js'
 // import type { WorkResp } from './Utils.js'
 import * as DataTypes from '../../bridge/dataTypedef'
 
@@ -37,6 +37,7 @@ async function handle_open_folder(
     logger.log('handle_open_folder', folderPath)
     const traversalFolder = new TraversalFolder()
     traversalFolder.type = openType
+    traversalFolder.bSort = true
     traversalFolder.folder = folderPath
     traversalFolder
       .start()
@@ -233,25 +234,25 @@ async function handle_select_video(
       respData.thumbnail = thubResp.data?.files
     }
   }
-  {
-    const filePath =
-      'D:/02_workspace/05_timeCapsule/02_stream_manager/stream_manager/src/main/proc_models/contour_records.json'
-    let data = ''
-    try {
-      data = fs.readFileSync(filePath, {
-        encoding: 'utf-8'
-      })
-    } catch (error: unknown) {
-      console.error('读取文件时出错:', error)
-    }
-    // 解析json数据
-    try {
-      const jsonData = JSON.parse(data)
-      respData.eventInfo = jsonData
-    } catch (error: unknown) {
-      console.log('err parse json:', error)
-    }
-  }
+  // {
+  //   const filePath =
+  //     'D:/02_workspace/05_timeCapsule/02_stream_manager/stream_manager/src/main/proc_models/contour_records.json'
+  //   let data = ''
+  //   try {
+  //     data = fs.readFileSync(filePath, {
+  //       encoding: 'utf-8'
+  //     })
+  //   } catch (error: unknown) {
+  //     console.error('读取文件时出错:', error)
+  //   }
+  //   // 解析json数据
+  //   try {
+  //     const jsonData = JSON.parse(data)
+  //     respData.eventInfo = jsonData
+  //   } catch (error: unknown) {
+  //     console.log('err parse json:', error)
+  //   }
+  // }
   return resp
 }
 
@@ -329,6 +330,7 @@ async function traversal_folder(
   }
   const traversalFolder = new TraversalFolder()
   traversalFolder.folder = folderpath
+  traversalFolder.bSort = true
   return await traversalFolder.start()
 }
 
@@ -338,17 +340,7 @@ async function process_heart_beat(): Promise<DataTypes.Resp<DataTypes.HeartBeat>
     time: '',
     appStatus: ''
   }
-
-  // 获取当前的时间的字符串，精确到秒，格式为：YYYY-MM-DD hh:mm:ss
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hour = String(now.getHours()).padStart(2, '0')
-  const minute = String(now.getMinutes()).padStart(2, '0')
-  const second = String(now.getSeconds()).padStart(2, '0')
-  const timeStr = `${year}-${month}-${day} ${hour}:${minute}:${second}`
-  respData.time = timeStr
+  respData.time = Util.getCurTime()
   respData.appStatus = ''
   if (workQueue.curReq != null) {
     respData.appStatus = workQueue.curReq.cmd
@@ -379,6 +371,9 @@ function make_cmd_response<T>(cmdResp: DataTypes.Resp<T>): DataTypes.Resp<string
     resp[key] = cmdResp[key]
   }
   resp.data = JSON.stringify(cmdResp.data)
+  if (!(cmdResp.bOver == false)) {
+    workQueue.addTask(null)
+  }
   return resp
 }
 
@@ -393,70 +388,72 @@ export class IpcHandlers {
     function convertCmdRequest<T>(req: DataTypes.Req): DataTypes.Req<T> {
       const cmdReq: DataTypes.Req<T> = {
         cmd: req.cmd,
+        cseq: req.cseq,
         data: JSON.parse(req.data ? req.data : '{}') as T
       }
       return cmdReq
     }
     const cmd = req.cmd
+    const cseq = req.cseq
     switch (cmd) {
       case 'get_key_frame_info': {
         const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
-        logger.log(`cmd:${cmd}, ${cmdReq.data?.filepath}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_get_key_frame_info(cmdReq))
       }
       case 'open_folder': {
-        logger.log(`cmd:${cmd}, ${req}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${req}`)
         return make_cmd_response(await handle_open_folder(this.mainWindow!, req))
       }
       case 'traversal_folder': {
         const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
-        logger.log(`cmd:${cmd}, ${cmdReq.data?.folder}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
         return make_cmd_response(await traversal_folder(cmdReq))
       }
       case 'slt_video_event': {
-        logger.log(`cmd:${cmd}, ${req}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${req}`)
         return make_cmd_response(await handle_video_event_detect())
       }
       case 'save_prj': {
         const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
-        logger.log(`cmd:${cmd}, ${cmdReq.data?.filepath}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_save_prj(cmdReq))
       }
       case 'cut_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
-        logger.log(`cmd:${cmd}, ${cmdReq.data?.filepath}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
       }
       case 'slt_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
-        logger.log(`cmd:${cmd}, ${cmdReq.data?.filepath}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_select_video(cmdReq))
       }
       case 'app_start':
-        logger.log(`cmd:${cmd}`)
+        logger.log(`cmd:${cmd}:${cseq}`)
         return make_cmd_response(await handle_app_start())
       case 'query_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
-        logger.log(`cmd:${cmd}, ${cmdReq}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq}`)
         return make_cmd_response(await handle_query_video(cmdReq))
       }
       case 'clean_work': {
         const cmdReq = convertCmdRequest<DataTypes.Req_ClearWork>(req)
-        logger.log(`cmd:${cmd}, files len:${cmdReq.data?.files?.length}`)
+        logger.log(`cmd:${cmd}:${cseq}, files len:${cmdReq.data?.files?.length}`)
         return make_cmd_response(await handle_clean_work(cmdReq))
       }
       case 'sync_work': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SyncWork>(req)
-        logger.log(`cmd:${cmd}, ${cmdReq.data?.folder}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
         return make_cmd_response(await recordsProc.start_sync_work(cmdReq))
       }
       case 'sync_trash': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SyncTrash>(req)
-        logger.log(`cmd:${cmd}, ${cmdReq.data?.folder}`)
+        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
         return make_cmd_response(await recordsProc.start_sync_trash(cmdReq))
       }
       default: {
-        console.log(`Unknown event: ${cmd}`)
+        console.log(`Unknown event: ${cmd}:${cseq}`)
         const resp = new DataTypes.Resp()
         return resp.err(`Unknown event: ${cmd}`)
       }
@@ -472,11 +469,11 @@ export class IpcHandlers {
     if (req.cmd != 'heart_beat') {
       // console.log(`Arguments: ${args}`);
     }
-
     if (req.cmd == 'heart_beat') {
       return make_cmd_response(await process_heart_beat())
     }
     if (workQueue.isBusy()) {
+      logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${workQueue.curReq?.cmd}`)
       return workQueue.makeBusyResponse()
     }
     workQueue.addTask(req)

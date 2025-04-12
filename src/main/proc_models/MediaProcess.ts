@@ -298,13 +298,32 @@ async function cutVideo(
     // if( req.data?.fileInfo.splitInfo === 0.0001) {
     const filename = path.basename(filepath)
     const distFilename = path.join(trashFolderPath, filename)
-    try {
-      await fs.promises.rename(filepath, distFilename)
-    } catch (err) {
-      console.error('move original video err:', err)
-      return resp.err('move original video err')
+    let attempts = 0
+    const maxAttempts = 3 // 最大尝试次数
+    async function attemptRename(): Promise<void> {
+      try {
+        await fs.promises.rename(filepath, distFilename)
+        logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
+      } catch (err) {
+        attempts++
+        if (attempts < maxAttempts) {
+          logger.error(
+            `move original video attempt ${attempts} failed, retrying in 1 second...`,
+            err
+          )
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          await attemptRename()
+        } else {
+          logger.error('move original video err after multiple attempts:', err)
+          throw err
+        }
+      }
     }
-    logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
+    try {
+      await attemptRename()
+    } catch (err) {
+      return resp.err(`move original video err ${err}`)
+    }
     const respData: DataTypes.Resp_CutVideo = {
       traversalResp: await traversalFolderByFolder(baseFolder)
     }

@@ -4,11 +4,11 @@
       <div class="preview-image">
         <!-- <video src="./data/00_20250313113251_20250313114420.mp4" controls></video> -->
         <video
-          v-if="viewModel === 'video'"
+          v-show="viewModel === 'video'"
           ref="videoRef"
           :src="appStore.videoPlayCtrl.curSrc"
         ></video>
-        <ThumbnailView v-if="viewModel === 'thumbnail'"></ThumbnailView>
+        <ThumbnailView v-show="viewModel === 'thumbnail'"></ThumbnailView>
       </div>
       <VideList v-if="rightPanel === 'list'" />
       <VideoWorkPanel v-if="rightPanel === 'workPanel'" />
@@ -26,8 +26,7 @@ import VideoWorkPanel from './video_view/VideoWorkPanel.vue'
 import ThumbnailView from './video_view/ThumbnailView.vue'
 import PlayProgressBar from './video_view/PlayProgressBar.vue'
 import PlayCtrl from './video_view/PlayCtrl.vue'
-import { ref, onMounted, watch, onBeforeMount, computed, onUnmounted } from 'vue'
-// import { IpcApi } from '../utils/IpcApi'
+import { ref, onMounted, watch, onBeforeMount, computed, onUnmounted, onBeforeUnmount } from 'vue'
 import util from '../utils/util'
 import { PlayReq } from '../utils/util'
 import { useAppStore } from '../stores/AppStore'
@@ -47,16 +46,20 @@ watch(
   () => appStore.curSltVideo,
   async (newVal) => {
     if (newVal == null) {
+      if (videoRef.value) {
+        videoRef.value.src = ''
+      }
       return
     }
-    if (videoRef.value == null) {
-      return console.log('video ref null')
-    }
+
     const clearReq = new DataTypes.ClearSltInfoReq()
     clearReq.bNotClear_curSltVideo = true
     util.clear_cur_slt_video_info(clearReq)
     await util.get_slt_video(newVal)
     const playReq = new PlayReq(newVal.src)
+    if (videoRef.value == null) {
+      return
+    }
     util.play_video(videoRef.value, playReq)
   }
 )
@@ -68,6 +71,7 @@ watch(
       return console.log('video ref null')
     }
     util.toggle_play(videoRef.value)
+    console.log('video ref', `${videoRef.value.src}`)
   }
 )
 
@@ -81,7 +85,7 @@ function nextFrame(): void {
     let video = videoRef.value
     if (!video.paused) video.pause()
     const frameInterval = 1 / frameRate
-    video.currentTime += frameInterval
+    util.set_video_cur_time(video, video.currentTime + frameInterval)
   }
 }
 
@@ -95,7 +99,7 @@ function previousFrame(): void {
     let video = videoRef.value
     if (!video.paused) video.pause()
     const frameInterval = 1 / frameRate
-    video.currentTime = Math.max(0, video.currentTime - frameInterval)
+    util.set_video_cur_time(video, Math.max(0, video.currentTime - frameInterval))
   }
 }
 
@@ -125,9 +129,6 @@ watch(
       if (appStore.curSltVideo == null) {
         return
       }
-      if (appStore.thumbSeekTime != 0) {
-        appStore.videoPlayCtrl.curTime = appStore.thumbSeekTime
-      }
 
       if (appStore.curSltVideo?.src != null) {
         if (videoRef.value == null) {
@@ -135,6 +136,9 @@ watch(
           return
         }
         const playReq = new PlayReq(appStore.curSltVideo.src)
+        if (appStore.thumbSeekTime != 0) {
+          playReq.playStartTimeSec = appStore.thumbSeekTime
+        }
         util.play_video(videoRef.value, playReq)
       }
     } else if (newVal === 'thumbnail') {
@@ -158,11 +162,74 @@ watch(
   }
 )
 
+/*
+        0 (HAVE_NOTHING)：没有获取到任何视频的相关信息。
+        1 (HAVE_METADATA)：已经获取到视频的元数据（如时长、尺寸等），但没有足够的数据来播放。
+        2 (HAVE_CURRENT_DATA)：当前播放位置的数据已可用，但不足以播放下一帧。
+        3 (HAVE_FUTURE_DATA)：当前播放位置及后续部分数据可用，可以播放一小段时间。
+        4 (HAVE_ENOUGH_DATA)：有足够的数据可以流畅播放。
+      */
+
+// watch(
+//   () => appStore.barSeekTime,
+//   (newValue) => {
+//     if (videoRef.value != null) {
+//       /*
+//         0 (HAVE_NOTHING)：没有获取到任何视频的相关信息。
+//         1 (HAVE_METADATA)：已经获取到视频的元数据（如时长、尺寸等），但没有足够的数据来播放。
+//         2 (HAVE_CURRENT_DATA)：当前播放位置的数据已可用，但不足以播放下一帧。
+//         3 (HAVE_FUTURE_DATA)：当前播放位置及后续部分数据可用，可以播放一小段时间。
+//         4 (HAVE_ENOUGH_DATA)：有足够的数据可以流畅播放。
+//       */
+//       console.log(
+//         `seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}`
+//       )
+//       videoRef.value.currentTime = newValue + appStore.videoPlayCtrl.videoStartTime
+//       // util.set_video_cur_time(videoRef.value, newValue + appStore.videoPlayCtrl.videoStartTime)
+//     }
+//   }
+// )
+
+// 提取比较逻辑到独立函数
+function isSeekSuccessful(currentTime: number, targetTime: number): boolean {
+  return Math.abs(currentTime - targetTime) < 0.2
+}
+
 watch(
   () => appStore.barSeekTime,
   (newValue) => {
     if (videoRef.value != null) {
-      videoRef.value.currentTime = newValue + appStore.videoPlayCtrl.videoStartTime
+      const trySeek = (): void => {
+        if (videoRef.value == null) {
+          return
+        }
+        const targetTime = newValue + appStore.videoPlayCtrl.videoStartTime
+        videoRef.value.currentTime = targetTime
+        // console.log(
+        //   `retry seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}, abs diff ${appStore.videoPlayCtrl.curTime - targetTime}`
+        // )
+        console.log(
+          `retry seek to ${targetTime}(start:${appStore.videoPlayCtrl.videoStartTime}), state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}, abs diff ${appStore.videoPlayCtrl.curTime - targetTime}`
+        )
+        if (isSeekSuccessful(appStore.videoPlayCtrl.curTime, targetTime)) {
+          return
+        }
+
+        if (videoRef.value.readyState >= 2) {
+          videoRef.value.currentTime = targetTime
+          console.log(
+            `seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}`
+          )
+        } else {
+          // 如果状态不满足，等待一段时间后重试
+          // console.log(
+          //   `retry seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}`
+          // )
+          setTimeout(trySeek, 100)
+        }
+      }
+
+      trySeek()
     }
   }
 )
@@ -191,6 +258,16 @@ onMounted(() => {
     return
   }
   util.setupVideoEventListeners(videoRef.value)
+})
+
+onBeforeUnmount(() => {
+  if (videoRef.value == null) {
+    console.log('video ref null')
+    return
+  }
+  util.stop_play()
+  util.toggle_play(videoRef.value)
+  videoRef.value.src = ''
 })
 
 onUnmounted(() => {

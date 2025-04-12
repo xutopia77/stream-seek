@@ -17,21 +17,12 @@ import * as DataTypes from '../../../../bridge/dataTypedef'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
 
-// 定义缩略图对象的类型
-interface Thumbnail {
-  src: string
-  indexTime: number
-  title: string
-  checked: boolean
-  btnName: string
-}
+let thumbnailImages = ref<DataTypes.Thumbnail[]>([])
 
-let thumbnailImages = ref<Thumbnail[]>([])
-
-let curCheckImage = ref<Thumbnail | null>(null)
+let curCheckImage = ref<DataTypes.Thumbnail | null>(null)
 
 // 按钮点击检查函数
-function btnclk_card_check(thumb: Thumbnail): void {
+function btnclk_card_check(thumb: DataTypes.Thumbnail): void {
   let lastChked = thumb.checked
   for (let i = 0; i < thumbnailImages.value.length; i++) {
     thumbnailImages.value[i].checked = false
@@ -47,19 +38,27 @@ function btnclk_card_check(thumb: Thumbnail): void {
 }
 
 // 处理图片选中状态改变函数
-function handle_image_checked_change(thumb: Thumbnail | null): void {
+function handle_image_checked_change(thumb: DataTypes.Thumbnail | null): void {
   if (thumb?.checked === false) {
     appStore.thumbSeekTime = 0
     return
   }
-  appStore.thumbSeekTime = thumb?.indexTime || 0
-  appStore.videoPlayCtrl.curTime = thumb?.indexTime || 0
+  if (thumb?.indexTime == null) {
+    appStore.thumbSeekTime = 0
+  } else {
+    const thubs = thumbnailImages.value
+    if (thubs.length == 0) {
+      appStore.thumbSeekTime = 0
+    } else {
+      appStore.thumbSeekTime = thumb.indexTime - thubs[0].indexTime
+    }
+  }
 }
 
 // 监听当前选中图片的变化
 watch(
   () => curCheckImage.value,
-  async (newVal: Thumbnail | null, oldVal: Thumbnail | null): Promise<void> => {
+  async (newVal: DataTypes.Thumbnail | null, oldVal: DataTypes.Thumbnail | null): Promise<void> => {
     if (newVal === oldVal) {
       return
     }
@@ -67,58 +66,19 @@ watch(
   }
 )
 
-// 更新缩略图函数
-function updateThumbnailImages(): void {
-  thumbnailImages.value = []
-  if (appStore.curVideoInfo === null) {
-    return
-  }
-  if (appStore.curVideoInfo.thumbnail == null) {
-    return
-  }
-  for (let i = 0; i < appStore.curVideoInfo.thumbnail.length; i++) {
-    let thumb = appStore.curVideoInfo.thumbnail[i]
-    thumbnailImages.value.push({
-      src: thumb.filePath,
-      indexTime: DataTypes.FileTools.parse_timestr_2_seconds(thumb.title),
-      title: thumb.title,
-      checked: false,
-      btnName: '⬜'
-    })
-  }
-}
-
-// 监听当前选中视频的变化
-watch(
-  () => appStore.curSltVideo,
-  async (newVal: DataTypes.FileInfo | null, oldVal: DataTypes.FileInfo | null): Promise<void> => {
-    if (newVal === oldVal) {
-      return
-    }
-    util.clear_cur_slt_video_info(null)
-    await util.get_slt_video(newVal)
-    updateThumbnailImages()
-    // playVideo(newVal.src)
-  }
-)
-
 // 监听当前视频信息的缩略图变化
 watch(
   () => appStore.curVideoInfo?.thumbnail,
-  async (
-    newVal: DataTypes.FileInfo[] | undefined,
-    oldVal: DataTypes.FileInfo[] | undefined
-  ): Promise<void> => {
-    if (newVal === oldVal) {
-      return
-    }
-    updateThumbnailImages()
+  async (): Promise<void> => {
+    thumbnailImages.value = []
+    util.update_thumbnail_images(thumbnailImages.value)
   }
 )
 
 // 组件挂载时更新缩略图
 onMounted(async (): Promise<void> => {
-  updateThumbnailImages()
+  thumbnailImages.value = []
+  util.update_thumbnail_images(thumbnailImages.value)
 })
 </script>
 

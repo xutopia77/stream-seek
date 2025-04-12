@@ -7,6 +7,7 @@ import * as DataTypes from '../../bridge/dataTypedef'
 class TraversalFolder {
   type: string | null = null // search时才遍历子文件夹
   folder: string | null = null
+  bSort: boolean = false
 
   // 递归遍历文件夹
   async traversal_folder(): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
@@ -42,6 +43,11 @@ class TraversalFolder {
         }
       }
       await traverseRecursive(folderPath)
+      if (this.bSort) {
+        fileInfo.sort((a, b) => {
+          return a.title.localeCompare(b.title)
+        })
+      }
       resp.success('success').data = { folder: folderPath, files: fileInfo }
       return resp
     } catch (error) {
@@ -79,11 +85,18 @@ class WorkQueue {
   // 生成忙碌响应
   makeBusyResponse = (): DataTypes.Resp => {
     const resp = new DataTypes.Resp()
-    return resp.err('busy')
+    return resp.err(`busy cur cmd is ${this.curReq?.cmd}`)
   }
 
   // 添加任务到队列
   addTask(req: WorkQueueRequest | null): void {
+    if (req !== null) {
+      logger.info('add task to queue', req?.cmd)
+    } else {
+      if (this.curReq != null) {
+        logger.info('clean task in queue', this.curReq?.cmd)
+      }
+    }
     this.curReq = req
   }
 
@@ -110,6 +123,22 @@ interface WorkResp<T> {
   data: T
 }
 
+class Util {
+  static getCurTime(): string {
+    // 获取当前的时间的字符串，精确到秒，格式为：YYYY-MM-DD hh:mm:ss
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hour = String(now.getHours()).padStart(2, '0')
+    const minute = String(now.getMinutes()).padStart(2, '0')
+    const second = String(now.getSeconds()).padStart(2, '0')
+    const timeStr = `${year}-${month}-${day} ${hour}:${minute}:${second}`
+    return timeStr
+  }
+}
+
 export { workQueue }
 export { TraversalFolder }
+export { Util }
 export type { WorkResp }

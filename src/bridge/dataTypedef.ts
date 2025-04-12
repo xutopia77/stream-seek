@@ -183,6 +183,15 @@ export class ClearSltInfoReq {
   bNotClear_curSltVideo?: boolean
 }
 
+// 定义缩略图对象的类型
+export interface Thumbnail {
+  src: string
+  indexTime: number
+  title: string
+  checked: boolean
+  btnName: string
+}
+
 // ========================
 export class Resp<T = string> {
   code: number
@@ -211,6 +220,7 @@ export class Resp<T = string> {
 export interface Req<T = string> {
   cmd: string
   data?: T
+  cseq?: number
 }
 
 // ======================== tools
@@ -240,7 +250,7 @@ export class FileTools {
     const picTimeStr = `${year}${month}${day}${hour}${minute}${second}`
     return picTimeStr
   }
-  // 解析文件名，提取序号、开始时间和结束时间
+  // 解析文件名，提取序号、开始时间和结束时间 10_20250301104336_20250301104500.mp4
   static parse_filename_mi(title: string | null): ParsedFilename | null {
     if (title == null) {
       return null
@@ -256,7 +266,7 @@ export class FileTools {
       endTime
     }
   }
-  // 将时间字符串转换为秒数
+  // 将时间字符串转换为秒数 20250301104336
   static parse_timestr_2_seconds(timeStr: string): number {
     const year = parseInt(timeStr.slice(0, 4), 10)
     const month = parseInt(timeStr.slice(4, 6), 10) - 1 // 月份从0开始
@@ -266,7 +276,7 @@ export class FileTools {
     const second = parseInt(timeStr.slice(12, 14), 10)
     return new Date(year, month, day, hour, minute, second).getTime() / 1000
   }
-  // 将秒数转换为时间字符串
+  // 将秒数转换为时间字符串 20250301104336
   static parse_seconds_2_timestr(seconds: number): string {
     const date = new Date(seconds * 1000) // 将秒转换为毫秒
     const year = date.getFullYear()
@@ -276,5 +286,17 @@ export class FileTools {
     const minutes = String(date.getMinutes()).padStart(2, '0')
     const secs = String(date.getSeconds()).padStart(2, '0')
     return `${year}${month}${day}${hours}${minutes}${secs}`
+  }
+
+}
+
+export class Utils {
+  // 这里把秒变成为时分秒的形式
+  static time_2_msec_str(time: number): string {
+    const hours = Math.floor(time / 3600)
+    const minutes = Math.floor((time % 3600) / 60)
+    const seconds = Math.floor(time % 60)
+    const milliseconds = Math.floor((time - Math.floor(time)) * 1000)
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
   }
 }
