@@ -1,14 +1,23 @@
 <template>
   <div class="video-list common-scrollbar">
     <ul>
-      <!-- 修改部分：添加动态类名 -->
+      <!-- 修改部分：添加动态类名和 checkbox -->
       <li
         v-for="(video, index) in videoList"
         :key="index"
         :class="{ selected: video === appStore.curSltVideo }"
-        @click="playVideo(video)"
       >
-        <span class="common-text">{{ `${index + 1}:${video.title}` }}</span>
+        <label class="vscode-checkbox">
+          <input
+            type="checkbox"
+            :checked="appStore.curCheckedVideo.has(video)"
+            @change="toggleVideoSelection(video, ($event.target as HTMLInputElement).checked)"
+          />
+          <span class="checkmark"></span>
+        </label>
+        <span class="common-text" @click="playVideo(video)">{{
+          `${index + 1}:${video.title}`
+        }}</span>
       </li>
     </ul>
   </div>
@@ -22,6 +31,16 @@ import '../../assets/common.css'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 const videoList = computed<DataTypes.FileInfo[]>(() => appStore.videoList)
 
+// 切换视频的选中状态
+const toggleVideoSelection = (video: DataTypes.FileInfo, isChecked: boolean): void => {
+  console.log(`Video ${video.title} is ${isChecked ? 'selected' : 'deselected'}`)
+  if (isChecked) {
+    appStore.curCheckedVideo.add(video)
+  } else {
+    appStore.curCheckedVideo.delete(video)
+  }
+}
+
 onBeforeMount(() => {})
 
 const playVideo = (video: DataTypes.FileInfo): void => {
@@ -30,6 +49,7 @@ const playVideo = (video: DataTypes.FileInfo): void => {
 </script>
 
 <style scoped>
+/* 原有的样式保持不变 */
 .video-list {
   height: 100%;
   width: 10%;
@@ -81,5 +101,13 @@ const playVideo = (video: DataTypes.FileInfo): void => {
 .video-list li.selected {
   background-color: #094771; /* VSCode 选中项背景色 */
   color: white; /* VSCode 选中项文字颜色 */
+}
+
+.vscode-checkbox {
+  padding-left: 10px;
+  padding-right: 10px;
+  padding: 0px;
+  margin: 0px;
+  opacity: 0.7;
 }
 </style>

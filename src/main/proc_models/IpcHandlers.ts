@@ -424,6 +424,11 @@ export class IpcHandlers {
         logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
       }
+      case 'delete_video': {
+        const cmdReq = convertCmdRequest<DataTypes.Req_DeleteFile>(req)
+        logger.log(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.filepaths.length}`)
+        return make_cmd_response(await recordsProc.start_delete_video(cmdReq))
+      }
       case 'slt_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
         logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)

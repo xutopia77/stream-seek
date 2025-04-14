@@ -172,6 +172,21 @@ function process_work_response(workRespose: DataTypes.WorkResp): void {
         }
       }
       break
+    case 'delete_video':
+      {
+        if (response.code !== 0) {
+          MessageShow.error(`删除失败: ${response.status}`)
+          console.log('cut video failed', response)
+        } else {
+          MessageShow.success(`删除完成:${response.status}`)
+          const respData: DataTypes.Resp_DeleteFile = response.data
+          if (respData.traversalResp != null) {
+            console.log('update file list', respData.traversalResp)
+            util.folder_file_proc(respData.traversalResp)
+          }
+        }
+      }
+      break
     case 'get_key_frame_info':
       if (response.code !== 0) {
         MessageShow.error(`获取关键帧信息失败: ${response.status}`)
@@ -684,7 +699,67 @@ function update_thumbnail_images(thumbnailImages: DataTypes.Thumbnail[]): void {
   }
 }
 
+const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<void> => {
+  const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
+  if (prjInfo === null) {
+    MessageShow.error(`no project info`)
+    return
+  }
+  if (appStore.curSltVideo == null) {
+    MessageShow.info('请先选择一个视频')
+    return
+  }
+  util.stop_play()
+
+  if (cutReq?.bDelFullVideo != null) {
+    if (prjInfo.fileInfo.splitInfo != null) {
+      prjInfo.fileInfo.splitInfo[0].isDelete = true
+    }
+  }
+
+  const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
+    cmd: 'cut_video',
+    data: prjInfo
+  }
+  const response = await IpcApi.trigger_event(req)
+  if (response.code === 1001) {
+    return
+  }
+  if (response.code !== 0) {
+    MessageShow.success(`剪辑失败: ${response.status}`)
+  } else {
+    if (response.bOver === false) {
+      MessageShow.info(`正在处理...`)
+    } else {
+      MessageShow.success(`剪辑成功`)
+    }
+  }
+}
+
+async function delete_video(reqInfo: DataTypes.Req_DeleteFile): Promise<void> {
+  util.stop_play()
+  const req: DataTypes.Req<DataTypes.Req_DeleteFile> = {
+    cmd: 'delete_video',
+    data: reqInfo
+  }
+  const response = await IpcApi.trigger_event(req)
+  if (response.code === 1001) {
+    return
+  }
+  if (response.code !== 0) {
+    MessageShow.success(`删除失败: ${response.status}`)
+  } else {
+    if (response.bOver === false) {
+      MessageShow.info(`正在处理...`)
+    } else {
+      MessageShow.success(`删除成功`)
+    }
+  }
+}
+
 class Util {
+  export_cut_video = export_cut_video
+  delete_video = delete_video
   set_video_cur_time = set_video_cur_time
   update_thumbnail_images = update_thumbnail_images
   update_bar_clips = update_bar_clips

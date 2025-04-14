@@ -378,6 +378,24 @@ async function start_cut_video(
   return resp
 }
 
+async function start_delete_video(
+  req: DataTypes.Req<DataTypes.Req_DeleteFile>
+): Promise<DataTypes.Resp<DataTypes.Resp_DeleteFile>> {
+  mediaProc
+    .delete_video(req)
+    .then((resp) => {
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+    })
+    .catch((error) => {
+      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+    })
+  const resp = new DataTypes.Resp<DataTypes.Resp_CutVideo>()
+  resp.code = 0
+  resp.status = 'success'
+  resp.bOver = false
+  return resp
+}
+
 async function start_sync_work(
   req: DataTypes.Req<DataTypes.Req_SyncWork>
 ): Promise<DataTypes.Resp> {
@@ -458,6 +476,7 @@ class RecordsProc {
   start_file_classify = file_classify
   query_images = query_images
   start_cut_video = start_cut_video
+  start_delete_video = start_delete_video
   start_sync_work = start_sync_work
   start_sync_trash = start_sync_trash
 }

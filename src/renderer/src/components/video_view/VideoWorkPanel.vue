@@ -47,7 +47,7 @@ import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
 import '../../assets/common.css'
 import util from '../../utils/util.js'
-import { IpcApi } from '../../utils/IpcApi'
+// import { IpcApi } from '../../utils/IpcApi'
 import MessageShow from '../util/MessageShow'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 
@@ -197,34 +197,36 @@ const restoreVideoRecord = (): void => {
 }
 
 const exportVideoRecord = async (): Promise<void> => {
-  const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
-  if (prjInfo === null) {
-    MessageShow.error(`no project info`)
-    return
-  }
-  if (appStore.curSltVideo == null) {
-    MessageShow.info('请先选择一个视频')
-    return
-  }
-  util.stop_play()
+  return util.export_cut_video(null)
 
-  const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
-    cmd: 'cut_video',
-    data: prjInfo
-  }
-  const response = await IpcApi.trigger_event(req)
-  if (response.code === 1001) {
-    return
-  }
-  if (response.code !== 0) {
-    MessageShow.success(`剪辑失败: ${response.status}`)
-  } else {
-    if (response.bOver === false) {
-      MessageShow.info(`正在处理...`)
-    } else {
-      MessageShow.success(`剪辑成功`)
-    }
-  }
+  // const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
+  // if (prjInfo === null) {
+  //   MessageShow.error(`no project info`)
+  //   return
+  // }
+  // if (appStore.curSltVideo == null) {
+  //   MessageShow.info('请先选择一个视频')
+  //   return
+  // }
+  // util.stop_play()
+
+  // const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
+  //   cmd: 'cut_video',
+  //   data: prjInfo
+  // }
+  // const response = await IpcApi.trigger_event(req)
+  // if (response.code === 1001) {
+  //   return
+  // }
+  // if (response.code !== 0) {
+  //   MessageShow.success(`剪辑失败: ${response.status}`)
+  // } else {
+  //   if (response.bOver === false) {
+  //     MessageShow.info(`正在处理...`)
+  //   } else {
+  //     MessageShow.success(`剪辑成功`)
+  //   }
+  // }
 }
 </script>
 

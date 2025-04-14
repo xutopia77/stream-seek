@@ -137,6 +137,15 @@ export interface Resp_CutVideo {
   traversalResp?: Resp<TraversalFolder>
 }
 
+export interface Req_DeleteFile {
+  baseFolder: string
+  filepaths: string[]
+}
+
+export interface Resp_DeleteFile {
+  traversalResp?: Resp<TraversalFolder>
+}
+
 export interface Frame {
   pict_type: string
   pts_time: number
@@ -190,6 +199,10 @@ export interface Thumbnail {
   title: string
   checked: boolean
   btnName: string
+}
+
+export interface CutVideoReq {
+  bDelFullVideo?: boolean
 }
 
 // ========================

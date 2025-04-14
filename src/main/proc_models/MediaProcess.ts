@@ -166,6 +166,87 @@ interface CutSplitInfo {
   endTime: number
 }
 
+async function traversalFolderByFolder(
+  baseFolder: string
+): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+  const traversalFolder = new TraversalFolder()
+  traversalFolder.folder = baseFolder
+  const traversalResp: DataTypes.Resp<DataTypes.TraversalFolder> = await traversalFolder.start()
+  return traversalResp
+}
+async function make_trash_folder(folderPath: string): Promise<string> {
+  try {
+    await fs.promises.access(folderPath, fs.constants.F_OK)
+  } catch (err) {
+    if (err) {
+      await fs.promises.mkdir(folderPath, { recursive: true })
+    }
+  }
+  try {
+    await fs.promises.access(folderPath, fs.constants.F_OK)
+  } catch (err) {
+    if (err) {
+      logger.error('trash dir not exist:', folderPath)
+      return `trash dir not exist: ${folderPath}`
+    }
+  }
+  return ''
+}
+
+async function delete_video(
+  req: DataTypes.Req<DataTypes.Req_DeleteFile>
+): Promise<DataTypes.Resp<DataTypes.Resp_DeleteFile>> {
+  const resp = new DataTypes.Resp<DataTypes.Resp_DeleteFile>()
+  if (!req.data?.filepaths || req.data.filepaths.length === 0) {
+    return resp.err('filepath is null')
+  }
+  const baseFolder = req.data.baseFolder
+  const trashFolderPath = path.join(baseFolder, '.trash')
+  //------ make or check trash folder
+  const resp_str = await make_trash_folder(trashFolderPath)
+  if (resp_str.length > 0) {
+    return resp.err(resp_str)
+  }
+
+  for (const item of req.data.filepaths) {
+    const filepath = item
+    const filename = path.basename(item)
+    const distFilename = path.join(trashFolderPath, filename)
+    let attempts = 0
+    const maxAttempts = 3 // 最大尝试次数
+    async function attemptRename(): Promise<void> {
+      try {
+        await fs.promises.rename(filepath, distFilename)
+        logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
+      } catch (err) {
+        attempts++
+        if (attempts < maxAttempts) {
+          logger.error(
+            `move original video attempt ${attempts} failed, retrying in 1 second...`,
+            err
+          )
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          await attemptRename()
+        } else {
+          logger.error('move original video err after multiple attempts:', err)
+          throw err
+        }
+      }
+    }
+    try {
+      await attemptRename()
+    } catch (err) {
+      return resp.err(`move original video err ${err}`)
+    }
+  }
+
+  const respData: DataTypes.Resp_DeleteFile = {
+    traversalResp: await traversalFolderByFolder(baseFolder)
+  }
+  resp.data = respData
+  return resp
+}
+
 async function cutVideo(
   req: DataTypes.Req<DataTypes.Req_CutVideo>
 ): Promise<DataTypes.Resp<DataTypes.Resp_CutVideo>> {
@@ -234,33 +315,6 @@ async function cutVideo(
       }
     }
     return ''
-  }
-  async function make_trash_folder(folderPath: string): Promise<string> {
-    try {
-      await fs.promises.access(folderPath, fs.constants.F_OK)
-    } catch (err) {
-      if (err) {
-        await fs.promises.mkdir(folderPath, { recursive: true })
-      }
-    }
-    try {
-      await fs.promises.access(folderPath, fs.constants.F_OK)
-    } catch (err) {
-      if (err) {
-        logger.error('trash dir not exist:', folderPath)
-        return `trash dir not exist: ${folderPath}`
-      }
-    }
-    return ''
-  }
-
-  async function traversalFolderByFolder(
-    baseFolder: string
-  ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
-    const traversalFolder = new TraversalFolder()
-    traversalFolder.folder = baseFolder
-    const traversalResp: DataTypes.Resp<DataTypes.TraversalFolder> = await traversalFolder.start()
-    return traversalResp
   }
 
   //------ make or check trash folder
@@ -430,6 +484,7 @@ async function cutVideo(
 class MediaProcess {
   // constructor() {}
   cutVideo = cutVideo
+  delete_video = delete_video
   get_frame_info = getFrameInfo
 
   async getVideoInfo(filePath: string): Promise<DataTypes.MediaInfo> {

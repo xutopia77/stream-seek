@@ -39,6 +39,13 @@
     <div class="right-area-ctrl">
       <button
         class="common-button btn-noborder"
+        title="删除当前所选的文件"
+        @click="btnclk_del_cur_video"
+      >
+        🗑
+      </button>
+      <button
+        class="common-button btn-noborder"
         title="显示文件列表"
         @click="btnclk_chg_panel('list')"
       >
@@ -184,6 +191,33 @@ function changeFile(flag: string): void {
 
 function btnclk_chg_panel(model: string): void {
   appStore.rightPanel = model as 'list' | 'workPanel'
+}
+
+function btnclk_del_cur_video(): void {
+  const curCheckedVideo = appStore.curCheckedVideo
+  if (curCheckedVideo == null) {
+    MessageShow.info('没有选择的文件')
+    return
+  }
+
+  const req: DataTypes.Req_DeleteFile = {
+    filepaths: [],
+    baseFolder: appStore.curOpenedFolder || ''
+  }
+
+  for (const item of curCheckedVideo) {
+    req.filepaths.push(item.filePath)
+  }
+
+  console.log('delete file req', req)
+  util.delete_video(req).then(() => {
+    appStore.curCheckedVideo.clear()
+  })
+
+  // const req: DataTypes.CutVideoReq = {
+  //   bDelFullVideo: true
+  // }
+  // util.export_cut_video(req)
 }
 </script>
 
