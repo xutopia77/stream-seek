@@ -1,3 +1,35 @@
+export class FileInfo {
+  title: string = ''
+  filePath: string = '' //文件的路径，由后端赋值
+  // src: string = '' // 文件的url由前端组装
+  size: number = 0
+  // birthtime: string
+  // mtime: string
+
+  src(): string {
+    return `file://${this.filePath}`
+  }
+  makePlayUrl(): string {
+    return `file://${this.filePath}`
+  }
+  static makePlayUrlByInfo(finfo: FileInfo): string {
+    return `file://${finfo.filePath}`
+  }
+}
+
+export interface FileModel {
+  id?: number // 视频 ID，新增时可省略
+  name: string // 视频名称
+  path: string // 视频文件路径
+  startTimeSec: number // 视频开始时间，单位秒
+  endTimeSec: number // 视频结束时间，单位秒
+  duration: number // 视频时长
+  size: number // 视频大小，单位字节
+  created_at?: string // 创建时间，新增时可省略
+  updated_at?: string // 更新时间，新增时可省略
+  deleted_at?: string // 删除时间，新增时可省略
+}
+
 export interface SplitInfo {
   startTime: number
   endTime: number // 原数据中为字符串，这里统一为数字类型，若需要字符串类型可修改
@@ -126,6 +158,10 @@ export interface TraversalFolder {
   files?: FileInfo[]
 }
 
+export interface PrjInfo {
+  name: string
+}
+
 export interface Req_CutVideo {
   fileInfo: SltMediaInfo
   filepath: string
@@ -159,14 +195,7 @@ export interface Req_FrameInfo {
   filepath: string
 }
 
-export interface FileInfo {
-  title: string
-  filePath: string //文件的路径，由后端赋值
-  src: string // 文件的url由前端组装
-  size: number
-  birthtime: string
-  mtime: string
-}
+
 
 export interface Req_SltFile {
   filepath: string
@@ -238,11 +267,14 @@ export interface Req<T = string> {
 
 // ======================== tools
 
-// 定义解析文件名后的返回类型
+// 定义解析文件名后的返回类型 10_20250301104336_20250301104500.mp4
 interface ParsedFilename {
-  sequence: string
-  startTime: string
-  endTime: string
+  sequence: string // 10
+  startTime: string // 20250301104336
+  endTime: string // 20250301104500
+  startTimeSec: number // 开始时间 单位秒
+  endTimeSec: number // 结束时间 单位秒
+  durationSec: number // 视频时长 单位秒
 }
 
 export class FileTools {
@@ -273,11 +305,16 @@ export class FileTools {
       return null
     }
     const endTime = endTimeWithExtension.replace('.mp4', '')
-    return {
+    const fileNameInfo: ParsedFilename = {
       sequence,
       startTime,
-      endTime
+      endTime,
+      startTimeSec: FileTools.parse_timestr_2_seconds(startTime),
+      endTimeSec: FileTools.parse_timestr_2_seconds(endTime),
+      durationSec:
+        FileTools.parse_timestr_2_seconds(endTime) - FileTools.parse_timestr_2_seconds(startTime)
     }
+    return fileNameInfo
   }
   // 将时间字符串转换为秒数 20250301104336
   static parse_timestr_2_seconds(timeStr: string): number {

@@ -8,6 +8,8 @@
         class="dropdown-menu"
         :class="{ show: isDropdownOpen['home'] }"
       >
+        <button class="common-button menu-button" @click="btn_createPrj">创建项目</button>
+        <button class="common-button menu-button" @click="btn_openPrj">打开项目</button>
         <button class="common-button menu-button" @click="openFolder">打开文件夹</button>
         <button class="common-button menu-button" @click="btnclk_save_project">保存项目</button>
         <button class="common-button menu-button" @click="btnclk_clean_project">清理项目</button>
@@ -129,6 +131,39 @@ function btnclk_clean_work(): void {
       MessageShow.error(error)
     })
   MessageShow.info('清理中...')
+}
+
+const btn_createPrj = async (): Promise<void> => {
+  const req: DataTypes.Req = {
+    cmd: 'create_prj'
+  }
+  const response: DataTypes.Resp = await IpcApi.trigger_event(req)
+  if (response.code != 0) {
+    console.log('创建项目失败')
+    MessageShow.error(`创建项目失败 ${response.status}`)
+  } else {
+    if (response.bOver == false) {
+      MessageShow.success('后台执行中...')
+    } else {
+      MessageShow.success('创建项目成功')
+    }
+  }
+}
+
+const btn_openPrj = async (): Promise<void> => {
+  const req: DataTypes.Req = {
+    cmd: 'open_prj'
+  }
+  const response: DataTypes.Resp = await IpcApi.trigger_event(req)
+  if (response.code != 0) {
+    console.log('打开项目失败')
+  } else {
+    if (response.bOver == false) {
+      MessageShow.success('后台执行中...')
+    } else {
+      MessageShow.success('打开项目成功')
+    }
+  }
 }
 
 // 打开文件夹的处理函数

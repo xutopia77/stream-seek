@@ -44,19 +44,20 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 
 watch(
   () => appStore.curSltVideo,
-  async (newVal) => {
+  async (newVal: DataTypes.FileInfo | null) => {
     if (newVal == null) {
       if (videoRef.value) {
         videoRef.value.src = ''
       }
       return
     }
-
     const clearReq = new DataTypes.ClearSltInfoReq()
     clearReq.bNotClear_curSltVideo = true
     util.clear_cur_slt_video_info(clearReq)
     await util.get_slt_video(newVal)
-    const playReq = new PlayReq(newVal.src)
+    console.log('video info11111111', typeof newVal)
+    console.log('video info', newVal)
+    const playReq = new PlayReq(DataTypes.FileInfo.makePlayUrlByInfo(newVal))
     if (videoRef.value == null) {
       return
     }
@@ -110,12 +111,12 @@ watch(
     if (newVal == null) {
       return
     }
-    if (appStore.curSltVideo?.src != null) {
+    if (appStore.curSltVideo != null) {
       if (videoRef.value == null) {
         console.log('video ref null')
         return
       }
-      const playReq = new PlayReq(appStore.curSltVideo.src)
+      const playReq = new PlayReq(appStore.curSltVideo.makePlayUrl())
       util.play_video(videoRef.value, playReq)
     }
   }
@@ -130,12 +131,12 @@ watch(
         return
       }
 
-      if (appStore.curSltVideo?.src != null) {
+      if (appStore.curSltVideo != null) {
         if (videoRef.value == null) {
           console.log('video ref null')
           return
         }
-        const playReq = new PlayReq(appStore.curSltVideo.src)
+        const playReq = new PlayReq(appStore.curSltVideo.makePlayUrl())
         if (appStore.thumbSeekTime != 0) {
           playReq.playStartTimeSec = appStore.thumbSeekTime
         }

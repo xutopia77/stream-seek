@@ -1,6 +1,7 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import logger from './Logger'
+// import appDb from './AppDb'
 import * as DataTypes from '../../bridge/dataTypedef'
 
 // 遍历文件夹类
@@ -17,7 +18,7 @@ class TraversalFolder {
       return resp.err('folder is null')
     }
     try {
-      const fileInfo: DataTypes.FileInfo[] = []
+      const fileInfos: DataTypes.FileInfo[] = []
       const traverseRecursive = async (currentPath: string): Promise<void> => {
         const currentFiles = await fs.promises.readdir(currentPath)
         for (const file of currentFiles) {
@@ -31,24 +32,39 @@ class TraversalFolder {
             }
             await traverseRecursive(filePath)
           } else {
-            fileInfo.push({
+            const fileInfo: DataTypes.FileInfo = {
               title: file,
               filePath: filePath,
               src: '',
-              size: stats.size,
-              birthtime: `${stats.birthtime}`,
-              mtime: `${stats.mtime}`
-            })
+              size: stats.size
+              // birthtime: `${stats.birthtime}`,
+              // mtime: `${stats.mtime}`
+            }
+            fileInfos.push(fileInfo)
+            const fileTimeInfo = DataTypes.FileTools.parse_filename_mi(file)
+            if (fileTimeInfo == null) {
+              logger.warn(`traversal skip: ${filePath}`)
+              continue
+            }
+            // const fileModel: DataTypes.FileModel = {
+            //   name: file,
+            //   path: filePath,
+            //   startTimeSec: fileTimeInfo.startTimeSec, // 视频开始时间，单位秒
+            //   endTimeSec: fileTimeInfo.endTimeSec, // 视频结束时间，单位秒
+            //   duration: fileTimeInfo.durationSec, // 视频时长
+            //   size: fileInfo.size // 视频大小，单位字节
+            // }
+            // appDb.insertFile(fileModel)
           }
         }
       }
       await traverseRecursive(folderPath)
       if (this.bSort) {
-        fileInfo.sort((a, b) => {
+        fileInfos.sort((a, b) => {
           return a.title.localeCompare(b.title)
         })
       }
-      resp.success('success').data = { folder: folderPath, files: fileInfo }
+      resp.success('success').data = { folder: folderPath, files: fileInfos }
       return resp
     } catch (error) {
       console.error('traversal folder err:', error)

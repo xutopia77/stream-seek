@@ -39,9 +39,8 @@ async function initApp(appCfg: AppCfg): Promise<void> {
   }
 }
 
-// 定义 AppCfg 类
 class AppCfg {
-  appData: string
+  appData: string // 程序运行数据文件夹
   thumbnail_dir: string = ''
   file_prj_dir: string = ''
   trashFolder: string = '.trash'

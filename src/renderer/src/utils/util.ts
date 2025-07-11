@@ -116,9 +116,9 @@ function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void
   if (files === undefined) {
     return
   }
-  for (let i = 0; i < files.length; i++) {
-    files[i].src = `file://${files[i].filePath}`
-  }
+  // for (let i = 0; i < files.length; i++) {
+  //   files[i].src = `file://${files[i].filePath}`
+  // }
   appStore.videoList = files
   appStore.curOpenedFolder = respData.folder || ''
 }
@@ -318,14 +318,14 @@ async function get_slt_video(video: DataTypes.FileInfo | null): Promise<void> {
       util.processVideoEvent(respData.eventInfo?.events)
     }
     processSplitInfo()
-    {
-      const thumbs = respData.thumbnail
-      if (thumbs != null) {
-        for (const item of thumbs) {
-          item.src = `file://${item.filePath}`
-        }
-      }
-    }
+    // {
+    //   const thumbs = respData.thumbnail
+    //   if (thumbs != null) {
+    //     for (const item of thumbs) {
+    //       item.src = `file://${item.filePath}`
+    //     }
+    //   }
+    // }
   }
 }
 
@@ -587,7 +587,7 @@ function toggle_play(videoRef: HTMLVideoElement): void {
     return filepath.replace(/\\/g, '/')
   }
   let p1 = convert_filepath_to_linux_style(videoRef.src)
-  let p2 = convert_filepath_to_linux_style(appStore.curSltVideo.src)
+  let p2 = convert_filepath_to_linux_style(appStore.curSltVideo.makePlayUrl())
   // 再去掉p1，p2的前缀file:// 或者 file:///
   if (p1?.startsWith('file:///')) {
     p1 = p1.substring(8)
@@ -600,7 +600,7 @@ function toggle_play(videoRef: HTMLVideoElement): void {
     p2 = p2.substring(7)
   }
   if (p1 !== p2) {
-    const playReq = new PlayReq(appStore.curSltVideo.src)
+    const playReq = new PlayReq(appStore.curSltVideo.makePlayUrl())
     util.play_video(videoRef, playReq)
   } else {
     videoRef.play()

@@ -3,7 +3,8 @@ import * as fs from 'fs'
 import { dialog, IpcMainInvokeEvent } from 'electron'
 import mediaProc from './MediaProcess.js'
 import appCfg from './AppCfg.js'
-import logger from './Logger.js'
+import logger from './Logger'
+import appdb from './AppDb'
 import recordsProc from './RecordsProcess.js'
 import { TraversalFolder, workQueue, Util } from './Utils.js'
 // import type { WorkResp } from './Utils.js'
@@ -34,7 +35,7 @@ async function handle_open_folder(
       // 查询文件夹的不用保存到工程文件
       appCfg.prj['lastOpenedFolder'] = folderPath
     }
-    logger.log('handle_open_folder', folderPath)
+    logger.log('handle open folder', folderPath)
     const traversalFolder = new TraversalFolder()
     traversalFolder.type = openType
     traversalFolder.bSort = true
@@ -55,10 +56,111 @@ async function handle_open_folder(
     const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
     resp.success('success').data = { folder: folderPath }
     resp.bOver = false
-    logger.log('handle_open_folder', resp.status)
+    logger.log('handle open folder', resp.status)
     return resp
   }
   return new DataTypes.Resp<DataTypes.TraversalFolder>().err('canceled')
+}
+
+async function handle_create_prj(
+  mainWindow: Electron.BrowserWindow
+): Promise<DataTypes.Resp<DataTypes.PrjInfo>> {
+  const resp = new DataTypes.Resp<DataTypes.PrjInfo>()
+  try {
+    // 显示文件夹选择对话框
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory']
+    })
+
+    if (canceled) {
+      // 用户取消选择，返回取消状态
+      return resp.err('User canceled the folder selection')
+    }
+
+    const folderPath = filePaths[0]
+    // 获取当前文件夹下内容是否为空
+    const folderContent = fs.readdirSync(folderPath)
+    if (folderContent.length > 0) {
+      logger.log('The selected folder is not empty')
+      return resp.err('The selected folder is not empty')
+    }
+
+    // 获取文件夹名称
+    const folderName = path.basename(folderPath)
+    const prjInfo: DataTypes.PrjInfo = {
+      name: folderName
+      // 可以根据实际需求添加更多字段
+    }
+
+    {
+      logger.log('create project file:', folderPath)
+      // 创建 db文件夹
+      const dbFolderPath = path.join(folderPath, 'db')
+      if (!fs.existsSync(dbFolderPath)) {
+        fs.mkdirSync(dbFolderPath)
+      }
+      const respDb = await appdb.initDb(dbFolderPath)
+      if (respDb.code !== 0) {
+        return resp.err('init db error')
+      }
+      // 创建 log 文件夹
+      const logFolderPath = path.join(folderPath, 'log')
+      if (!fs.existsSync(logFolderPath)) {
+        fs.mkdirSync(logFolderPath)
+      }
+      // 创建 thumbnail 文件夹
+      const thumbnailFolderPath = path.join(folderPath, 'thumbnail')
+      if (!fs.existsSync(thumbnailFolderPath)) {
+        fs.mkdirSync(thumbnailFolderPath)
+      }
+    }
+
+    const projectFilePath = path.join(folderPath, 'project.json')
+    const jsonContent = JSON.stringify(prjInfo, null, 2)
+    await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
+    resp.success('Project file created successfully').data = prjInfo
+    return resp
+  } catch (error) {
+    logger.error('Error creating project file:', error)
+    return resp.err(
+      `Error creating project file: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+}
+
+async function handle_open_prj(
+  mainWindow: Electron.BrowserWindow
+): Promise<DataTypes.Resp<DataTypes.PrjInfo>> {
+  const resp = new DataTypes.Resp<DataTypes.PrjInfo>()
+  try {
+    // 显示文件选择对话框
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'Project Files', extensions: ['json'] }, // 可根据实际需求修改文件类型
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    })
+
+    if (canceled) {
+      // 用户取消选择，返回取消状态
+      return resp.err('User canceled the file selection')
+    }
+
+    const filePath = filePaths[0]
+    const fileContent = await fs.promises.readFile(filePath, 'utf-8')
+    // 解析文件内容为 JSON
+    const prjInfo = JSON.parse(fileContent) as DataTypes.PrjInfo
+    // 设置响应数据并标记成功
+    resp.success('File opened successfully').data = prjInfo
+    return resp
+  } catch (error) {
+    // 处理异常，返回错误信息
+    logger.error('Error opening project file:', error)
+    return resp.err(
+      `Error opening project file: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
 }
 
 async function handle_query_video(
@@ -400,6 +502,14 @@ export class IpcHandlers {
         const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
         logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_get_key_frame_info(cmdReq))
+      }
+      case 'create_prj': {
+        logger.log(`cmd:${cmd}:${cseq}, ${req}`)
+        return make_cmd_response(await handle_create_prj(this.mainWindow!))
+      }
+      case 'open_prj': {
+        logger.log(`cmd:${cmd}:${cseq}, ${req}`)
+        return make_cmd_response(await handle_open_prj(this.mainWindow!))
       }
       case 'open_folder': {
         logger.log(`cmd:${cmd}:${cseq}, ${req}`)
