@@ -1,86 +1,7 @@
-import * as path from 'path'
-import * as fs from 'fs'
+// import * as path from 'path'
+// import * as fs from 'fs'
 import logger from './Logger'
-import appDb from './AppDb'
 import * as DataTypes from '../../bridge/dataTypedef'
-
-// 遍历文件夹类
-class TraversalFolder {
-  type: string | null = null // search时才遍历子文件夹
-  folder: string | null = null
-  bSort: boolean = false
-
-  async proc_one_file(fPath: string, fName: string, stats: fs.Stats): Promise<DataTypes.Resp> {
-    const resp: DataTypes.Resp = new DataTypes.Resp()
-    const fileInfo: DataTypes.FileInfo = new DataTypes.FileInfo()
-    fileInfo.title = fName
-    fileInfo.filePath = fPath
-    fileInfo.size = stats.size
-    const fileTimeInfo = DataTypes.FileTools.parse_filename_mi(fName)
-    if (fileTimeInfo == null) {
-      logger.warn(`traversal skip: ${fPath}`)
-      return resp.err(`traversal skip: ${fPath}`)
-    }
-    const fileModel: DataTypes.FileModel = {
-      name: fName,
-      path: fPath,
-      startTimeSec: fileTimeInfo.startTimeSec, // 视频开始时间，单位秒
-      endTimeSec: fileTimeInfo.endTimeSec, // 视频结束时间，单位秒
-      duration: fileTimeInfo.durationSec, // 视频时长
-      size: fileInfo.size // 视频大小，单位字节
-    }
-    appDb.insertFile(fileModel)
-    return resp
-  }
-
-  // 递归遍历文件夹
-  async traversal_folder(): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
-    const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
-    const folderPath = this.folder
-    if (!folderPath) {
-      return resp.err('folder is null')
-    }
-    try {
-      const fileInfos: DataTypes.FileInfo[] = []
-      const traverseRecursive = async (currentPath: string): Promise<void> => {
-        const currentFiles = await fs.promises.readdir(currentPath)
-        for (const file of currentFiles) {
-          const filePath = path.join(currentPath, file)
-          const stats = await fs.promises.stat(filePath)
-          if (stats.isDirectory()) {
-            // 判断目录的名称，如果目录的名称是trash，则跳过
-            if (file === '.trash') {
-              // logger.log(`traversal skip: ${filePath}`)
-              continue
-            }
-            await traverseRecursive(filePath)
-          } else {
-            await this.proc_one_file(filePath, file, stats)
-          }
-        }
-      }
-      await traverseRecursive(folderPath)
-      if (this.bSort) {
-        fileInfos.sort((a, b) => {
-          return a.title.localeCompare(b.title)
-        })
-      }
-      resp.success('success').data = { folder: folderPath, files: fileInfos }
-      return resp
-    } catch (error) {
-      console.error('traversal folder err:', error)
-      return resp.err(`traversal folder err: ${error}`)
-    }
-  }
-
-  // 启动文件夹遍历
-  async start(): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
-    if (this.folder === null) {
-      return new DataTypes.Resp<DataTypes.TraversalFolder>().err('folder is null')
-    }
-    return this.traversal_folder()
-  }
-}
 
 // 定义工作队列请求类型
 interface WorkQueueRequest {
@@ -156,6 +77,5 @@ class Util {
 }
 
 export { workQueue }
-export { TraversalFolder }
 export { Util }
 export type { WorkResp }

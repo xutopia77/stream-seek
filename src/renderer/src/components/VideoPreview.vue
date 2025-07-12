@@ -1,23 +1,19 @@
 <template>
-  <div class="video-preview-container">
-    <div class="preview-container">
-      <div class="preview-image">
-        <!-- <video src="./data/00_20250313113251_20250313114420.mp4" controls></video> -->
-        <video
-          v-show="viewModel === 'video'"
-          ref="videoRef"
-          :src="appStore.videoPlayCtrl.curSrc"
-        ></video>
-        <ThumbnailView v-show="viewModel === 'thumbnail'"></ThumbnailView>
-      </div>
-      <VideList v-if="rightPanel === 'list'" />
-      <VideoWorkPanel v-if="rightPanel === 'workPanel'" />
+    <div class="video-preview-container">
+        <div class="preview-container">
+            <div class="preview-image">
+                <!-- <video src="./data/00_20250313113251_20250313114420.mp4" controls></video> -->
+                <video v-show="viewModel === 'video'" ref="videoRef" :src="appStore.videoPlayCtrl.curSrc"></video>
+                <ThumbnailView v-show="viewModel === 'thumbnail'"></ThumbnailView>
+            </div>
+            <VideList v-if="rightPanel === 'list'" />
+            <VideoWorkPanel v-if="rightPanel === 'workPanel'" />
+        </div>
+        <div class="control-container">
+            <PlayProgressBar />
+            <PlayCtrl />
+        </div>
     </div>
-    <div class="control-container">
-      <PlayProgressBar />
-      <PlayCtrl />
-    </div>
-  </div>
 </template>
 
 <script lang="ts" setup>
@@ -37,130 +33,130 @@ const appStore = useAppStore()
 let rightPanel = computed(() => appStore.rightPanel)
 
 const viewModel = computed(() => {
-  return appStore.curViewModel
+    return appStore.curViewModel
 })
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 
 watch(
-  () => appStore.curSltVideo,
-  async (newVal: DataTypes.File | null) => {
-    if (newVal == null) {
-      if (videoRef.value) {
-        videoRef.value.src = ''
-      }
-      return
+    () => appStore.curSltVideo,
+    async (newVal: DataTypes.File | null) => {
+        if (newVal == null) {
+            if (videoRef.value) {
+                videoRef.value.src = ''
+            }
+            return
+        }
+        const clearReq = new DataTypes.ClearSltInfoReq()
+        clearReq.bNotClear_curSltVideo = true
+        util.clear_cur_slt_video_info(clearReq)
+        await util.get_slt_video(newVal)
+        console.log('video info11111111', typeof newVal)
+        console.log('video info', newVal)
+        const playReq = new PlayReq(DataTypes.File.makePlayUrl(newVal))
+        if (videoRef.value == null) {
+            return
+        }
+        util.play_video(videoRef.value, playReq)
     }
-    const clearReq = new DataTypes.ClearSltInfoReq()
-    clearReq.bNotClear_curSltVideo = true
-    util.clear_cur_slt_video_info(clearReq)
-    await util.get_slt_video(newVal)
-    console.log('video info11111111', typeof newVal)
-    console.log('video info', newVal)
-    const playReq = new PlayReq(DataTypes.File.makePlayUrlByInfo(newVal))
-    if (videoRef.value == null) {
-      return
-    }
-    util.play_video(videoRef.value, playReq)
-  }
 )
 
 watch(
-  () => appStore.videoPlayCtrl.isPlay,
-  () => {
-    if (videoRef.value == null) {
-      return console.log('video ref null')
+    () => appStore.videoPlayCtrl.isPlay,
+    () => {
+        if (videoRef.value == null) {
+            return console.log('video ref null')
+        }
+        util.toggle_play(videoRef.value)
+        console.log('video ref', `${videoRef.value.src}`)
     }
-    util.toggle_play(videoRef.value)
-    console.log('video ref', `${videoRef.value.src}`)
-  }
 )
 
 function nextFrame(): void {
-  if (videoRef.value != null) {
-    const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
-    if (frameRate == null) {
-      console.log('frame rate is null')
-      return
+    if (videoRef.value != null) {
+        const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+        if (frameRate == null) {
+            console.log('frame rate is null')
+            return
+        }
+        let video = videoRef.value
+        if (!video.paused) video.pause()
+        const frameInterval = 1 / frameRate
+        util.set_video_cur_time(video, video.currentTime + frameInterval)
     }
-    let video = videoRef.value
-    if (!video.paused) video.pause()
-    const frameInterval = 1 / frameRate
-    util.set_video_cur_time(video, video.currentTime + frameInterval)
-  }
 }
 
 function previousFrame(): void {
-  if (videoRef.value != null) {
-    const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
-    if (frameRate == null) {
-      console.log('frame rate is null')
-      return
+    if (videoRef.value != null) {
+        const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+        if (frameRate == null) {
+            console.log('frame rate is null')
+            return
+        }
+        let video = videoRef.value
+        if (!video.paused) video.pause()
+        const frameInterval = 1 / frameRate
+        util.set_video_cur_time(video, Math.max(0, video.currentTime - frameInterval))
     }
-    let video = videoRef.value
-    if (!video.paused) video.pause()
-    const frameInterval = 1 / frameRate
-    util.set_video_cur_time(video, Math.max(0, video.currentTime - frameInterval))
-  }
 }
 
 // 防止刚切换过来，videoRef为空，导致没有开始播放，所以等待videoRef不为空后再播放
 watch(
-  () => videoRef.value,
-  (newVal) => {
-    if (newVal == null) {
-      return
+    () => videoRef.value,
+    (newVal) => {
+        if (newVal == null) {
+            return
+        }
+        if (appStore.curSltVideo != null) {
+            if (videoRef.value == null) {
+                console.log('video ref null')
+                return
+            }
+            const playReq = new PlayReq(DataTypes.File.makePlayUrl(appStore.curSltVideo))
+            util.play_video(videoRef.value, playReq)
+        }
     }
-    if (appStore.curSltVideo != null) {
-      if (videoRef.value == null) {
-        console.log('video ref null')
-        return
-      }
-      const playReq = new PlayReq(appStore.curSltVideo.makePlayUrl())
-      util.play_video(videoRef.value, playReq)
-    }
-  }
 )
 
 // 播放模式，video or thumbnail
 watch(
-  () => appStore.curViewModel,
-  (newVal) => {
-    if (newVal === 'video') {
-      if (appStore.curSltVideo == null) {
-        return
-      }
+    () => appStore.curViewModel,
+    (newVal) => {
+        if (newVal === 'video') {
+            if (appStore.curSltVideo == null) {
+                return
+            }
 
-      if (appStore.curSltVideo != null) {
-        if (videoRef.value == null) {
-          console.log('video ref null')
-          return
+            if (appStore.curSltVideo != null) {
+                if (videoRef.value == null) {
+                    console.log('video ref null')
+                    return
+                }
+                const playReq = new PlayReq(DataTypes.File.makePlayUrl(appStore.curSltVideo))
+                if (appStore.thumbSeekTime != 0) {
+                    playReq.playStartTimeSec = appStore.thumbSeekTime
+                }
+                util.play_video(videoRef.value, playReq)
+            }
+        } else if (newVal === 'thumbnail') {
+            // const removeEventListeners = setupVideoEventListeners()
+            // if (removeEventListeners != null) {
+            //   removeEventListeners()
+            // }
+            util.clear_cur_slt_video_info({ clearModel: 'changeToThumbnail' })
+        } else {
+            console.log('unsupported view model:', newVal)
         }
-        const playReq = new PlayReq(appStore.curSltVideo.makePlayUrl())
-        if (appStore.thumbSeekTime != 0) {
-          playReq.playStartTimeSec = appStore.thumbSeekTime
-        }
-        util.play_video(videoRef.value, playReq)
-      }
-    } else if (newVal === 'thumbnail') {
-      // const removeEventListeners = setupVideoEventListeners()
-      // if (removeEventListeners != null) {
-      //   removeEventListeners()
-      // }
-      util.clear_cur_slt_video_info({ clearModel: 'changeToThumbnail' })
-    } else {
-      console.log('unsupported view model:', newVal)
     }
-  }
 )
 
 watch(
-  () => appStore.videoPlayCtrl.playbackRate,
-  () => {
-    if (videoRef.value != null) {
-      videoRef.value.playbackRate = appStore.videoPlayCtrl.playbackRate
+    () => appStore.videoPlayCtrl.playbackRate,
+    () => {
+        if (videoRef.value != null) {
+            videoRef.value.playbackRate = appStore.videoPlayCtrl.playbackRate
+        }
     }
-  }
 )
 
 /*
@@ -193,135 +189,137 @@ watch(
 
 // 提取比较逻辑到独立函数
 function isSeekSuccessful(currentTime: number, targetTime: number): boolean {
-  return Math.abs(currentTime - targetTime) < 0.2
+    return Math.abs(currentTime - targetTime) < 0.2
 }
 
 watch(
-  () => appStore.barSeekTime,
-  (newValue) => {
-    if (videoRef.value != null) {
-      const trySeek = (): void => {
-        if (videoRef.value == null) {
-          return
-        }
-        const targetTime = newValue + appStore.videoPlayCtrl.videoStartTime
-        videoRef.value.currentTime = targetTime
-        // console.log(
-        //   `retry seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}, abs diff ${appStore.videoPlayCtrl.curTime - targetTime}`
-        // )
-        console.log(
-          `retry seek to ${targetTime}(start:${appStore.videoPlayCtrl.videoStartTime}), state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}, abs diff ${appStore.videoPlayCtrl.curTime - targetTime}`
-        )
-        if (isSeekSuccessful(appStore.videoPlayCtrl.curTime, targetTime)) {
-          return
-        }
+    () => appStore.barSeekTime,
+    (newValue) => {
+        if (videoRef.value != null) {
+            const trySeek = (): void => {
+                if (videoRef.value == null) {
+                    return
+                }
+                const targetTime = newValue + appStore.videoPlayCtrl.videoStartTime
+                videoRef.value.currentTime = targetTime
+                // console.log(
+                //   `retry seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}, abs diff ${appStore.videoPlayCtrl.curTime - targetTime}`
+                // )
+                console.log(
+                    `retry seek to ${targetTime}(start:${appStore.videoPlayCtrl.videoStartTime}), state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}, abs diff ${appStore.videoPlayCtrl.curTime - targetTime}`
+                )
+                if (isSeekSuccessful(appStore.videoPlayCtrl.curTime, targetTime)) {
+                    return
+                }
 
-        if (videoRef.value.readyState >= 2) {
-          videoRef.value.currentTime = targetTime
-          console.log(
-            `seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}`
-          )
-        } else {
-          // 如果状态不满足，等待一段时间后重试
-          // console.log(
-          //   `retry seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}`
-          // )
-          setTimeout(trySeek, 100)
-        }
-      }
+                if (videoRef.value.readyState >= 2) {
+                    videoRef.value.currentTime = targetTime
+                    console.log(
+                        `seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}`
+                    )
+                } else {
+                    // 如果状态不满足，等待一段时间后重试
+                    // console.log(
+                    //   `retry seek to ${newValue}, duration ${videoRef.value.duration}, state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}`
+                    // )
+                    setTimeout(trySeek, 100)
+                }
+            }
 
-      trySeek()
+            trySeek()
+        }
     }
-  }
 )
 
 watch(
-  () => appStore.videoPlayCtrl.isStop,
-  (newValue) => {
-    if (videoRef.value != null) {
-      if (newValue == true) {
-        videoRef.value.pause()
-      }
+    () => appStore.videoPlayCtrl.isStop,
+    (newValue) => {
+        if (videoRef.value != null) {
+            if (newValue == true) {
+                videoRef.value.pause()
+            }
+        }
     }
-  }
 )
 
 onBeforeMount(() => {
-  appStore.func_nextFrame = nextFrame
-  appStore.func_prevFrame = previousFrame
-  appStore.func_get_ele_video = (): HTMLVideoElement | null => {
-    return videoRef.value
-  }
+    appStore.func_nextFrame = nextFrame
+    appStore.func_prevFrame = previousFrame
+    appStore.func_get_ele_video = (): HTMLVideoElement | null => {
+        return videoRef.value
+    }
 })
 onMounted(() => {
-  if (videoRef.value == null) {
-    console.log('video ref null')
-    return
-  }
-  util.setupVideoEventListeners(videoRef.value)
+    if (videoRef.value == null) {
+        console.log('video ref null')
+        return
+    }
+    util.setupVideoEventListeners(videoRef.value)
 })
 
 onBeforeUnmount(() => {
-  if (videoRef.value == null) {
-    console.log('video ref null')
-    return
-  }
-  util.stop_play()
-  util.toggle_play(videoRef.value)
-  videoRef.value.src = ''
+    if (videoRef.value == null) {
+        console.log('video ref null')
+        return
+    }
+    util.stop_play()
+    util.toggle_play(videoRef.value)
+    videoRef.value.src = ''
 })
 
 onUnmounted(() => {
-  if (videoRef.value == null) {
-    console.log('video ref null')
-    return
-  }
-  util.setupVideoEventListeners(videoRef.value, true)
-  util.clear_cur_slt_video_info(null)
+    if (videoRef.value == null) {
+        console.log('video ref null')
+        return
+    }
+    util.setupVideoEventListeners(videoRef.value, true)
+    util.clear_cur_slt_video_info(null)
 })
 </script>
 
 <style scoped>
 .video-preview-container {
-  height: calc(100% - 30px);
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  background-color: #f0f2f7;
-  display: flex;
-  flex-direction: column;
+    height: calc(100% - 30px);
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background-color: #f0f2f7;
+    display: flex;
+    flex-direction: column;
 }
 
 .preview-container {
-  width: 100%;
-  height: calc(100% - 60px);
-  padding: 0;
-  margin: 0;
-  display: flex;
+    width: 100%;
+    height: calc(100% - 60px);
+    padding: 0;
+    margin: 0;
+    display: flex;
 }
 
 .preview-image {
-  height: 100%;
-  width: 90%;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: black;
+    height: 100%;
+    width: 90%;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
 }
 
 .preview-image video {
-  max-height: 100%;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  object-fit: contain; /* 确保视频适应容器 */
+    max-height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    object-fit: contain;
+    /* 确保视频适应容器 */
 }
+
 .control-container {
-  height: 60px;
-  width: 100%;
-  padding: 0;
-  margin: 0;
+    height: 60px;
+    width: 100%;
+    padding: 0;
+    margin: 0;
 }
 </style>
