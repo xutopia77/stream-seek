@@ -34,8 +34,8 @@ const searchFolder = computed<string>(() => {
   height: calc(100% - 30px);
   margin: 0;
   padding: 0;
-  background-color: var(--common-page-background-color);
-  color: var(--common-page-text-color);
+  background-color: var(--xc-page-background-color);
+  color: var(--xc-page-text-color);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   flex-direction: column;

@@ -4,7 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
 import { IpcHandlers } from './proc_models/IpcHandlers'
-import appCfg from './proc_models/AppCfg'
+import appProc from './proc_models/AppProc'
 const handlers = new IpcHandlers()
 
 function createWindow(): void {
@@ -50,7 +50,7 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
-  await appCfg.initCfg()
+  await appProc.initApp()
 
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
@@ -79,7 +79,7 @@ app.on('before-quit', async (event) => {
   console.log(event)
   console.log('app exit')
   // event.preventDefault()
-  await appCfg.quiteApp()
+  await appProc.quiteApp()
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

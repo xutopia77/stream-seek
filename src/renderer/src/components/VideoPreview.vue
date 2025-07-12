@@ -44,7 +44,7 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 
 watch(
   () => appStore.curSltVideo,
-  async (newVal: DataTypes.FileInfo | null) => {
+  async (newVal: DataTypes.File | null) => {
     if (newVal == null) {
       if (videoRef.value) {
         videoRef.value.src = ''
@@ -57,7 +57,7 @@ watch(
     await util.get_slt_video(newVal)
     console.log('video info11111111', typeof newVal)
     console.log('video info', newVal)
-    const playReq = new PlayReq(DataTypes.FileInfo.makePlayUrlByInfo(newVal))
+    const playReq = new PlayReq(DataTypes.File.makePlayUrlByInfo(newVal))
     if (videoRef.value == null) {
       return
     }

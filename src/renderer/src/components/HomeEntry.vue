@@ -33,23 +33,30 @@ function startTimer(): void {
   }, 500)
 }
 
-async function updatePrj(prj: DataTypes.Prj): Promise<void> {
-  appStore.prj = prj
-  if (prj.lastOpenedFolder != null) {
-    const req: DataTypes.Req<DataTypes.Req_TraversalFolder> = {
-      cmd: 'traversal_folder',
-      data: { folder: prj.lastOpenedFolder }
-    }
-    const response: DataTypes.Resp<DataTypes.TraversalFolder> = await IpcApi.trigger_event(req)
-    if (response.code === 0) {
-      appStore.curOpenedFolder = prj.lastOpenedFolder
-      util.folder_file_proc(response)
-    } else {
-      MessageShow.error(`遍历文件夹失败`)
-    }
+async function updateAppInfo(appStartResp: DataTypes.AppStartResp): Promise<void> {
+  appStore.appInfo = appStartResp.appInfo
+  if (appStartResp.prj != null) {
+    appStore.prj = appStartResp.prj
+    console.log('get prj success ', appStartResp.prj)
+    await util.search_file()
   } else {
-    console.log('lastOpenedFolder is null')
+    console.log('get prj failed')
   }
+  // if (prj.dataFolder != null && prj.dataFolder !== '') {
+  //   const req: DataTypes.Req<DataTypes.Req_TraversalFolder> = {
+  //     cmd: 'traversal_folder',
+  //     data: { folder: prj.lastOpenedFolder }
+  //   }
+  //   const response: DataTypes.Resp<DataTypes.TraversalFolder> = await IpcApi.trigger_event(req)
+  //   if (response.code === 0) {
+  //     appStore.curOpenedFolder = prj.lastOpenedFolder
+  //     util.folder_file_proc(response)
+  //   } else {
+  //     MessageShow.error(`遍历文件夹失败`)
+  //   }
+  // } else {
+  //   console.log('lastOpenedFolder is null')
+  // }
 }
 
 watch(
@@ -65,10 +72,8 @@ watch(
 
 onBeforeMount(async () => {
   util.setAppStore(appStore)
-  const req: DataTypes.Req = {
-    cmd: 'app_start'
-  }
-  const response: DataTypes.Resp<DataTypes.Prj> = await IpcApi.trigger_event(req)
+  const req: DataTypes.Req = { cmd: 'app_start' }
+  const response: DataTypes.Resp<DataTypes.AppStartResp> = await IpcApi.trigger_event(req)
   if (response.code !== 0) {
     MessageShow.error(`启动失败`)
     return
@@ -78,7 +83,7 @@ onBeforeMount(async () => {
   if (respData == null) {
     return
   }
-  updatePrj(respData)
+  updateAppInfo(respData)
 })
 
 onMounted(() => {

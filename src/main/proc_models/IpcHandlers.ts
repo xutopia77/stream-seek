@@ -4,7 +4,7 @@ import { dialog, IpcMainInvokeEvent } from 'electron'
 import mediaProc from './MediaProcess.js'
 import appCfg from './AppCfg.js'
 import logger from './Logger'
-import appdb from './AppDb'
+import appProc from './AppProc'
 import recordsProc from './RecordsProcess.js'
 import { TraversalFolder, workQueue, Util } from './Utils.js'
 // import type { WorkResp } from './Utils.js'
@@ -33,7 +33,7 @@ async function handle_open_folder(
     const folderPath = filePaths[0]
     if (openType != 'search') {
       // 查询文件夹的不用保存到工程文件
-      appCfg.prj['lastOpenedFolder'] = folderPath
+      appCfg.prj.dataFolder = folderPath
     }
     logger.log('handle open folder', folderPath)
     const traversalFolder = new TraversalFolder()
@@ -63,6 +63,7 @@ async function handle_open_folder(
 }
 
 async function handle_create_prj(
+  req : DataTypes.Req<DataTypes.CreatePrjReq>,
   mainWindow: Electron.BrowserWindow
 ): Promise<DataTypes.Resp<DataTypes.PrjInfo>> {
   const resp = new DataTypes.Resp<DataTypes.PrjInfo>()
@@ -76,7 +77,6 @@ async function handle_create_prj(
       // 用户取消选择，返回取消状态
       return resp.err('User canceled the folder selection')
     }
-
     const folderPath = filePaths[0]
     // 获取当前文件夹下内容是否为空
     const folderContent = fs.readdirSync(folderPath)
@@ -84,42 +84,7 @@ async function handle_create_prj(
       logger.log('The selected folder is not empty')
       return resp.err('The selected folder is not empty')
     }
-
-    // 获取文件夹名称
-    const folderName = path.basename(folderPath)
-    const prjInfo: DataTypes.PrjInfo = {
-      name: folderName
-      // 可以根据实际需求添加更多字段
-    }
-
-    {
-      logger.log('create project file:', folderPath)
-      // 创建 db文件夹
-      const dbFolderPath = path.join(folderPath, 'db')
-      if (!fs.existsSync(dbFolderPath)) {
-        fs.mkdirSync(dbFolderPath)
-      }
-      const respDb = await appdb.initDb(dbFolderPath)
-      if (respDb.code !== 0) {
-        return resp.err('init db error')
-      }
-      // 创建 log 文件夹
-      const logFolderPath = path.join(folderPath, 'log')
-      if (!fs.existsSync(logFolderPath)) {
-        fs.mkdirSync(logFolderPath)
-      }
-      // 创建 thumbnail 文件夹
-      const thumbnailFolderPath = path.join(folderPath, 'thumbnail')
-      if (!fs.existsSync(thumbnailFolderPath)) {
-        fs.mkdirSync(thumbnailFolderPath)
-      }
-    }
-
-    const projectFilePath = path.join(folderPath, 'project.json')
-    const jsonContent = JSON.stringify(prjInfo, null, 2)
-    await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
-    resp.success('Project file created successfully').data = prjInfo
-    return resp
+    return await appProc.create_prj(req, folderPath)
   } catch (error) {
     logger.error('Error creating project file:', error)
     return resp.err(
@@ -375,27 +340,6 @@ async function handle_save_prj(
   }
 }
 
-function handle_app_start(): DataTypes.Resp<DataTypes.Prj> {
-  const resp = new DataTypes.Resp<DataTypes.Prj>()
-  const cfgPath = path.join(appCfg.appData, 'prj.json')
-  let data = ''
-  try {
-    data = fs.readFileSync(cfgPath, {
-      encoding: 'utf-8'
-    })
-  } catch (error: unknown) {
-    console.error('读取文件时出错:', error)
-  }
-  try {
-    const jsonData = JSON.parse(data)
-    appCfg.prj = jsonData
-    resp.data = appCfg.prj
-  } catch (error: unknown) {
-    console.log('err parse json:', error)
-  }
-  return resp
-}
-
 async function handle_get_key_frame_info(
   req: DataTypes.Req<DataTypes.Req_FrameInfo>
 ): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
@@ -498,14 +442,18 @@ export class IpcHandlers {
     const cmd = req.cmd
     const cseq = req.cseq
     switch (cmd) {
+      case 'app_start':
+        logger.log(`cmd:${cmd}:${cseq}`)
+        return make_cmd_response(await appProc.app_start())
       case 'get_key_frame_info': {
         const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
         logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_get_key_frame_info(cmdReq))
       }
       case 'create_prj': {
+        const cmdReq = convertCmdRequest<DataTypes.CreatePrjReq>(req)
         logger.log(`cmd:${cmd}:${cseq}, ${req}`)
-        return make_cmd_response(await handle_create_prj(this.mainWindow!))
+        return make_cmd_response(await handle_create_prj(cmdReq, this.mainWindow!))
       }
       case 'open_prj': {
         logger.log(`cmd:${cmd}:${cseq}, ${req}`)
@@ -514,6 +462,11 @@ export class IpcHandlers {
       case 'open_folder': {
         logger.log(`cmd:${cmd}:${cseq}, ${req}`)
         return make_cmd_response(await handle_open_folder(this.mainWindow!, req))
+      }
+      case 'search_file': {
+        logger.log(`cmd:${cmd}:${cseq}, ${req}`)
+        const cmdReq = convertCmdRequest<DataTypes.SearchFileReq>(req)
+        return make_cmd_response(await appProc.search_file(cmdReq))
       }
       case 'traversal_folder': {
         const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
@@ -544,9 +497,6 @@ export class IpcHandlers {
         logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
         return make_cmd_response(await handle_select_video(cmdReq))
       }
-      case 'app_start':
-        logger.log(`cmd:${cmd}:${cseq}`)
-        return make_cmd_response(await handle_app_start())
       case 'query_video': {
         const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
         logger.log(`cmd:${cmd}:${cseq}, ${cmdReq}`)
@@ -557,9 +507,9 @@ export class IpcHandlers {
         logger.log(`cmd:${cmd}:${cseq}, files len:${cmdReq.data?.files?.length}`)
         return make_cmd_response(await handle_clean_work(cmdReq))
       }
-      case 'sync_work': {
-        const cmdReq = convertCmdRequest<DataTypes.Req_SyncWork>(req)
-        logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
+      case 'sync_prj': {
+        const cmdReq = convertCmdRequest<DataTypes.SyncPrjReq>(req)
+        logger.log(`cmd:${cmd}:${cseq}`)
         return make_cmd_response(await recordsProc.start_sync_work(cmdReq))
       }
       case 'sync_trash': {

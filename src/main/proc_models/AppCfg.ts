@@ -1,8 +1,8 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import { app } from 'electron'
-import { console } from 'inspector'
 import logger from './Logger'
+import * as DataTypes from '../../bridge/dataTypedef'
 
 // 初始化应用配置的函数
 async function initApp(appCfg: AppCfg): Promise<void> {
@@ -46,9 +46,11 @@ class AppCfg {
   trashFolder: string = '.trash'
   ffmpegExe: string = ''
   ffprobeExe: string = ''
-  prj = {
+  appInfo: DataTypes.AppInfo = new DataTypes.AppInfo()
+  prj: DataTypes.Prj = {
     name: 'stream_manager',
-    version: '0.0.1'
+    version: '0.0.1',
+    dataFolder: ''
   }
 
   folderClassifyNum: number = 10
@@ -63,17 +65,6 @@ class AppCfg {
       await initApp(this)
     } catch (error) {
       logger.error('initCfg error:', error)
-    }
-  }
-
-  async quiteApp(): Promise<void> {
-    // 保存 cfg.json
-    const cfgPath = path.join(this.appData, 'prj.json')
-    const data = JSON.stringify(this.prj)
-    try {
-      fs.writeFileSync(cfgPath, data)
-    } catch (error) {
-      console.error('write file err:', error)
     }
   }
 }

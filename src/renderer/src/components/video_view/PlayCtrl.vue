@@ -162,7 +162,7 @@ function changeFile(flag: string): void {
   }
   let curVideoIdx = -1
   for (let i = 0; i < appStore.videoList.length; i++) {
-    if (appStore.videoList[i].filePath == appStore.curSltVideo.filePath) {
+    if (appStore.videoList[i].path == appStore.curSltVideo.path) {
       curVideoIdx = i
       break
     }
@@ -206,7 +206,7 @@ function btnclk_del_cur_video(): void {
   }
 
   for (const item of curCheckedVideo) {
-    req.filepaths.push(item.filePath)
+    req.filepaths.push(item.path)
   }
 
   console.log('delete file req', req)

@@ -45,7 +45,7 @@ async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
   const req: DataTypes.Req<DataTypes.Req_FrameInfo> = {
     cmd: 'get_key_frame_info',
     data: {
-      filepath: appStore?.curSltVideo?.filePath
+      filepath: appStore?.curSltVideo?.path
     }
   }
   if (appStore?.curVideoInfo?.frameInfo == null) {
@@ -60,7 +60,7 @@ async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
 }
 */
 function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
-  function clear_videoPlayCtrl(): void {
+  const clear_videoPlayCtrl = (): void => {
     if (appStore) {
       appStore.videoPlayCtrl.curSrc = ''
       appStore.videoPlayCtrl.curTime = 0
@@ -264,7 +264,7 @@ function processVideoEvent(videoEvent: DataTypes.FileEventInfo[][]): void {
   // [todo] 事件的数据暂时不处理
 }
 
-async function get_slt_video(video: DataTypes.FileInfo | null): Promise<void> {
+async function get_slt_video(video: DataTypes.File | null): Promise<void> {
   function processSplitInfo(): void {
     if (appStore?.curVideoInfo?.splitInfo != null) {
       // 从后台已经获取到了信息，就不用再处理了
@@ -296,7 +296,7 @@ async function get_slt_video(video: DataTypes.FileInfo | null): Promise<void> {
   const req: DataTypes.Req<DataTypes.Req_SltFile> = {
     cmd: 'slt_video',
     data: {
-      filepath: video.filePath
+      filepath: video.path
     }
   }
   const response: DataTypes.Resp<DataTypes.SltMediaInfo> = await IpcApi.trigger_event(req)
@@ -344,8 +344,8 @@ async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
   }
   const prjInfo: DataTypes.Req_CutVideo = {
     fileInfo: appStore.curVideoInfo,
-    filepath: appStore.curSltVideo?.filePath || '',
-    filename: util.getFilenameFromPath(appStore.curSltVideo?.filePath || ''),
+    filepath: appStore.curSltVideo?.path || '',
+    filename: util.getFilenameFromPath(appStore.curSltVideo?.path || ''),
     baseFolder: appStore.curOpenedFolder || ''
   }
   return prjInfo
@@ -614,7 +614,7 @@ async function clean_work(): Promise<DataTypes.Resp> {
   return IpcApi.trigger_event(req)
 }
 
-async function clean_project(files: DataTypes.FileInfo[]): Promise<DataTypes.Resp> {
+async function clean_project(files: DataTypes.File[]): Promise<DataTypes.Resp> {
   const req: DataTypes.Req<DataTypes.Req_ClearWork> = {
     cmd: 'clean_work',
     data: {
@@ -787,6 +787,21 @@ class Util {
   clean_work = clean_work
   setAppStore(store): void {
     appStore = store
+  }
+  async search_file(): Promise<DataTypes.Resp<DataTypes.SearchFileResp>> {
+    const req: DataTypes.Req<DataTypes.SearchFileReq> = {
+      cmd: 'search_file',
+      data: { page: 1, pageSize: 10 }
+    }
+    const response: DataTypes.Resp<DataTypes.SearchFileResp> = await IpcApi.trigger_event(req)
+    if (response.code != 0) {
+      MessageShow.error(`search file failed: ${response.status}`)
+      console.log(`search file failed: ${response.status}`)
+      return response
+    }
+    console.info('search file success', response.data)
+    appStore.videoList = response.data?.files || []
+    return response
   }
 }
 

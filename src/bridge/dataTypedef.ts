@@ -1,3 +1,12 @@
+export class AppInfo {
+  prjFile: string = '' // 项目文件的路径，没有项目时，为空
+}
+
+export class AppStartResp {
+  appInfo: AppInfo = new AppInfo()
+  prj: Prj | null = null
+}
+
 export class FileInfo {
   title: string = ''
   filePath: string = '' //文件的路径，由后端赋值
@@ -5,15 +14,27 @@ export class FileInfo {
   size: number = 0
   // birthtime: string
   // mtime: string
-
-  src(): string {
-    return `file://${this.filePath}`
-  }
   makePlayUrl(): string {
     return `file://${this.filePath}`
   }
   static makePlayUrlByInfo(finfo: FileInfo): string {
     return `file://${finfo.filePath}`
+  }
+}
+
+export class File {
+  id: number = 0 // 视频 ID，新增时可省略
+  name: string = '' // 视频名称
+  path: string = '' // 视频文件路径
+  startTimeSec: number = 0 // 视频开始时间，单位秒
+  endTimeSec: number = 0 // 视频结束时间，单位秒
+  duration: number = 0 // 视频时长
+  size: number = 0 // 视频大小，单位字节
+  makePlayUrl(): string {
+    return `file://${this.path}`
+  }
+  static makePlayUrlByInfo(finfo: File): string {
+    return `file://${finfo.path}`
   }
 }
 
@@ -28,6 +49,20 @@ export interface FileModel {
   created_at?: string // 创建时间，新增时可省略
   updated_at?: string // 更新时间，新增时可省略
   deleted_at?: string // 删除时间，新增时可省略
+}
+
+export class CreatePrjReq{
+  dataBasePath: string = ''
+};
+
+export class SearchFileReq {
+  page: number = 1
+  pageSize: number = 10
+}
+
+export class SearchFileResp {
+  total: number = 0
+  files: File[] = []
 }
 
 export interface SplitInfo {
@@ -121,18 +156,10 @@ export interface MediaItem {
   filePath: string
 }
 
-export interface Prj {
-  name: string
-  version: string
-  lastOpenedFolder?: string
-}
-
-export interface Resp_Prj {
-  code: number
-  status: string
-  data?: {
-    prj?: Prj
-  }
+export class Prj {
+  name: string = ''
+  version: string = '1.0.0'
+  dataFolder: string = ''
 }
 
 export interface WorkResp {
@@ -155,11 +182,7 @@ export interface Req_TraversalFolder {
 
 export interface TraversalFolder {
   folder?: string
-  files?: FileInfo[]
-}
-
-export interface PrjInfo {
-  name: string
+  files?: File[]
 }
 
 export interface Req_CutVideo {
@@ -195,8 +218,6 @@ export interface Req_FrameInfo {
   filepath: string
 }
 
-
-
 export interface Req_SltFile {
   filepath: string
 }
@@ -206,10 +227,10 @@ export interface Req_SearchFile {
 }
 
 export interface Req_ClearWork {
-  files?: FileInfo[]
+  files?: File[]
 }
-export interface Req_SyncWork {
-  folder: string
+export interface SyncPrjReq {
+  prj: Prj
 }
 export interface Req_SyncTrash {
   folder: string
@@ -337,7 +358,6 @@ export class FileTools {
     const secs = String(date.getSeconds()).padStart(2, '0')
     return `${year}${month}${day}${hours}${minutes}${secs}`
   }
-
 }
 
 export class Utils {

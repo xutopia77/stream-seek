@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import * as DataTypes from '../../../bridge/dataTypedef'
 
 export type AppStore = {
+  appInfo: DataTypes.AppInfo
   prj: DataTypes.Prj
   serverUrlPrefix: string
   curOpenedFolder: string
@@ -19,9 +20,9 @@ export type AppStore = {
   func_prevFrame: (() => void) | null
   func_get_ele_video: (() => HTMLVideoElement | null) | null
   rightPanel: 'list' | 'workPanel'
-  videoList: DataTypes.FileInfo[]
-  curCheckedVideo: Set<DataTypes.FileInfo>
-  curSltVideo: DataTypes.FileInfo | null
+  videoList: DataTypes.File[]
+  curCheckedVideo: Set<DataTypes.File>
+  curSltVideo: DataTypes.File | null
   curVideoInfo: DataTypes.SltMediaInfo | null
   //   videoSplitInfo: any[]
   bShowKeyFrameInfo: boolean
@@ -38,10 +39,11 @@ export type AppStore = {
 
 export const useAppStore = defineStore('app', {
   state: (): AppStore => ({
+    appInfo: new DataTypes.AppInfo(),
     prj: {
       name: 'AppStore',
       version: '1.0.0',
-      lastOpenedFolder: ''
+      dataFolder: ''
     },
     // utils
     // serverUrlPrefix: "http://localhost:38080",
@@ -63,7 +65,7 @@ export const useAppStore = defineStore('app', {
     // ------
     rightPanel: 'list', //list, workPanel
     videoList: [],
-    curCheckedVideo: new Set<DataTypes.FileInfo>(), // 当前选中的视频列表
+    curCheckedVideo: new Set<DataTypes.File>(), // 当前选中的视频列表
     curSltVideo: null, // 当前选中的视频
     curVideoInfo: null, // 当前选中的视频信息
     // ------ 视频切分信息

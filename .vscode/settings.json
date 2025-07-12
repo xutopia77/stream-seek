@@ -9,4 +9,11 @@
   //   "editor.defaultFormatter": "esbenp.prettier-vscode"
   // },
   "outline.showVariables": false,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "out": true,
+    "appData": true,
+  }
 }

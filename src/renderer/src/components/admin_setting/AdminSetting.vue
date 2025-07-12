@@ -7,8 +7,8 @@
       <span class="common-text">文件管理 </span>
       <span class="common-text">{{ searchFolder }}</span>
     </div>
-    <hr style="height: 1px; background-color: var(--common-page-text-color)" />
-    <button class="common-button" type="button" @click="btnclk_sync_work">创建工程</button>
+    <hr style="height: 1px; background-color: var(--xc-page-text-color)" />
+    <button class="common-button" type="button" @click="btnclk_sync_work">同步项目</button>
     <button class="common-button" type="button" @click="btnclk_sync_trash">整理回收站</button>
   </div>
 </template>
@@ -26,20 +26,20 @@ const searchFolder = computed<string>(() => {
 })
 
 async function btnclk_sync_work(): Promise<void> {
-  const req: DataTypes.Req<DataTypes.Req_SyncWork> = {
-    cmd: 'sync_work',
+  const req: DataTypes.Req<DataTypes.SyncPrjReq> = {
+    cmd: 'sync_prj',
     data: {
-      folder: appStore.curOpenedFolder
+      prj: appStore.prj
     }
   }
   const response = await IpcApi.trigger_event(req)
   if (response.code !== 0) {
-    MessageShow.error(`创建工程: ${response.status}`)
+    MessageShow.error(`同步项目失败: ${response.status}`)
   } else {
     if (response.bOver === false) {
       MessageShow.info('后台执行中...')
     } else {
-      MessageShow.success('创建工程成功')
+      MessageShow.success('同步项目')
     }
   }
 }
@@ -70,8 +70,8 @@ async function btnclk_sync_trash(): Promise<void> {
   width: 100%;
   padding: 0;
   margin: 0;
-  background-color: var(--common-page-background-color);
-  color: var(--common-page-text-color);
+  background-color: var(--xc-page-background-color);
+  color: var(--xc-page-text-color);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 </style>

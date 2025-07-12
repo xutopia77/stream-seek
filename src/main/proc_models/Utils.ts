@@ -1,7 +1,7 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import logger from './Logger'
-// import appDb from './AppDb'
+import appDb from './AppDb'
 import * as DataTypes from '../../bridge/dataTypedef'
 
 // 遍历文件夹类
@@ -9,6 +9,29 @@ class TraversalFolder {
   type: string | null = null // search时才遍历子文件夹
   folder: string | null = null
   bSort: boolean = false
+
+  async proc_one_file(fPath: string, fName: string, stats: fs.Stats): Promise<DataTypes.Resp> {
+    const resp: DataTypes.Resp = new DataTypes.Resp()
+    const fileInfo: DataTypes.FileInfo = new DataTypes.FileInfo()
+    fileInfo.title = fName
+    fileInfo.filePath = fPath
+    fileInfo.size = stats.size
+    const fileTimeInfo = DataTypes.FileTools.parse_filename_mi(fName)
+    if (fileTimeInfo == null) {
+      logger.warn(`traversal skip: ${fPath}`)
+      return resp.err(`traversal skip: ${fPath}`)
+    }
+    const fileModel: DataTypes.FileModel = {
+      name: fName,
+      path: fPath,
+      startTimeSec: fileTimeInfo.startTimeSec, // 视频开始时间，单位秒
+      endTimeSec: fileTimeInfo.endTimeSec, // 视频结束时间，单位秒
+      duration: fileTimeInfo.durationSec, // 视频时长
+      size: fileInfo.size // 视频大小，单位字节
+    }
+    appDb.insertFile(fileModel)
+    return resp
+  }
 
   // 递归遍历文件夹
   async traversal_folder(): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
@@ -32,29 +55,7 @@ class TraversalFolder {
             }
             await traverseRecursive(filePath)
           } else {
-            const fileInfo: DataTypes.FileInfo = {
-              title: file,
-              filePath: filePath,
-              src: '',
-              size: stats.size
-              // birthtime: `${stats.birthtime}`,
-              // mtime: `${stats.mtime}`
-            }
-            fileInfos.push(fileInfo)
-            const fileTimeInfo = DataTypes.FileTools.parse_filename_mi(file)
-            if (fileTimeInfo == null) {
-              logger.warn(`traversal skip: ${filePath}`)
-              continue
-            }
-            // const fileModel: DataTypes.FileModel = {
-            //   name: file,
-            //   path: filePath,
-            //   startTimeSec: fileTimeInfo.startTimeSec, // 视频开始时间，单位秒
-            //   endTimeSec: fileTimeInfo.endTimeSec, // 视频结束时间，单位秒
-            //   duration: fileTimeInfo.durationSec, // 视频时长
-            //   size: fileInfo.size // 视频大小，单位字节
-            // }
-            // appDb.insertFile(fileModel)
+            await this.proc_one_file(filePath, file, stats)
           }
         }
       }

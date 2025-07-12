@@ -396,45 +396,6 @@ async function start_delete_video(
   return resp
 }
 
-async function start_sync_work(
-  req: DataTypes.Req<DataTypes.Req_SyncWork>
-): Promise<DataTypes.Resp> {
-  const resp = new DataTypes.Resp()
-  if (req.data?.folder === undefined) {
-    return resp.err('folder is undefined')
-  }
-
-  const traversalFolder = new TraversalFolder()
-  traversalFolder.type = null
-  traversalFolder.folder = req.data?.folder
-  traversalFolder
-    .start()
-    .then(async (resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
-      if (resp.data?.files != null) {
-        logger.log('traversal folder:', resp.status, resp.data.files?.length)
-        const resp_classify = await recordsProc.start_file_classify(req, resp.data.files)
-        if (resp_classify.code !== 0) {
-          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-          return
-        }
-        const resp_genThumb = await recordsProc.start_gen_thumbnail(req)
-        if (resp_genThumb.code !== 0) {
-          workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-          return
-        }
-        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-      } else {
-        logger.log('traversal folder:', resp.status)
-        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-      }
-    })
-    .catch((error: unknown) => {
-      logger.error('open folder err:', error)
-      workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
-    })
-  return resp.success('success')
-}
-
 async function start_sync_trash(
   req: DataTypes.Req<DataTypes.Req_SyncTrash>
 ): Promise<DataTypes.Resp> {
@@ -477,8 +438,50 @@ class RecordsProc {
   query_images = query_images
   start_cut_video = start_cut_video
   start_delete_video = start_delete_video
-  start_sync_work = start_sync_work
   start_sync_trash = start_sync_trash
+
+  async start_sync_work(req: DataTypes.Req<DataTypes.SyncPrjReq>): Promise<DataTypes.Resp> {
+    const resp = new DataTypes.Resp()
+    if (req.data == null) {
+      return resp.err('req.data is null')
+    }
+    if (req.data.prj.dataFolder == '') {
+      return resp.err('req.data.prj.dataFolder is empty')
+    }
+    const traversalFolder = new TraversalFolder()
+    traversalFolder.type = null
+    traversalFolder.folder = req.data?.prj.dataFolder
+    const respTra = await traversalFolder.start()
+    workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(respTra) })
+    return resp
+
+    // traversalFolder
+    //   .start()
+    //   .then(async (resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+    //     if (resp.data?.files != null) {
+    //       logger.log('traversal folder:', resp.status, resp.data.files?.length)
+    //       const resp_classify = await recordsProc.start_file_classify(req, resp.data.files)
+    //       if (resp_classify.code !== 0) {
+    //         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+    //         return
+    //       }
+    //       const resp_genThumb = await recordsProc.start_gen_thumbnail(req)
+    //       if (resp_genThumb.code !== 0) {
+    //         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+    //         return
+    //       }
+    //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+    //     } else {
+    //       logger.log('traversal folder:', resp.status)
+    //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+    //     }
+    //   })
+    //   .catch((error: unknown) => {
+    //     logger.error('open folder err:', error)
+    //     workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+    //   })
+    // return resp.success('success')
+  }
 }
 
 const recordsProc = new RecordsProc()

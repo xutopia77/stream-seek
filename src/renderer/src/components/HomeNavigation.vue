@@ -52,6 +52,8 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useAppStore } from '../stores/AppStore'
 import '../assets/common.css'
 import util from '../utils/util'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 const appStore = useAppStore()
 import { IpcApi } from '../utils/IpcApi'
@@ -92,11 +94,11 @@ const btnclk_save_project = (): void => {
 
 function btnclk_clean_project(): void {
   if (appStore.curSltVideo == null) return MessageShow.error('请先选择一个视频')
-  const confirmDelete = confirm(`确定要清理 ${appStore.curSltVideo.title} 项目吗？`)
+  const confirmDelete = confirm(`确定要清理 ${appStore.curSltVideo.name} 项目吗？`)
   if (!confirmDelete) {
     return
   }
-  const reqFiles: DataTypes.FileInfo[] = []
+  const reqFiles: DataTypes.File[] = []
   reqFiles.push(appStore.curSltVideo)
   util
     .clean_project(reqFiles)
@@ -134,20 +136,7 @@ function btnclk_clean_work(): void {
 }
 
 const btn_createPrj = async (): Promise<void> => {
-  const req: DataTypes.Req = {
-    cmd: 'create_prj'
-  }
-  const response: DataTypes.Resp = await IpcApi.trigger_event(req)
-  if (response.code != 0) {
-    console.log('创建项目失败')
-    MessageShow.error(`创建项目失败 ${response.status}`)
-  } else {
-    if (response.bOver == false) {
-      MessageShow.success('后台执行中...')
-    } else {
-      MessageShow.success('创建项目成功')
-    }
-  }
+  router.push('/create_prj')
 }
 
 const btn_openPrj = async (): Promise<void> => {
@@ -236,7 +225,7 @@ onUnmounted(() => {
 <style scoped>
 /* 整体导航栏样式 */
 .home-navigation {
-  height: 30px;
+  height: var(--xc-home-nac-height);
   width: 100%;
   display: flex;
   background-color: #252526;

@@ -12,11 +12,11 @@ import AdminSetting from './admin_setting/AdminSetting.vue'
 <style scoped>
 .admin-container {
   width: 100%;
-  height: calc(100% - 30px);
+  height: calc(100% - var(--xc-home-nac-height));
   margin: 0;
   padding: 0;
-  background-color: var(--common-page-background-color);
-  color: var(--common-page-text-color);
+  background-color: var(--xc-page-background-color);
+  color: var(--xc-page-text-color);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 </style>

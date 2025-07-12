@@ -16,7 +16,7 @@
           <span class="checkmark"></span>
         </label>
         <span class="common-text" @click="playVideo(video)">{{
-          `${index + 1}:${video.title}`
+          `${index + 1}:${video.name}`
         }}</span>
       </li>
     </ul>
@@ -29,11 +29,11 @@ import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
 import '../../assets/common.css'
 import * as DataTypes from '../../../../bridge/dataTypedef'
-const videoList = computed<DataTypes.FileInfo[]>(() => appStore.videoList)
+const videoList = computed<DataTypes.File[]>(() => appStore.videoList)
 
 // 切换视频的选中状态
-const toggleVideoSelection = (video: DataTypes.FileInfo, isChecked: boolean): void => {
-  console.log(`Video ${video.title} is ${isChecked ? 'selected' : 'deselected'}`)
+const toggleVideoSelection = (video: DataTypes.File, isChecked: boolean): void => {
+  console.log(`Video ${video.name} is ${isChecked ? 'selected' : 'deselected'}`)
   if (isChecked) {
     appStore.curCheckedVideo.add(video)
   } else {
@@ -43,7 +43,7 @@ const toggleVideoSelection = (video: DataTypes.FileInfo, isChecked: boolean): vo
 
 onBeforeMount(() => {})
 
-const playVideo = (video: DataTypes.FileInfo): void => {
+const playVideo = (video: DataTypes.File): void => {
   appStore.curSltVideo = video
 }
 </script>
@@ -57,7 +57,7 @@ const playVideo = (video: DataTypes.FileInfo): void => {
   max-width: 300px;
   padding: 0;
   margin: 0;
-  background-color: var(--common-page-background-color);
+  background-color: var(--xc-page-background-color);
   /* VSCode 侧边栏背景色 */
   color: #ccc;
   /* 文字颜色 */
