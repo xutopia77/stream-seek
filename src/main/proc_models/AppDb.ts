@@ -169,31 +169,92 @@ class AppDb {
         const resp = new DataTypes.Resp<DataTypes.SearchFileResp>()
         try {
             let query = 'SELECT * FROM files'
+            let countQuery = 'SELECT COUNT(*) as total FROM files' // 用于统计总记录数
             const params: unknown[] = []
+            const countParams: unknown[] = [] // 统计总记录数的参数
+
             if (req != null) {
                 const conditionsParam: string[] = []
+                const countConditionsParam: string[] = []
+
                 if (req.path != null) {
-                    // conditionsParam += ' path = ?'
                     conditionsParam.push('path = ?')
+                    countConditionsParam.push('path = ?')
                     params.push(req.path)
+                    countParams.push(req.path)
                 }
                 if (req.repo != null) {
                     conditionsParam.push('repo = ?')
+                    countConditionsParam.push('repo = ?')
                     params.push(req.repo)
+                    countParams.push(req.repo)
                 }
                 if (req.status.length > 0) {
                     const placeholders = req.status.map(() => '?').join(', ')
                     conditionsParam.push(`status IN (${placeholders})`)
+                    countConditionsParam.push(`status IN (${placeholders})`)
                     params.push(...req.status)
+                    countParams.push(...req.status)
                 }
+                if (req.startTimeSecMin != null) {
+                    conditionsParam.push('startTimeSec >= ?')
+                    countConditionsParam.push('startTimeSec >= ?')
+                    params.push(req.startTimeSecMin)
+                    countParams.push(req.startTimeSecMin)
+                }
+                if (req.startTimeSecMax != null) {
+                    conditionsParam.push('startTimeSec <= ?')
+                    countConditionsParam.push('startTimeSec <= ?')
+                    params.push(req.startTimeSecMax)
+                    countParams.push(req.startTimeSecMax)
+                }
+                if (req.endTimeSecMin != null) {
+                    conditionsParam.push('endTimeSec >= ?')
+                    countConditionsParam.push('endTimeSec >= ?')
+                    params.push(req.endTimeSecMin)
+                    countParams.push(req.endTimeSecMin)
+                }
+                if (req.endTimeSecMax != null) {
+                    conditionsParam.push('endTimeSec <= ?')
+                    countConditionsParam.push('endTimeSec <= ?')
+                    params.push(req.endTimeSecMax)
+                    countParams.push(req.endTimeSecMax)
+                }
+                if (req.durationMin != null) {
+                    conditionsParam.push('duration >= ?')
+                    countConditionsParam.push('duration >= ?')
+                    params.push(req.durationMin)
+                    countParams.push(req.durationMin)
+                }
+                if (req.durationMax != null) {
+                    conditionsParam.push('duration <= ?')
+                    countConditionsParam.push('duration <= ?')
+                    params.push(req.durationMax)
+                    countParams.push(req.durationMax)
+                }
+                if (req.sizeMin != null) {
+                    conditionsParam.push('size >= ?')
+                    countConditionsParam.push('size >= ?')
+                    params.push(req.sizeMin)
+                    countParams.push(req.sizeMin)
+                }
+                if (req.sizeMax != null) {
+                    conditionsParam.push('size <= ?')
+                    countConditionsParam.push('size <= ?')
+                    params.push(req.sizeMax)
+                    countParams.push(req.sizeMax)
+                }
+                if (req.type.length > 0) {
+                    const placeholders = req.type.map(() => '?').join(', ')
+                    conditionsParam.push(`type IN (${placeholders})`)
+                    countConditionsParam.push(`type IN (${placeholders})`)
+                    params.push(...req.type)
+                    countParams.push(...req.type)
+                }
+
                 if (conditionsParam.length > 0) {
-                    query += ' WHERE '
-                    for (let i = 0; i < conditionsParam.length; i++) {
-                        if (i > 0) {
-                            query += ' AND '
-                        }
-                        query += conditionsParam[i]
-                    }
+                    query += ' WHERE ' + conditionsParam.join(' AND ')
+                    countQuery += ' WHERE ' + countConditionsParam.join(' AND ')
                 }
                 if (req.orderBy && req.order) {
                     query += ` ORDER BY ${req.orderBy} ${req.order}`
@@ -206,6 +267,11 @@ class AppDb {
             }
 
             if (!this.db) throw new Error('Database not initialized')
+
+            // 执行统计总记录数的查询
+            const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
+            const total = countResult?.total || 0
+
             const fileModels = await this.db.all<DataTypes.FileModel[]>(query, params)
             resp.data = new DataTypes.SearchFileResp()
             resp.data.total = 0
@@ -231,8 +297,8 @@ class AppDb {
                 fileInfo.repo = fileModel.repo
                 resp.data.files.push(fileInfo)
             }
-            resp.data.total = resp.data.files.length
-            resp.success('Videos fetched successfully')
+            resp.data.total = total
+            resp.success('success')
         } catch (error) {
             logger.error('Error fetching files:', error)
             resp.err(

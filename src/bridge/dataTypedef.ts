@@ -106,8 +106,17 @@ export class SearchFileReq {
     path: string | null = null
     repo: string | null = null
     status: FileStatus[] = []
+    startTimeSecMin: number | null = null
+    startTimeSecMax: number | null = null
+    endTimeSecMin: number | null = null
+    endTimeSecMax: number | null = null
+    durationMin: number | null = null
+    durationMax: number | null = null
+    sizeMin: number | null = null
+    sizeMax: number | null = null
+    type: FileType[] = []
     // 升序，降序
-    order: 'asc' | 'desc' = 'desc' // 枚举值直接传入数据库
+    order: 'asc' | 'desc' = 'asc' // 枚举值直接传入数据库
     orderBy: 'id' | 'name' | 'startTimeSec' | 'created_at' | 'updated_at' = 'startTimeSec' // 枚举值直接传入数据库
 
     static makeReqStatusNotDel(path: string | null, repo: string | null): SearchFileReq {
