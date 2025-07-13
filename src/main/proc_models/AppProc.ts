@@ -225,6 +225,7 @@ class AppProc {
         await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
         resp.success('Project file created successfully').data = prjInfo
         appCfg.appInfo.prjFile = projectFilePath
+        appCfg.prj = prjInfo
         this.saveAppCfg()
         return resp
     }

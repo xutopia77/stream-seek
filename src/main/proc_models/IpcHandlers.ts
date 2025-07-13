@@ -35,7 +35,7 @@ import * as DataTypes from '../../bridge/dataTypedef'
 //             // 查询文件夹的不用保存到工程文件
 //             appCfg.prj.dataFolder = folderPath
 //         }
-//         logger.log('handle open folder', folderPath)
+//         logger.info('handle open folder', folderPath)
 //         const traversalFolder = new TraversalFolder()
 //         traversalFolder.type = openType
 //         traversalFolder.bSort = true
@@ -59,7 +59,7 @@ import * as DataTypes from '../../bridge/dataTypedef'
 //         const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
 //         resp.success('success').data = { folder: folderPath }
 //         resp.bOver = false
-//         logger.log('handle open folder', resp.status)
+//         logger.info('handle open folder', resp.status)
 //         return resp
 //     }
 //     return new DataTypes.Resp<DataTypes.TraversalFolder>().err('canceled')
@@ -84,7 +84,7 @@ async function handle_create_prj(
         // 获取当前文件夹下内容是否为空
         const folderContent = fs.readdirSync(folderPath)
         if (folderContent.length > 0) {
-            logger.log('The selected folder is not empty')
+            logger.info('The selected folder is not empty')
             return resp.err('The selected folder is not empty')
         }
         return await appProc.create_prj(req, folderPath)
@@ -144,11 +144,11 @@ async function handle_create_prj(
 //         .start()
 //         .then((resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
 //             if (resp.data?.files != null) {
-//                 logger.log('traversal folder:', resp.status, resp.data.files?.length)
+//                 logger.info('traversal folder:', resp.status, resp.data.files?.length)
 //                 recordsProc
 //                     .start_file_classify(req, resp.data.files)
 //                     .then((resp: DataTypes.Resp) => {
-//                         logger.log('handle_query_video after classify:', resp)
+//                         logger.info('handle_query_video after classify:', resp)
 //                         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
 //                     })
 //                     .catch((error: unknown) => {
@@ -159,7 +159,7 @@ async function handle_create_prj(
 //                         })
 //                     })
 //             } else {
-//                 logger.log('traversal folder:', resp.status)
+//                 logger.info('traversal folder:', resp.status)
 //                 workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
 //             }
 //         })
@@ -282,7 +282,7 @@ async function handle_create_prj(
 //                 const jsonData = JSON.parse(data)
 //                 resp.data = jsonData.fileInfo
 //                 // 读取成功了直接返回
-//                 logger.log('handle_select_video read file prj success')
+//                 logger.info('handle_select_video read file prj success')
 //                 return resp
 //             } catch (error: unknown) {
 //                 console.error('not find video split info:', filePrjPath, error)
@@ -382,7 +382,7 @@ async function process_heart_beat(): Promise<DataTypes.Resp<DataTypes.HeartBeat>
     if (workQueue.resps.length != 0) {
         workQueue.addTask(null)
         for (const item of workQueue.resps) {
-            logger.log(`work resp:cmd: ${item.cmd}`)
+            logger.info(`work resp:cmd: ${item.cmd}`)
         }
     }
     respData.workRespose = workQueue.resps
@@ -427,78 +427,78 @@ export class IpcHandlers {
         const cseq = req.cseq
         switch (cmd) {
             case 'app_start':
-                logger.log(`cmd:${cmd}:${cseq}`)
+                logger.info(`cmd:${cmd}:${cseq}`)
                 return make_cmd_response(await appProc.app_start())
             case 'get_key_frame_info': {
                 const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
-                logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
+                logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
                 return make_cmd_response(await handle_get_key_frame_info(cmdReq))
             }
             case 'create_prj': {
                 const cmdReq = convertCmdRequest<DataTypes.CreatePrjReq>(req)
-                logger.log(`cmd:${cmd}:${cseq}, ${req}`)
+                logger.info(`cmd:${cmd}:${cseq}, ${req}`)
                 return make_cmd_response(await handle_create_prj(cmdReq, this.mainWindow!))
             }
             // case 'open_prj': {
-            //     logger.log(`cmd:${cmd}:${cseq}, ${req}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
             //     return make_cmd_response(await handle_open_prj(this.mainWindow!))
             // }
             // case 'open_folder': {
-            //     logger.log(`cmd:${cmd}:${cseq}, ${req}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
             //     return make_cmd_response(await handle_open_folder(this.mainWindow!, req))
             // }
             case 'search_file': {
-                logger.log(`cmd:${cmd}:${cseq}`)
+                logger.info(`cmd:${cmd}:${cseq}`)
                 const cmdReq = convertCmdRequest<DataTypes.SearchFileReq>(req)
                 return make_cmd_response(await appProc.search_file(cmdReq))
             }
             // case 'traversal_folder': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
-            //     logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
             //     return make_cmd_response(await traversal_folder(cmdReq))
             // }
             // case 'slt_video_event': {
-            //     logger.log(`cmd:${cmd}:${cseq}, ${req}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
             //     return make_cmd_response(await handle_video_event_detect())
             // }
             // case 'save_prj': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
-            //     logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
             //     return make_cmd_response(await handle_save_prj(cmdReq))
             // }
             // case 'cut_video': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
-            //     logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
             //     return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
             // }
             case 'delete_video': {
                 const cmdReq = convertCmdRequest<DataTypes.DeleteFileReq>(req)
-                logger.log(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.files.length}`)
+                logger.info(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.files.length}`)
                 return make_cmd_response(await appProc.handle_delete_file(cmdReq))
             }
             case 'slt_video': {
                 const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
-                logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
+                logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
                 return make_cmd_response(await appProc.handle_select_video(cmdReq))
             }
             // case 'query_video': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
-            //     logger.log(`cmd:${cmd}:${cseq}, ${cmdReq}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq}`)
             //     return make_cmd_response(await handle_query_video(cmdReq))
             // }
             // case 'clean_work': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_ClearWork>(req)
-            //     logger.log(`cmd:${cmd}:${cseq}, files len:${cmdReq.data?.files?.length}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, files len:${cmdReq.data?.files?.length}`)
             //     return make_cmd_response(await handle_clean_work(cmdReq))
             // }
             case 'sync_prj': {
                 const cmdReq = convertCmdRequest<DataTypes.SyncPrjReq>(req)
-                logger.log(`cmd:${cmd}:${cseq}`)
+                logger.info(`cmd:${cmd}:${cseq}`)
                 return make_cmd_response(await appProc.start_sync_work(cmdReq))
             }
             // case 'sync_trash': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_SyncTrash>(req)
-            //     logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
+            //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
             //     return make_cmd_response(await recordsProc.start_sync_trash(cmdReq))
             // }
             default: {

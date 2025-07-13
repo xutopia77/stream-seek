@@ -14,19 +14,23 @@ async function initApp(appCfg: AppCfg): Promise<void> {
     }
 
     appCfg.appData = path.join(appCfg.appDir, 'appData')
-    logger.log('appData:', appCfg.appData)
 
     if (!fs.existsSync(appCfg.appData)) {
         fs.mkdirSync(appCfg.appData)
     }
-    const cfgDir = path.join(appCfg.appData, 'cfg')
-    if (!fs.existsSync(cfgDir)) {
-        fs.mkdirSync(cfgDir)
-    }
+
     appCfg.log_dir = path.join(appCfg.appData, 'log')
     if (!fs.existsSync(appCfg.log_dir)) {
         fs.mkdirSync(appCfg.log_dir)
     }
+    logger.log_dir = appCfg.log_dir
+    logger.info('appData:', appCfg.appData)
+
+    const cfgDir = path.join(appCfg.appData, 'cfg')
+    if (!fs.existsSync(cfgDir)) {
+        fs.mkdirSync(cfgDir)
+    }
+
     appCfg.file_prj_dir = path.join(appCfg.appData, 'file_prj')
     if (!fs.existsSync(appCfg.file_prj_dir)) {
         fs.mkdirSync(appCfg.file_prj_dir)

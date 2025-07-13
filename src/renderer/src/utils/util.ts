@@ -481,25 +481,6 @@ function update_bar_clips(): DataTypes.BarClip[] {
     return barClips
 }
 
-function update_thumbnail_images(thumbnailImages: DataTypes.Thumbnail[]): void {
-    if (appStore.curVideoInfo === null) {
-        return
-    }
-    if (appStore.curVideoInfo.thumbnail == null) {
-        console.log('cur video thumbnail null')
-        return
-    }
-    for (let i = 0; i < appStore.curVideoInfo.thumbnail.path.length; i++) {
-        const thumb = appStore.curVideoInfo.thumbnail.path[i]
-        const thumbInfo = new DataTypes.Thumbnail()
-        thumbInfo.path = thumb
-        thumbInfo.indexTime = DataTypes.FileTools.parse_timestr_2_seconds(thumb)
-        thumbInfo.name = util.getFilenameFromPath(thumb)
-        thumbInfo.btnName = '⬜'
-        thumbnailImages.push(thumbInfo)
-    }
-}
-
 const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<void> => {
     const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
     if (prjInfo === null) {
@@ -540,12 +521,29 @@ const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<v
 class Util {
     export_cut_video = export_cut_video
     set_video_cur_time = set_video_cur_time
-    update_thumbnail_images = update_thumbnail_images
     update_bar_clips = update_bar_clips
     updateKeyframeSplitInfo = updateKeyframeSplitInfo
     save_project = save_project
     formatSecond2Time = formatSecond2Time
 
+    update_thumbnail_images(thumbnailImages: DataTypes.Thumbnail[]): void {
+        if (appStore.curVideoInfo === null) {
+            return
+        }
+        if (appStore.curVideoInfo.thumbnail?.path == null) {
+            console.log('cur video thumbnail null')
+            return
+        }
+        for (let i = 0; i < appStore.curVideoInfo.thumbnail.path.length; i++) {
+            const thumb = appStore.curVideoInfo.thumbnail.path[i]
+            const thumbInfo = new DataTypes.Thumbnail()
+            thumbInfo.path = thumb
+            thumbInfo.indexTime = DataTypes.FileTools.parse_timestr_2_seconds(thumb)
+            thumbInfo.name = util.getFilenameFromPath(thumb)
+            thumbInfo.btnName = '⬜'
+            thumbnailImages.push(thumbInfo)
+        }
+    }
     process_heartbeat(resp: DataTypes.Resp<DataTypes.HeartBeat>): void {
         if (resp.code !== 0) {
             console.log('process heartbeat failed', resp)

@@ -91,6 +91,8 @@ export interface FileModel {
     type: FileType // 数据类型
     status: FileStatus // 数据状态
     repo: string // 数据仓库名称
+    // [todo] 新增字段
+    // infoHash: string // 数据的信息哈希值，计算方式 repo+path
     created_at?: string // 创建时间，新增时可省略
     updated_at?: string // 更新时间，新增时可省略
     deleted_at?: string // 删除时间，新增时可省略
@@ -260,7 +262,6 @@ export interface HeartBeat {
 }
 
 export interface Req_TraversalFolder {
-    folder: string
     type?: string
     startTime?: string //2025-03-25 12:00:00
     endTime?: string //2025-03-25 12:59:59
