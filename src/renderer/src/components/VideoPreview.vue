@@ -3,7 +3,11 @@
         <div class="preview-container">
             <div class="preview-image">
                 <!-- <video src="./data/00_20250313113251_20250313114420.mp4" controls></video> -->
-                <video v-show="viewModel === 'video'" ref="videoRef" :src="appStore.videoPlayCtrl.curSrc"></video>
+                <video
+                    v-show="viewModel === 'video'"
+                    ref="videoRef"
+                    :src="appStore.videoPlayCtrl.curSrc"
+                ></video>
                 <ThumbnailView v-show="viewModel === 'thumbnail'"></ThumbnailView>
             </div>
             <VideList v-if="rightPanel === 'list'" />
@@ -51,8 +55,7 @@ watch(
         clearReq.bNotClear_curSltVideo = true
         util.clear_cur_slt_video_info(clearReq)
         await util.get_slt_video(newVal)
-        console.log('video info11111111', typeof newVal)
-        console.log('video info', newVal)
+        console.log(`video info ${newVal}`)
         const playReq = new PlayReq(DataTypes.File.makePlayUrl(newVal))
         if (videoRef.value == null) {
             return

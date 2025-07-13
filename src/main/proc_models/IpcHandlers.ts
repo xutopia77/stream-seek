@@ -9,6 +9,7 @@ import appProc from './AppProc'
 import { workQueue, Util } from './Utils.js'
 // import type { WorkResp } from './Utils.js'
 import * as DataTypes from '../../bridge/dataTypedef'
+import appCfg from './AppCfg.js'
 
 // function make_file_prj_path(filename: string): string {
 //     let filePath = `${filename}_prj.json`
@@ -96,40 +97,42 @@ async function handle_create_prj(
     }
 }
 
-// async function handle_open_prj(
-//     mainWindow: Electron.BrowserWindow
-// ): Promise<DataTypes.Resp<DataTypes.PrjInfo>> {
-//     const resp = new DataTypes.Resp<DataTypes.PrjInfo>()
-//     try {
-//         // 显示文件选择对话框
-//         const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-//             properties: ['openFile'],
-//             filters: [
-//                 { name: 'Project Files', extensions: ['json'] }, // 可根据实际需求修改文件类型
-//                 { name: 'All Files', extensions: ['*'] }
-//             ]
-//         })
+async function handle_open_prj(
+    mainWindow: Electron.BrowserWindow
+): Promise<DataTypes.Resp<DataTypes.Prj>> {
+    const resp = new DataTypes.Resp<DataTypes.Prj>()
+    try {
+        // 显示文件选择对话框
+        const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+            properties: ['openFile'],
+            filters: [
+                { name: 'Project Files', extensions: ['json'] }, // 可根据实际需求修改文件类型
+                { name: 'All Files', extensions: ['*'] }
+            ]
+        })
 
-//         if (canceled) {
-//             // 用户取消选择，返回取消状态
-//             return resp.err('User canceled the file selection')
-//         }
+        if (canceled) {
+            // 用户取消选择，返回取消状态
+            return resp.err('User canceled the file selection')
+        }
 
-//         const filePath = filePaths[0]
-//         const fileContent = await fs.promises.readFile(filePath, 'utf-8')
-//         // 解析文件内容为 JSON
-//         const prjInfo = JSON.parse(fileContent) as DataTypes.PrjInfo
-//         // 设置响应数据并标记成功
-//         resp.success('File opened successfully').data = prjInfo
-//         return resp
-//     } catch (error) {
-//         // 处理异常，返回错误信息
-//         logger.error('Error opening project file:', error)
-//         return resp.err(
-//             `Error opening project file: ${error instanceof Error ? error.message : String(error)}`
-//         )
-//     }
-// }
+        const filePath = filePaths[0]
+        logger.info('Selected file path:', filePath)
+        const fileContent = await fs.promises.readFile(filePath, 'utf-8')
+        const prjInfo = JSON.parse(fileContent) as DataTypes.Prj
+        appCfg.prj = prjInfo
+        appCfg.appInfo.prjFile = filePath
+        appProc.saveAppCfg()
+        resp.success('File opened successfully').data = prjInfo
+        return resp
+    } catch (error) {
+        // 处理异常，返回错误信息
+        logger.error('Error opening project file:', error)
+        return resp.err(
+            `Error opening project file: ${error instanceof Error ? error.message : String(error)}`
+        )
+    }
+}
 
 // async function handle_query_video(
 //     req: DataTypes.Req<DataTypes.Req_TraversalFolder>
@@ -439,10 +442,10 @@ export class IpcHandlers {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
                 return make_cmd_response(await handle_create_prj(cmdReq, this.mainWindow!))
             }
-            // case 'open_prj': {
-            //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-            //     return make_cmd_response(await handle_open_prj(this.mainWindow!))
-            // }
+            case 'open_prj': {
+                logger.info(`cmd:${cmd}:${cseq}, ${req}`)
+                return make_cmd_response(await handle_open_prj(this.mainWindow!))
+            }
             // case 'open_folder': {
             //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
             //     return make_cmd_response(await handle_open_folder(this.mainWindow!, req))

@@ -13,34 +13,34 @@
 import * as DataTypes from '../../../bridge/dataTypedef'
 
 export class IpcApi {
-  static cseq: number = 0
-  // 为函数添加返回类型注解
-  static async trigger_event<T = string, R = string>(
-    req: DataTypes.Req<T>
-  ): Promise<DataTypes.Resp<R>> {
-    const sendReq: DataTypes.Req<string> = {
-      ...req,
-      data: req.data ? JSON.stringify(req.data) : undefined
+    static cseq: number = 0
+    // 为函数添加返回类型注解
+    static async trigger_event<T = string, R = string>(
+        req: DataTypes.Req<T>
+    ): Promise<DataTypes.Resp<R>> {
+        const sendReq: DataTypes.Req<string> = {
+            ...req,
+            data: req.data ? JSON.stringify(req.data) : undefined
+        }
+        sendReq.cseq = this.cseq++
+        const reqStr = JSON.stringify(sendReq)
+        if (sendReq.cmd == 'slt_video') {
+            // console.log(`Arguments: ${reqStr}`)
+        }
+        try {
+            const response = await window.electron.ipcRenderer.invoke('render_event', reqStr)
+            return {
+                ...response, // 1. 展开response对象的所有属性
+                data: response.data // 2. 条件判断response.data是否存在
+                    ? (JSON.parse(response.data) as R) // 3. 存在则解析JSON并类型断言为R
+                    : undefined // 4. 不存在则设为undefined
+            }
+        } catch (error) {
+            console.error('err:', error)
+            const resp = new DataTypes.Resp<R>()
+            return resp.err(String(error))
+        }
     }
-    sendReq.cseq = this.cseq++
-    const reqStr = JSON.stringify(sendReq)
-    if( sendReq.cmd== "slt_video"){
-      console.log(`Arguments: ${reqStr}`)
-    }
-    try {
-      const response = await window.electron.ipcRenderer.invoke('render_event', reqStr)
-      return {
-        ...response, // 1. 展开response对象的所有属性
-        data: response.data // 2. 条件判断response.data是否存在
-          ? (JSON.parse(response.data) as R) // 3. 存在则解析JSON并类型断言为R
-          : undefined // 4. 不存在则设为undefined
-      }
-    } catch (error) {
-      console.error('err:', error)
-      const resp = new DataTypes.Resp<R>()
-      return resp.err(String(error))
-    }
-  }
 }
 
 // 下面注释掉的代码在原文件中可能是开发过程中的不同尝试，这里也保留并转换为 TypeScript 风格

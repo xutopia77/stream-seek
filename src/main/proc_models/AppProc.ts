@@ -426,7 +426,28 @@ class AppProc {
         if (searchRe.data?.files.length === 0) {
             return resp.err('file not exist')
         }
-        resp.success('success').data = searchRe.data?.files[0]
+        const fInfo = searchRe.data?.files[0]
+        if (fInfo == null) {
+            return resp.err('file info is null')
+        }
+        resp.success('success').data = fInfo
+        if (resp.data.thumbnail?.path == null) {
+            const tra = new TraversalFolder()
+            tra.repo.path = recordsProc.thumbnail_make_mp4_path(
+                appCfg.prj.path,
+                fInfo?.repo,
+                fInfo?.path
+            )
+            const fRe = await tra.get_folder_files()
+            if (fRe.code != 0) {
+                logger.warn(`thumbnail not exist ${fInfo.path}`)
+            } else {
+                resp.data.thumbnail = new DataTypes.ThumbnailInfo()
+                for (const item of fRe.data?.files ?? []) {
+                    resp.data.thumbnail.path.push(item.path)
+                }
+            }
+        }
 
         // // 先读取文件的项目信息
         // {
