@@ -484,7 +484,7 @@ class AppProc {
                     return resp.err(resp_str)
                 }
             }
-            const searchReq = DataTypes.SearchFileReq.makeReqStatusNormal(item.path, item.repo)
+            const searchReq = DataTypes.SearchFileReq.makeReqStatusNotDel(item.path, item.repo)
             const searchResp = await appDb.search_file(searchReq)
             if (searchResp.code !== 0) {
                 logger.error(`search file ${item.repo} ${item.path} err: ${searchResp.status}`)

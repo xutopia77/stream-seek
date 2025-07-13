@@ -219,7 +219,10 @@ function btnclk_del_cur_video(): void {
         fInfo.repo = item.repo
         req.files.push(fInfo)
     }
-
+    if (req.files.length == 0) {
+        MessageShow.info('没有选择的文件')
+        return
+    }
     console.log('delete file req', req)
     util.delete_video(req).then(() => {
         appStore.curCheckedVideo.clear()

@@ -778,12 +778,9 @@ class Util {
 
     async search_file(): Promise<DataTypes.Resp<DataTypes.SearchFileResp>> {
         const req: DataTypes.Req<DataTypes.SearchFileReq> = {
-            cmd: 'search_file',
-            data: new DataTypes.SearchFileReq()
+            cmd: 'search_file'
         }
-        if (req.data != null) {
-            req.data.status = DataTypes.FileStatus.Normal
-        }
+        req.data = DataTypes.SearchFileReq.makeReqStatusNotDel(null, null)
         const response: DataTypes.Resp<DataTypes.SearchFileResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
             MessageShow.error(`search file failed: ${response.status}`)

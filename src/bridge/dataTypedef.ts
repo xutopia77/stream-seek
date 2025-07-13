@@ -24,7 +24,10 @@ export class FileInfo {
 export enum FileStatus {
     Normal = 0, // 正常
     Deleted = 1, // 删除
-    Error = 2 // 错误
+    Error = 2, // 错误
+    Pending = 3, // 待处理
+    // Processing = 4 // 处理中
+    Finished = 5 // 处理完成
 }
 
 export enum FileType {
@@ -98,17 +101,20 @@ export class CreatePrjReq {
 }
 
 export class SearchFileReq {
-    page: number = 1
-    pageSize: number = 10
+    page?: number | null = null // 页码，从 1 开始
+    pageSize: number | null = null
     path: string | null = null
     repo: string | null = null
-    status: FileStatus | null = null
+    status: FileStatus[] = []
+    // 升序，降序
+    order: 'asc' | 'desc' = 'desc' // 枚举值直接传入数据库
+    orderBy: 'id' | 'name' | 'startTimeSec' | 'created_at' | 'updated_at' = 'startTimeSec' // 枚举值直接传入数据库
 
-    static makeReqStatusNormal(path: string, repo: string): SearchFileReq {
+    static makeReqStatusNotDel(path: string | null, repo: string | null): SearchFileReq {
         const req = new SearchFileReq()
         req.path = path
         req.repo = repo
-        req.status = FileStatus.Normal
+        req.status = [FileStatus.Normal, FileStatus.Finished]
         return req
     }
 }

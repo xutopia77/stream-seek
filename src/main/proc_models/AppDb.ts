@@ -181,9 +181,10 @@ class AppDb {
                     conditionsParam.push('repo = ?')
                     params.push(req.repo)
                 }
-                if (req.status != null) {
-                    conditionsParam.push('status = ?')
-                    params.push(req.status)
+                if (req.status.length > 0) {
+                    const placeholders = req.status.map(() => '?').join(', ')
+                    conditionsParam.push(`status IN (${placeholders})`)
+                    params.push(...req.status)
                 }
                 if (conditionsParam.length > 0) {
                     query += ' WHERE '
@@ -193,6 +194,14 @@ class AppDb {
                         }
                         query += conditionsParam[i]
                     }
+                }
+                if (req.orderBy && req.order) {
+                    query += ` ORDER BY ${req.orderBy} ${req.order}`
+                }
+                if (req.page && req.pageSize) {
+                    const offset = (req.page - 1) * req.pageSize
+                    query += ' LIMIT ? OFFSET ?'
+                    params.push(req.pageSize, offset)
                 }
             }
 
