@@ -22,7 +22,7 @@ export class FileInfo {
 
 export class File {
     id: number = 0 // 视频 ID，新增时可省略
-    name: string = '' // 视频名称
+    name: string = '' // 视频名称 00_20250301124348_20250301124906.mp4
     path: string = '' // 视频文件路径
     startTimeSec: number = 0 // 视频开始时间，单位秒
     endTimeSec: number = 0 // 视频结束时间，单位秒
@@ -33,6 +33,8 @@ export class File {
     frameInfo: FrameInfo | null = null // 以json字符串的形式存储在数据库
     thumbnail: ThumbnailInfo | null = null // 以json字符串的形式存储在数据库
     eventInfo: FileEventInfo | null = null // 以json字符串的形式存储在数据库
+    type: FileType = FileType.Video // 数据类型
+    status: FileStatus = FileStatus.Normal // 数据状态
     static makePlayUrl(finfo: File): string {
         return `file://${finfo.path}`
     }
@@ -56,6 +58,19 @@ export class File {
     }
 }
 
+// 定义一个枚举，是数字类型，表示文件的状态
+export enum FileStatus {
+    Normal = 0, // 正常
+    Deleted = 1, // 删除
+    Error = 2 // 错误
+}
+
+export enum FileType {
+    Video = 0,
+    Image = 1,
+    Txt = 2
+}
+
 export interface FileModel {
     id?: number // 视频 ID，新增时可省略
     name: string // 视频名称
@@ -69,7 +84,8 @@ export interface FileModel {
     frameInfo: string // 以json字符串的形式存储在数据库
     thumbnail: string // 以json字符串的形式存储在数据库
     eventInfo: string // 以json字符串的形式存储在数据库
-    // type: string // 数据类型
+    type: FileType // 数据类型
+    status: FileStatus // 数据状态
     created_at?: string // 创建时间，新增时可省略
     updated_at?: string // 更新时间，新增时可省略
     deleted_at?: string // 删除时间，新增时可省略
@@ -189,6 +205,7 @@ export class Prj {
     name: string = ''
     version: string = '1.0.0'
     dataFolder: string = ''
+    thumbnail_dir: string = ''
 }
 
 export interface WorkResp {
@@ -225,14 +242,12 @@ export interface Resp_CutVideo {
     traversalResp?: Resp<TraversalFolder>
 }
 
-export interface Req_DeleteFile {
-    baseFolder: string
-    filepaths: string[]
+export class DeleteFileReq {
+    baseFolder: string = '' // 会在此基础路径下创建回收站
+    filepaths: string[] = []
 }
 
-export interface Resp_DeleteFile {
-    traversalResp?: Resp<TraversalFolder>
-}
+export class DeleteFileResp {}
 
 export interface Frame {
     pict_type: string
@@ -263,6 +278,12 @@ export interface SyncPrjReq {
 }
 export interface Req_SyncTrash {
     folder: string
+}
+
+// ======================== main
+
+export class DbInsertResp {
+    id: number = 0
 }
 
 // ======================== render

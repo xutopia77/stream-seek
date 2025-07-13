@@ -181,164 +181,12 @@ async function file_classify(
     return resp.success('file classify success')
 }
 
-async function gen_thumbnail(
-    req: DataTypes.Req<DataTypes.Req_SearchFile>
-): Promise<DataTypes.Resp> {
-    logger.log('gen thumbnail')
-    const resp = new DataTypes.Resp()
-    // 处理单个文件
-    async function process_single_file(file: DataTypes.FileInfo): Promise<DataTypes.Resp> {
-        const filepath = file.filePath
-        const filename = file.title
-
-        const thumbnail_dir = appCfg.thumbnail_dir
-        const file_thubmbnail_dir = path.join(thumbnail_dir, path.basename(filepath, '.mp4'))
-
-        let bExist = true
-        // 检查对应的文件的缩略图是否已经存在
-        try {
-            await fs.promises.access(file_thubmbnail_dir)
-        } catch (error) {
-            if (!error) console.log(error)
-            bExist = false
-        }
-        if (bExist) {
-            return resp.success('thumbnail exist')
-        }
-
-        // 先删除临时文件夹，再创建新文件夹
-        const tmp_thubmbnail_dir = path.join(thumbnail_dir, 'tmp')
-        try {
-            await fs.promises.access(tmp_thubmbnail_dir)
-            await fs.promises.rm(tmp_thubmbnail_dir, { recursive: true })
-        } catch (error) {
-            if (!error) console.log(error)
-        }
-        try {
-            await fs.promises.mkdir(tmp_thubmbnail_dir, { recursive: true })
-        } catch (error) {
-            logger.log(`mkdir error ${error}`)
-            return resp.err(`mkdir error ${error}`)
-        }
-        const parseRe = DataTypes.FileTools.parse_filename_mi(filename)
-        if (parseRe == null) {
-            return resp.err(`parse filename error ${filename}`)
-        }
-        const { startTime, endTime } = parseRe
-        const startTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(startTime)
-        const endTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(endTime)
-        const duration = endTimeSeconds - startTimeSeconds
-        let time = 0
-        let bOver = true
-        while (time <= duration) {
-            const picTime = startTimeSeconds + time
-            const outputPath = path.join(
-                tmp_thubmbnail_dir,
-                `${DataTypes.FileTools.parsetimeToTimeStr(picTime)}.jpg`
-            )
-            const width = 640 // 设置图片宽度
-            const height = 480 // 设置图片高度
-            const args = [
-                '-v',
-                'error',
-                '-ss',
-                time.toString(),
-                '-i',
-                filepath,
-                '-vframes',
-                '1',
-                '-s',
-                `${width}x${height}`,
-                outputPath
-            ]
-
-            try {
-                await new Promise((resolve, reject) => {
-                    const child = execFile(`${appCfg.ffmpegExe}`, args, (error) => {
-                        if (error) {
-                            reject(error)
-                        } else {
-                            resolve(undefined)
-                        }
-                    })
-                    child.on('close', () => {
-                        // 确保进程关闭
-                    })
-                })
-            } catch (error) {
-                logger.log(`gen thumbnail error, ${error}`)
-                bOver = false
-                break
-            }
-            time += 10
-        }
-        if (!bOver) {
-            return resp.err(`gen thumbnail error, ${filename}`)
-        }
-
-        // 移动文件到目标文件夹
-        try {
-            await fs.promises.rename(tmp_thubmbnail_dir, file_thubmbnail_dir)
-        } catch (error) {
-            logger.log(`move file error, ${error}`)
-            return resp.err(`move file error, ${error}`)
-        }
-        return resp.success('success')
-    }
-
-    const folder = req.data?.folder
-    if (folder === undefined) {
-        return resp.err('folder is undefined')
-    }
-    const traversalFolder = new TraversalFolder()
-    traversalFolder.type = 'search'
-    traversalFolder.folder = folder
-    const filesResp = await traversalFolder.start()
-    if (filesResp.code !== 0) {
-        return resp.err(filesResp.status)
-    }
-    if (filesResp.data?.files != null) {
-        const files = filesResp.data.files
-        const fileNum = files.length
-        let curProcIdx = 0
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i]
-            await process_single_file(file)
-            curProcIdx += 1
-            const interval = fileNum > 200 ? 1 : 10
-            const curProcPercent = Math.floor((curProcIdx / fileNum) * 100)
-            if (curProcPercent % interval === 0) {
-                logger.log(`gen thumbnail ${curProcPercent}% ${curProcIdx}/${fileNum}`)
-            }
-        }
-    }
-    return resp.success('success')
-}
-
 // 开始切割视频
 async function start_cut_video(
     req: DataTypes.Req<DataTypes.Req_CutVideo>
 ): Promise<DataTypes.Resp<DataTypes.Resp_CutVideo>> {
     mediaProc
         .cutVideo(req)
-        .then((resp) => {
-            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-        })
-        .catch((error) => {
-            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
-        })
-    const resp = new DataTypes.Resp<DataTypes.Resp_CutVideo>()
-    resp.code = 0
-    resp.status = 'success'
-    resp.bOver = false
-    return resp
-}
-
-async function start_delete_video(
-    req: DataTypes.Req<DataTypes.Req_DeleteFile>
-): Promise<DataTypes.Resp<DataTypes.Resp_DeleteFile>> {
-    mediaProc
-        .delete_video(req)
         .then((resp) => {
             workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
         })
@@ -389,10 +237,8 @@ async function start_sync_trash(
 }
 
 class RecordsProc {
-    start_gen_thumbnail = gen_thumbnail
     start_file_classify = file_classify
     start_cut_video = start_cut_video
-    start_delete_video = start_delete_video
     start_sync_trash = start_sync_trash
 
     async gen_thumbnail(fileInfo: DataTypes.File): Promise<DataTypes.Resp<string[]>> {
@@ -402,6 +248,9 @@ class RecordsProc {
         const filename = fileInfo.name
 
         const thumbnail_dir = appCfg.thumbnail_dir
+        if (thumbnail_dir === '') {
+            return resp.err('thumbnail dir is empty')
+        }
         const file_thubmbnail_dir = path.join(thumbnail_dir, path.basename(filepath, '.mp4'))
 
         let bExist = true

@@ -179,7 +179,7 @@ function process_work_response(workRespose: DataTypes.WorkResp): void {
                     console.log('cut video failed', response)
                 } else {
                     MessageShow.success(`删除完成:${response.status}`)
-                    const respData: DataTypes.Resp_DeleteFile = response.data
+                    const respData: DataTypes.DeleteFileResp = response.data
                     if (respData.traversalResp != null) {
                         console.log('update file list', respData.traversalResp)
                         util.folder_file_proc(respData.traversalResp)
@@ -653,30 +653,8 @@ const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<v
     }
 }
 
-async function delete_video(reqInfo: DataTypes.Req_DeleteFile): Promise<void> {
-    util.stop_play()
-    const req: DataTypes.Req<DataTypes.Req_DeleteFile> = {
-        cmd: 'delete_video',
-        data: reqInfo
-    }
-    const response = await IpcApi.trigger_event(req)
-    if (response.code === 1001) {
-        return
-    }
-    if (response.code !== 0) {
-        MessageShow.success(`删除失败: ${response.status}`)
-    } else {
-        if (response.bOver === false) {
-            MessageShow.info(`正在处理...`)
-        } else {
-            MessageShow.success(`删除成功`)
-        }
-    }
-}
-
 class Util {
     export_cut_video = export_cut_video
-    delete_video = delete_video
     set_video_cur_time = set_video_cur_time
     update_thumbnail_images = update_thumbnail_images
     update_bar_clips = update_bar_clips
@@ -684,6 +662,27 @@ class Util {
     process_heartbeat = process_heartbeat
     save_project = save_project
     formatSecond2Time = formatSecond2Time
+
+    async delete_video(reqInfo: DataTypes.DeleteFileReq): Promise<void> {
+        util.stop_play()
+        const req: DataTypes.Req<DataTypes.DeleteFileReq> = {
+            cmd: 'delete_video',
+            data: reqInfo
+        }
+        const response = await IpcApi.trigger_event(req)
+        if (response.code === 1001) {
+            return
+        }
+        if (response.code !== 0) {
+            MessageShow.success(`删除失败: ${response.status}`)
+        } else {
+            if (response.bOver === false) {
+                MessageShow.info(`正在处理...`)
+            } else {
+                MessageShow.success(`删除成功`)
+            }
+        }
+    }
 
     async get_slt_video(video: DataTypes.File | null): Promise<void> {
         const processSplitInfo = (): void => {

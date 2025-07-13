@@ -4,6 +4,7 @@ import { exec, execSync } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as DataTypes from '../../bridge/dataTypedef'
+import appDb from './AppDb'
 // import { TraversalFolder } from './Utils.js'
 // 获取帧信息
 async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
@@ -91,7 +92,7 @@ async function make_split_info(
         return resp.err('fileInfo is null')
     }
 
-    const splitInfo = req.data.fileInfo.splitInfo
+    const splitInfo = req.data.fileInfo.splitInfo?.splits
     let keyFrameSplitInfo = req.data.fileInfo?.frameInfo?.frames
 
     if (splitInfo?.length === 1) {
@@ -191,60 +192,6 @@ async function make_trash_folder(folderPath: string): Promise<string> {
         }
     }
     return ''
-}
-
-async function delete_video(
-    req: DataTypes.Req<DataTypes.Req_DeleteFile>
-): Promise<DataTypes.Resp<DataTypes.Resp_DeleteFile>> {
-    const resp = new DataTypes.Resp<DataTypes.Resp_DeleteFile>()
-    if (!req.data?.filepaths || req.data.filepaths.length === 0) {
-        return resp.err('filepath is null')
-    }
-    const baseFolder = req.data.baseFolder
-    const trashFolderPath = path.join(baseFolder, '.trash')
-    //------ make or check trash folder
-    const resp_str = await make_trash_folder(trashFolderPath)
-    if (resp_str.length > 0) {
-        return resp.err(resp_str)
-    }
-
-    for (const item of req.data.filepaths) {
-        const filepath = item
-        const filename = path.basename(item)
-        const distFilename = path.join(trashFolderPath, filename)
-        let attempts = 0
-        const maxAttempts = 3 // 最大尝试次数
-        async function attemptRename(): Promise<void> {
-            try {
-                await fs.promises.rename(filepath, distFilename)
-                logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
-            } catch (err) {
-                attempts++
-                if (attempts < maxAttempts) {
-                    logger.error(
-                        `move original video attempt ${attempts} failed, retrying in 1 second...`,
-                        err
-                    )
-                    await new Promise((resolve) => setTimeout(resolve, 1000))
-                    await attemptRename()
-                } else {
-                    logger.error('move original video err after multiple attempts:', err)
-                    throw err
-                }
-            }
-        }
-        try {
-            await attemptRename()
-        } catch (err) {
-            return resp.err(`move original video err ${err}`)
-        }
-    }
-
-    const respData: DataTypes.Resp_DeleteFile = {
-        traversalResp: await traversalFolderByFolder(baseFolder)
-    }
-    resp.data = respData
-    return resp
 }
 
 async function cutVideo(
@@ -484,7 +431,6 @@ async function cutVideo(
 class MediaProcess {
     // constructor() {}
     cutVideo = cutVideo
-    delete_video = delete_video
     get_frame_info = getFrameInfo
 
     async getVideoInfo(filePath: string): Promise<DataTypes.MediaInfo> {

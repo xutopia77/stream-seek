@@ -34,9 +34,12 @@ class TraversalFolder {
             splitInfo: '',
             frameInfo: '',
             thumbnail: '',
-            eventInfo: ''
+            eventInfo: '',
+            type: DataTypes.FileType.Video,
+            status: DataTypes.FileStatus.Normal
         }
-        appDb.file_insert(fileModel)
+        const respInsert = await appDb.file_insert(fileModel)
+        logger.info(`insert id:${respInsert.data?.id} ${respInsert.status} ${fPath}`)
         return resp
     }
 
@@ -132,6 +135,25 @@ class TraversalFolder {
     }
 }
 
+async function make_trash_folder(folderPath: string): Promise<string> {
+    try {
+        await fs.promises.access(folderPath, fs.constants.F_OK)
+    } catch (err) {
+        if (err) {
+            await fs.promises.mkdir(folderPath, { recursive: true })
+        }
+    }
+    try {
+        await fs.promises.access(folderPath, fs.constants.F_OK)
+    } catch (err) {
+        if (err) {
+            logger.error('trash dir not exist:', folderPath)
+            return `trash dir not exist: ${folderPath}`
+        }
+    }
+    return ''
+}
+
 class AppProc {
     // constructor() {}
     saveAppCfg(): void {
@@ -165,11 +187,10 @@ class AppProc {
         }
         // 1, make prj info
         const folderName = path.basename(folderPath)
-        const prjInfo: DataTypes.Prj = {
-            name: folderName,
-            version: '0.0.1',
-            dataFolder: req.data.dataBasePath
-        }
+        const prjInfo: DataTypes.Prj = new DataTypes.Prj()
+        prjInfo.name = folderName
+        prjInfo.version = '0.0.1'
+        prjInfo.dataFolder = req.data.dataBasePath
         {
             // 2, create db folder and init db
             logger.log('create project file:', folderPath)
@@ -181,16 +202,12 @@ class AppProc {
             if (respDb.code !== 0) {
                 return resp.err('init db error')
             }
-            //3, 创建 log 文件夹
-            const logFolderPath = path.join(folderPath, 'log')
-            if (!fs.existsSync(logFolderPath)) {
-                fs.mkdirSync(logFolderPath)
-            }
             //4, 创建 thumbnail 文件夹
-            const thumbnailFolderPath = path.join(folderPath, 'thumbnail')
-            if (!fs.existsSync(thumbnailFolderPath)) {
-                fs.mkdirSync(thumbnailFolderPath)
+            prjInfo.thumbnail_dir = path.join(folderPath, 'thumbnail')
+            if (!fs.existsSync(prjInfo.thumbnail_dir)) {
+                fs.mkdirSync(prjInfo.thumbnail_dir)
             }
+            appCfg.thumbnail_dir = prjInfo.thumbnail_dir
         }
         // 5, write prj info to file
         const projectFilePath = path.join(folderPath, 'project.json')
@@ -207,7 +224,7 @@ class AppProc {
         resp.data = new DataTypes.AppStartResp()
         const cfgPath = path.join(appCfg.appData, 'prj.json')
         if (!fs.existsSync(cfgPath)) {
-            return resp.success('app start not find prj file')
+            return resp.success('success no prj')
         }
         let data = ''
         //1，read app info json
@@ -222,14 +239,20 @@ class AppProc {
             appCfg.appInfo = jsonData
             resp.data.appInfo = appCfg.appInfo
         } catch (error: unknown) {
-            logger.info('err parse json:', error)
-            return resp.err('err parse json')
+            logger.info('app cfg err parse json:', error)
+            return resp.err('app cfg err parse json')
         }
         // 2, if appInfo.prjFile isempty, return without prj info
         if (appCfg.appInfo.prjFile == '') {
             resp.data.prj = null
             return resp
         }
+        if (!fs.existsSync(appCfg.appInfo.prjFile)) {
+            appCfg.appInfo.prjFile = ''
+            this.saveAppCfg()
+            return resp.success('app start prj file loss')
+        }
+
         // 3, init db
         const prjFilePath = path.dirname(appCfg.appInfo.prjFile)
         const respDb = await appDb.initDb(path.join(prjFilePath, 'db'))
@@ -242,6 +265,7 @@ class AppProc {
             const prjInfo = JSON.parse(prjData)
             appCfg.prj = prjInfo
             resp.data.prj = prjInfo
+            appCfg.thumbnail_dir = appCfg.prj.thumbnail_dir
         } catch (error: unknown) {
             logger.info('err parse json:', error)
             return resp.err('err parse json')
@@ -255,15 +279,19 @@ class AppProc {
     }
 
     async start_gen_thumbnail(): Promise<DataTypes.Resp> {
-        logger.log('start gen thumbnail')
         const resp = new DataTypes.Resp()
+        if (appCfg.thumbnail_dir == '') {
+            logger.log('start gen thumbnail err thumbnail_dir is empty')
+            return resp.err('thumbnail_dir is empty')
+        }
+        logger.log('start gen thumbnail')
         const searchRe = await appDb.search_file(null)
         if (searchRe.code !== 0) {
             return resp.err('search file error')
         }
         for (const fileInfo of searchRe.data?.files ?? []) {
             const respThumb = await recordsProc.gen_thumbnail(fileInfo)
-            logger.info('gen thumbnail:', fileInfo.path, respThumb.status)
+            logger.info(`gen thumbnail ${respThumb.status} `, fileInfo.path)
             if (respThumb.code !== 0) {
                 logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
                 continue
@@ -303,11 +331,6 @@ class AppProc {
         //         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
         //         return
         //       }
-        //       const resp_genThumb = await recordsProc.start_gen_thumbnail(req)
-        //       if (resp_genThumb.code !== 0) {
-        //         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-        //         return
-        //       }
         //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
         //     } else {
         //       logger.log('traversal folder:', resp.status)
@@ -324,6 +347,10 @@ class AppProc {
     async query_images(filepath: string): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
         const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
         const thumbnail_dir = appCfg.thumbnail_dir
+        if (thumbnail_dir == '') {
+            return resp.err('thumbnail dir is empty')
+        }
+
         const file_thubmbnail_dir = path.join(thumbnail_dir, path.basename(filepath, '.mp4'))
         let bExist = true
         // 对应文件的缩略图存储在文件名对应的文件夹中， 文件夹不存在，返回错误
@@ -361,7 +388,7 @@ class AppProc {
         return response
     }
 
-    async select_video(
+    async handle_select_video(
         req: DataTypes.Req<DataTypes.Req_SltFile>
     ): Promise<DataTypes.Resp<DataTypes.File>> {
         const resp = new DataTypes.Resp<DataTypes.File>()
@@ -408,7 +435,7 @@ class AppProc {
         //         }
         //     }
         // }
-    
+
         // // get media info
         // {
         //     const mediaInfo = await mediaProc.getVideoInfo(video_path)
@@ -422,10 +449,75 @@ class AppProc {
         //     }
         // }
         return resp
-
     }
 
+    async delete_video(
+        req: DataTypes.Req<DataTypes.DeleteFileReq>
+    ): Promise<DataTypes.Resp<DataTypes.DeleteFileResp>> {
+        const resp = new DataTypes.Resp<DataTypes.DeleteFileResp>()
+        if (!req.data?.filepaths || req.data.filepaths.length === 0) {
+            return resp.err('filepath is null')
+        }
+        const baseFolder = req.data.baseFolder
+        const trashFolderPath = path.join(baseFolder, '.trash')
+        //1, make or check trash folder
+        const resp_str = await make_trash_folder(trashFolderPath)
+        if (resp_str.length > 0) {
+            return resp.err(resp_str)
+        }
+        // 2, start delete video
+        for (const item of req.data.filepaths) {
+            const searchParam = new DataTypes.SearchFileReq()
+            searchParam.path = item
+            const searchResp = await appDb.search_file(searchParam)
+            if (searchResp.code !== 0) {
+                logger.error(`search file ${item} err: ${searchResp.status}`)
+                continue
+            }
 
+            for (const fileInfo of searchResp.data?.files || []) {
+                const filepath = fileInfo.path
+                const filename = fileInfo.name
+                const distFilename = path.join(trashFolderPath, filename)
+                let attempts = 0
+                const maxAttempts = 3 // 最大尝试次数
+                async function attemptRename(): Promise<void> {
+                    try {
+                        await fs.promises.rename(filepath, distFilename)
+                        logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
+                    } catch (err) {
+                        attempts++
+                        if (attempts < maxAttempts) {
+                            logger.error(
+                                `move original video attempt ${attempts} failed, retrying in 1 second...`,
+                                err
+                            )
+                            await new Promise((resolve) => setTimeout(resolve, 1000))
+                            await attemptRename()
+                        } else {
+                            logger.error('move original video err after multiple attempts:', err)
+                            throw err
+                        }
+                    }
+                }
+                try {
+                    await attemptRename()
+                } catch (err) {
+                    return resp.err(`move original video err ${err}`)
+                }
+            }
+        }
+        resp.data = {}
+        return resp
+    }
+
+    async handle_delete_file(
+        req: DataTypes.Req<DataTypes.DeleteFileReq>
+    ): Promise<DataTypes.Resp<DataTypes.DeleteFileResp>> {
+        const respDel = await this.delete_video(req)
+        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(respDel) })
+        return respDel
+    }
 }
 
 const appProc = new AppProc()

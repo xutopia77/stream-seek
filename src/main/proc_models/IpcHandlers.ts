@@ -50,7 +50,10 @@ async function handle_open_folder(
                 workQueue.addResp(workResp)
             })
             .catch((error: unknown) => {
-                workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+                workQueue.addResp({
+                    cmd: req.cmd,
+                    data: JSON.stringify({ code: 1, status: error })
+                })
                 logger.error('open folder err:', error)
             })
         const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
@@ -150,7 +153,10 @@ async function handle_query_video(
                     })
                     .catch((error: unknown) => {
                         logger.error('open folder err:', error)
-                        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+                        workQueue.addResp({
+                            cmd: req.cmd,
+                            data: JSON.stringify({ code: 1, status: error })
+                        })
                     })
             } else {
                 logger.log('traversal folder:', resp.status)
@@ -464,14 +470,14 @@ export class IpcHandlers {
                 return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
             }
             case 'delete_video': {
-                const cmdReq = convertCmdRequest<DataTypes.Req_DeleteFile>(req)
+                const cmdReq = convertCmdRequest<DataTypes.DeleteFileReq>(req)
                 logger.log(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.filepaths.length}`)
-                return make_cmd_response(await recordsProc.start_delete_video(cmdReq))
+                return make_cmd_response(await appProc.handle_delete_file(cmdReq))
             }
             case 'slt_video': {
                 const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
                 logger.log(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
-                return make_cmd_response(await appProc.select_video(cmdReq))
+                return make_cmd_response(await appProc.handle_select_video(cmdReq))
             }
             case 'query_video': {
                 const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
@@ -501,7 +507,10 @@ export class IpcHandlers {
         }
     }
 
-    handle_event = async (event: IpcMainInvokeEvent, ...args: string[]): Promise<DataTypes.Resp> => {
+    handle_event = async (
+        event: IpcMainInvokeEvent,
+        ...args: string[]
+    ): Promise<DataTypes.Resp> => {
         if (!event) {
             console.log(`event is null`)
         }

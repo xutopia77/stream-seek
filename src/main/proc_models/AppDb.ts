@@ -32,9 +32,11 @@ class AppDb {
           frameInfo TEXT,
           thumbnail TEXT,
           eventInfo TEXT,
+          type INTEGER NOT NULL,
+          status INTEGER NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          updated_at DATETIME,
+          deleted_at DATETIME
         );
       `
             await db.exec(createTableQuery)
@@ -54,12 +56,13 @@ class AppDb {
         }
     }
 
-    async file_insert(file: DataTypes.FileModel): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
+    async file_insert(file: DataTypes.FileModel): Promise<DataTypes.Resp<DataTypes.DbInsertResp>> {
+        const resp = new DataTypes.Resp<DataTypes.DbInsertResp>()
+        resp.data = new DataTypes.DbInsertResp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             const result = await this.db.run(
-                'INSERT INTO files (name, path, startTimeSec, endTimeSec, duration, size, mediaInfo, splitInfo, frameInfo, thumbnail, eventInfo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO files (name, path, startTimeSec, endTimeSec, duration, size, mediaInfo, splitInfo, frameInfo, thumbnail, eventInfo,type,status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     file.name,
                     file.path,
@@ -71,16 +74,19 @@ class AppDb {
                     file.splitInfo,
                     file.frameInfo,
                     file.thumbnail,
-                    file.eventInfo
+                    file.eventInfo,
+                    file.type,
+                    file.status
                 ]
             )
-            logger.info('Video added successfully. ID:', result.lastID)
-            // resp.success('Video added successfully').data = { id: result.lastID }
+            // logger.info('Video added successfully. ID:', result.lastID)
+            resp.data.id = result.lastID == null ? 0 : result.lastID
+            resp.success('success')
         } catch (error) {
             if (error instanceof Error && 'code' in error) {
                 const sqliteErrorCode = error.code
                 if (sqliteErrorCode == 'SQLITE_CONSTRAINT') {
-                    return resp.success('Video already exists')
+                    return resp.success('success file already exists')
                 }
             }
             logger.error('Error adding video:', error)
@@ -121,7 +127,7 @@ class AppDb {
                 return resp
             }
             const result = await this.db.run(
-                'UPDATE files SET name = ?, path = ?, startTimeSec = ?, endTimeSec = ?, duration = ?, size = ?, mediaInfo = ?, splitInfo = ?, frameInfo = ?, thumbnail = ?, eventInfo = ? WHERE id = ?',
+                'UPDATE files SET name = ?, path = ?, startTimeSec = ?, endTimeSec = ?, duration = ?, size = ?, mediaInfo = ?, splitInfo = ?, frameInfo = ?, thumbnail = ?, eventInfo = ?, type = ?, status = ? WHERE id = ?',
                 [
                     fInfo.name,
                     fInfo.path,
@@ -134,6 +140,8 @@ class AppDb {
                     JSON.stringify(fInfo.frameInfo),
                     JSON.stringify(fInfo.thumbnail),
                     JSON.stringify(fInfo.eventInfo),
+                    fInfo.type,
+                    fInfo.status,
                     fInfo.id
                 ]
             )
