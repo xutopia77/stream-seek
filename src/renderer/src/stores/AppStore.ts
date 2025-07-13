@@ -6,7 +6,6 @@ export type AppStore = {
     appInfo: DataTypes.AppInfo
     prj: DataTypes.Prj
     serverUrlPrefix: string
-    curOpenedFolder: string
     videoPlayCtrl: {
         curSrc: string // 当前播放视频地址
         curTime: number // 浮点数，秒 只读参数
@@ -40,15 +39,10 @@ export type AppStore = {
 export const useAppStore = defineStore('app', {
     state: (): AppStore => ({
         appInfo: new DataTypes.AppInfo(),
-        prj: {
-            name: 'AppStore',
-            version: '1.0.0',
-            dataFolder: ''
-        },
+        prj: new DataTypes.Prj(),
         // utils
         // serverUrlPrefix: "http://localhost:38080",
         serverUrlPrefix: '',
-        curOpenedFolder: '',
         // video play
         videoPlayCtrl: {
             curSrc: '', // 当前播放视频地址

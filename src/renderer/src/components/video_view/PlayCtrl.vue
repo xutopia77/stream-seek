@@ -212,13 +212,12 @@ function btnclk_del_cur_video(): void {
         return
     }
 
-    const req: DataTypes.DeleteFileReq = {
-        filepaths: [],
-        baseFolder: appStore.curOpenedFolder || ''
-    }
-
+    const req: DataTypes.DeleteFileReq = new DataTypes.DeleteFileReq()
     for (const item of curCheckedVideo) {
-        req.filepaths.push(item.path)
+        const fInfo = new DataTypes.File()
+        fInfo.path = item.path
+        fInfo.repo = item.repo
+        req.files.push(fInfo)
     }
 
     console.log('delete file req', req)

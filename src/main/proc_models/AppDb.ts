@@ -34,6 +34,7 @@ class AppDb {
           eventInfo TEXT,
           type INTEGER NOT NULL,
           status INTEGER NOT NULL,
+          repo TEXT NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME,
           deleted_at DATETIME
@@ -62,7 +63,7 @@ class AppDb {
         try {
             if (!this.db) throw new Error('Database not initialized')
             const result = await this.db.run(
-                'INSERT INTO files (name, path, startTimeSec, endTimeSec, duration, size, mediaInfo, splitInfo, frameInfo, thumbnail, eventInfo,type,status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO files (name, path, startTimeSec, endTimeSec, duration, size, mediaInfo, splitInfo, frameInfo, thumbnail, eventInfo,type,status,repo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     file.name,
                     file.path,
@@ -76,7 +77,8 @@ class AppDb {
                     file.thumbnail,
                     file.eventInfo,
                     file.type,
-                    file.status
+                    file.status,
+                    file.repo
                 ]
             )
             // logger.info('Video added successfully. ID:', result.lastID)
@@ -127,7 +129,7 @@ class AppDb {
                 return resp
             }
             const result = await this.db.run(
-                'UPDATE files SET name = ?, path = ?, startTimeSec = ?, endTimeSec = ?, duration = ?, size = ?, mediaInfo = ?, splitInfo = ?, frameInfo = ?, thumbnail = ?, eventInfo = ?, type = ?, status = ? WHERE id = ?',
+                'UPDATE files SET name = ?, path = ?, startTimeSec = ?, endTimeSec = ?, duration = ?, size = ?, mediaInfo = ?, splitInfo = ?, frameInfo = ?, thumbnail = ?, eventInfo = ?, type = ?, status = ?, repo = ? WHERE id = ?',
                 [
                     fInfo.name,
                     fInfo.path,
@@ -142,6 +144,7 @@ class AppDb {
                     JSON.stringify(fInfo.eventInfo),
                     fInfo.type,
                     fInfo.status,
+                    fInfo.repo,
                     fInfo.id
                 ]
             )
@@ -168,9 +171,28 @@ class AppDb {
             let query = 'SELECT * FROM files'
             const params: unknown[] = []
             if (req != null) {
+                const conditionsParam: string[] = []
                 if (req.path != null) {
-                    query += ' WHERE path = ?'
+                    // conditionsParam += ' path = ?'
+                    conditionsParam.push('path = ?')
                     params.push(req.path)
+                }
+                if (req.repo != null) {
+                    conditionsParam.push('repo = ?')
+                    params.push(req.repo)
+                }
+                if (req.status != null) {
+                    conditionsParam.push('status = ?')
+                    params.push(req.status)
+                }
+                if (conditionsParam.length > 0) {
+                    query += ' WHERE '
+                    for (let i = 0; i < conditionsParam.length; i++) {
+                        if (i > 0) {
+                            query += ' AND '
+                        }
+                        query += conditionsParam[i]
+                    }
                 }
             }
 
@@ -195,6 +217,9 @@ class AppDb {
                 fileInfo.frameInfo = JSON.parse(fileModel.frameInfo || '{}')
                 fileInfo.thumbnail = JSON.parse(fileModel.thumbnail || '{}')
                 fileInfo.eventInfo = JSON.parse(fileModel.eventInfo || '{}')
+                fileInfo.type = fileModel.type
+                fileInfo.status = fileModel.status
+                fileInfo.repo = fileModel.repo
                 resp.data.files.push(fileInfo)
             }
             resp.data.total = resp.data.files.length

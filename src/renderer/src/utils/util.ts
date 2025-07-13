@@ -120,87 +120,6 @@ function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void
     //   files[i].src = `file://${files[i].filePath}`
     // }
     appStore.videoList = files
-    appStore.curOpenedFolder = respData.folder || ''
-}
-
-function process_work_response(workRespose: DataTypes.WorkResp): void {
-    const cmd = workRespose.cmd
-
-    const response = JSON.parse(workRespose.data)
-    // const showCtx = `命令:${cmd} 执行结果: ${response.status}`
-    // if (response.code !== 0) {
-    //   MessageShow.error(showCtx)
-    // } else {
-    //   MessageShow.success(showCtx)
-    // }
-
-    // console.log('process_work_response', cmd, response)
-    switch (cmd) {
-        case 'open_folder':
-            console.log('open folder', response)
-            util.folder_file_proc(response)
-            if (response.code !== 0) {
-                MessageShow.error(`打开文件夹失败: ${response.status}`)
-            } else {
-                MessageShow.success(`打开文件夹成功: ${response.status}`)
-            }
-            break
-        case 'traversal_folder':
-            {
-                console.log('traversal folder', response)
-                util.folder_file_proc(response)
-                if (response.code !== 0) {
-                    MessageShow.error(`更新文件夹: ${response.status}`)
-                }
-            }
-            break
-        case 'query_video':
-            if (appStore) {
-                // appStore.queryInfo = response.data
-            }
-            break
-        case 'cut_video':
-            if (response.code !== 0) {
-                MessageShow.error(`视频裁剪失败: ${response.status}`)
-                console.log('cut video failed', response)
-            } else {
-                MessageShow.success(`视频裁剪完成:${response.status}`)
-                const respData: DataTypes.Resp_CutVideo = response.data
-                if (respData.traversalResp != null) {
-                    console.log('update file list', respData.traversalResp)
-                    util.folder_file_proc(respData.traversalResp)
-                }
-            }
-            break
-        case 'delete_video':
-            {
-                if (response.code !== 0) {
-                    MessageShow.error(`删除失败: ${response.status}`)
-                    console.log('cut video failed', response)
-                } else {
-                    MessageShow.success(`删除完成:${response.status}`)
-                    const respData: DataTypes.DeleteFileResp = response.data
-                    if (respData.traversalResp != null) {
-                        console.log('update file list', respData.traversalResp)
-                        util.folder_file_proc(respData.traversalResp)
-                    }
-                }
-            }
-            break
-        case 'get_key_frame_info':
-            if (response.code !== 0) {
-                MessageShow.error(`获取关键帧信息失败: ${response.status}`)
-            } else {
-                if (appStore) {
-                    if (appStore.curVideoInfo == null) {
-                        appStore.curVideoInfo = new DataTypes.File()
-                    }
-                    appStore.curVideoInfo.frameInfo = response.data
-                }
-                MessageShow.info(`获取关键帧信息完成:${response.status}`)
-            }
-            break
-    }
 }
 
 function processVideoEvent(videoEvent: DataTypes.FileEventInfo[][]): void {
@@ -282,8 +201,7 @@ async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
     const prjInfo: DataTypes.Req_CutVideo = {
         fileInfo: appStore.curVideoInfo,
         filepath: appStore.curSltVideo?.path || '',
-        filename: util.getFilenameFromPath(appStore.curSltVideo?.path || ''),
-        baseFolder: appStore.curOpenedFolder || ''
+        filename: util.getFilenameFromPath(appStore.curSltVideo?.path || '')
     }
     return prjInfo
 }
@@ -303,40 +221,6 @@ const save_project = async (): Promise<void> => {
         MessageShow.success(`保存失败: ${response.status}`)
     } else {
         MessageShow.success(`保存成功`)
-    }
-}
-
-// function process_heartbeat(response: {
-//   code: number
-//   data: {
-//     time: string
-//     appStatus: string
-//     workRespose?: { cmd: string; data: { code: number; status: string } }[]
-//   }
-// }): void {
-
-function process_heartbeat(resp: DataTypes.Resp<DataTypes.HeartBeat>): void {
-    if (resp.code !== 0) {
-        console.log('process_heartbeat failed', resp)
-        return
-    }
-    if (resp.data === undefined) {
-        console.log('process_heartbeat failed', resp)
-        return
-    }
-    const respData: DataTypes.HeartBeat = resp.data
-    const curTime = respData.time
-    const appStatus = respData.appStatus
-    if (appStore) {
-        appStore.documentTitle = `${curTime} ${appStatus != null ? appStatus : ''}`
-    }
-    if (respData.workRespose != null) {
-        if (respData.workRespose.length > 0) {
-            console.log('process_heartbeat', respData.workRespose)
-        }
-        for (const item of respData.workRespose) {
-            util.process_work_response(item)
-        }
     }
 }
 
@@ -659,9 +543,33 @@ class Util {
     update_thumbnail_images = update_thumbnail_images
     update_bar_clips = update_bar_clips
     updateKeyframeSplitInfo = updateKeyframeSplitInfo
-    process_heartbeat = process_heartbeat
     save_project = save_project
     formatSecond2Time = formatSecond2Time
+
+    process_heartbeat(resp: DataTypes.Resp<DataTypes.HeartBeat>): void {
+        if (resp.code !== 0) {
+            console.log('process heartbeat failed', resp)
+            return
+        }
+        if (resp.data === undefined) {
+            console.log('process heartbeat failed', resp)
+            return
+        }
+        const respData: DataTypes.HeartBeat = resp.data
+        const curTime = respData.time
+        const appStatus = respData.appStatus
+        if (appStore) {
+            appStore.documentTitle = `${curTime} ${appStatus != null ? appStatus : ''}`
+        }
+        if (respData.workRespose != null) {
+            if (respData.workRespose.length > 0) {
+                console.log('process heartbeat', respData.workRespose)
+            }
+            for (const item of respData.workRespose) {
+                util.process_work_response(item)
+            }
+        }
+    }
 
     async delete_video(reqInfo: DataTypes.DeleteFileReq): Promise<void> {
         util.stop_play()
@@ -679,7 +587,7 @@ class Util {
             if (response.bOver === false) {
                 MessageShow.info(`正在处理...`)
             } else {
-                MessageShow.success(`删除成功`)
+                // MessageShow.success(`删除成功`)
             }
         }
     }
@@ -753,7 +661,6 @@ class Util {
     }
 
     processVideoEvent = processVideoEvent
-    process_work_response = process_work_response
     folder_file_proc = folder_file_proc
     getKeyFrameInfo = getKeyFrameInfo
     clear_cur_slt_video_info = clear_cur_slt_video_info
@@ -770,6 +677,83 @@ class Util {
     setAppStore(store): void {
         appStore = store
     }
+
+    process_work_response(workRespose: DataTypes.WorkResp): void {
+        const cmd = workRespose.cmd
+
+        const response = JSON.parse(workRespose.data)
+        // const showCtx = `命令:${cmd} 执行结果: ${response.status}`
+        // if (response.code !== 0) {
+        //   MessageShow.error(showCtx)
+        // } else {
+        //   MessageShow.success(showCtx)
+        // }
+
+        // console.log('process_work_response', cmd, response)
+        switch (cmd) {
+            case 'open_folder':
+                console.log('open folder', response)
+                util.folder_file_proc(response)
+                if (response.code !== 0) {
+                    MessageShow.error(`打开文件夹失败: ${response.status}`)
+                } else {
+                    MessageShow.success(`打开文件夹成功: ${response.status}`)
+                }
+                break
+            case 'traversal_folder':
+                {
+                    console.log('traversal folder', response)
+                    util.folder_file_proc(response)
+                    if (response.code !== 0) {
+                        MessageShow.error(`更新文件夹: ${response.status}`)
+                    }
+                }
+                break
+            case 'query_video':
+                if (appStore) {
+                    // appStore.queryInfo = response.data
+                }
+                break
+            case 'cut_video':
+                if (response.code !== 0) {
+                    MessageShow.error(`视频裁剪失败: ${response.status}`)
+                    console.log('cut video failed', response)
+                } else {
+                    MessageShow.success(`视频裁剪完成:${response.status}`)
+                    const respData: DataTypes.Resp_CutVideo = response.data
+                    if (respData.traversalResp != null) {
+                        console.log('update file list', respData.traversalResp)
+                        util.folder_file_proc(respData.traversalResp)
+                    }
+                }
+                break
+            case 'delete_video':
+                {
+                    if (response.code !== 0) {
+                        MessageShow.error(`删除失败: ${response.status}`)
+                        console.log('cut video failed', response)
+                    } else {
+                        MessageShow.success(`删除完成:${response.status}`)
+                        util.search_file()
+                    }
+                }
+                break
+            case 'get_key_frame_info':
+                if (response.code !== 0) {
+                    MessageShow.error(`获取关键帧信息失败: ${response.status}`)
+                } else {
+                    if (appStore) {
+                        if (appStore.curVideoInfo == null) {
+                            appStore.curVideoInfo = new DataTypes.File()
+                        }
+                        appStore.curVideoInfo.frameInfo = response.data
+                    }
+                    MessageShow.info(`获取关键帧信息完成:${response.status}`)
+                }
+                break
+        }
+    }
+
     getFilenameFromPath(filePath: string | null | undefined): string {
         if (filePath == null || filePath === '') return ''
         const parts = filePath.split(/[\\/]/)
@@ -796,6 +780,9 @@ class Util {
         const req: DataTypes.Req<DataTypes.SearchFileReq> = {
             cmd: 'search_file',
             data: new DataTypes.SearchFileReq()
+        }
+        if (req.data != null) {
+            req.data.status = DataTypes.FileStatus.Normal
         }
         const response: DataTypes.Resp<DataTypes.SearchFileResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {

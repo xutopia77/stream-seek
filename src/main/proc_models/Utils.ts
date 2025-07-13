@@ -29,10 +29,10 @@ class WorkQueue {
     // 添加任务到队列
     addTask(req: WorkQueueRequest | null): void {
         if (req !== null) {
-            logger.info('add task to queue', req?.cmd)
+            // logger.info('add task to queue', req?.cmd)
         } else {
             if (this.curReq != null) {
-                logger.info('clean task in queue', this.curReq?.cmd)
+                // logger.info('clean task in queue', this.curReq?.cmd)
             }
         }
         this.curReq = req

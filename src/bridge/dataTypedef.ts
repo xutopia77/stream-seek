@@ -20,6 +20,19 @@ export class FileInfo {
     // mtime: string
 }
 
+// 定义一个枚举，是数字类型，表示文件的状态
+export enum FileStatus {
+    Normal = 0, // 正常
+    Deleted = 1, // 删除
+    Error = 2 // 错误
+}
+
+export enum FileType {
+    Video = 0,
+    Image = 1,
+    Txt = 2
+}
+
 export class File {
     id: number = 0 // 视频 ID，新增时可省略
     name: string = '' // 视频名称 00_20250301124348_20250301124906.mp4
@@ -35,6 +48,7 @@ export class File {
     eventInfo: FileEventInfo | null = null // 以json字符串的形式存储在数据库
     type: FileType = FileType.Video // 数据类型
     status: FileStatus = FileStatus.Normal // 数据状态
+    repo: string = '' // 数据仓库名称
     static makePlayUrl(finfo: File): string {
         return `file://${finfo.path}`
     }
@@ -58,19 +72,6 @@ export class File {
     }
 }
 
-// 定义一个枚举，是数字类型，表示文件的状态
-export enum FileStatus {
-    Normal = 0, // 正常
-    Deleted = 1, // 删除
-    Error = 2 // 错误
-}
-
-export enum FileType {
-    Video = 0,
-    Image = 1,
-    Txt = 2
-}
-
 export interface FileModel {
     id?: number // 视频 ID，新增时可省略
     name: string // 视频名称
@@ -86,19 +87,30 @@ export interface FileModel {
     eventInfo: string // 以json字符串的形式存储在数据库
     type: FileType // 数据类型
     status: FileStatus // 数据状态
+    repo: string // 数据仓库名称
     created_at?: string // 创建时间，新增时可省略
     updated_at?: string // 更新时间，新增时可省略
     deleted_at?: string // 删除时间，新增时可省略
 }
 
 export class CreatePrjReq {
-    dataBasePath: string = ''
+    dataRepo: DataRepo[] = []
 }
 
 export class SearchFileReq {
     page: number = 1
     pageSize: number = 10
     path: string | null = null
+    repo: string | null = null
+    status: FileStatus | null = null
+
+    static makeReqStatusNormal(path: string, repo: string): SearchFileReq {
+        const req = new SearchFileReq()
+        req.path = path
+        req.repo = repo
+        req.status = FileStatus.Normal
+        return req
+    }
 }
 
 export class SearchFileResp {
@@ -201,11 +213,24 @@ export interface MediaItem {
     filePath: string
 }
 
+export class DataRepo {
+    path: string = ''
+    name: string = '' // 需要唯一
+    static getRepoByPath(name: string, repos: DataRepo[]): DataRepo | null {
+        for (const repo of repos) {
+            if (repo.name == name) {
+                return repo
+            }
+        }
+        return null
+    }
+}
+
 export class Prj {
     name: string = ''
     version: string = '1.0.0'
-    dataFolder: string = ''
-    thumbnail_dir: string = ''
+    path: string = '' //  project path
+    dataRepo: DataRepo[] = []
 }
 
 export interface WorkResp {
@@ -235,7 +260,6 @@ export interface Req_CutVideo {
     fileInfo: File
     filepath: string
     filename: string
-    baseFolder: string
 }
 
 export interface Resp_CutVideo {
@@ -243,8 +267,8 @@ export interface Resp_CutVideo {
 }
 
 export class DeleteFileReq {
-    baseFolder: string = '' // 会在此基础路径下创建回收站
-    filepaths: string[] = []
+    // 有效字段 path， repo， 其他字段不用理会
+    files: File[] = []
 }
 
 export class DeleteFileResp {}
