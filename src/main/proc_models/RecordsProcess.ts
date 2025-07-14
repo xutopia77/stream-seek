@@ -251,9 +251,9 @@ class RecordsProc {
 
     async thumbnail_get_mp4_path(fPath: string): Promise<DataTypes.Resp<string>> {
         const resp = new DataTypes.Resp<string>()
-        const searchReq = new DataTypes.SearchFileReq()
+        const searchReq = new DataTypes.FilesReq()
         searchReq.path = fPath
-        const searchResp = await appDb.search_file(searchReq)
+        const searchResp = await appDb.file_view_search(searchReq)
         if (searchResp.code !== 0) {
             return resp.err('search file error')
         }

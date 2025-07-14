@@ -523,7 +523,7 @@ class Util {
         if (response.code !== 0) {
             return resp.err(response.status)
         }
-        if(response.data == null) {
+        if (response.data == null) {
             return resp.err('app start resp data is null')
         }
         this.updateAppInfo(response.data)
@@ -548,6 +548,7 @@ class Util {
             thumbnailImages.push(thumbInfo)
         }
     }
+
     process_heartbeat(resp: DataTypes.Resp<DataTypes.HeartBeat>): void {
         if (resp.code !== 0) {
             console.log('process heartbeat failed', resp)
@@ -659,6 +660,66 @@ class Util {
             //     }
             //   }
             // }
+        }
+    }
+
+    async files_get(
+        reqParam: DataTypes.FilesReq | null
+    ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
+        const req: DataTypes.Req<DataTypes.FilesReq> = {
+            cmd: 'files_get',
+            data: reqParam == null ? new DataTypes.FilesReq() : reqParam
+        }
+        const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
+        if (response.code !== 0) {
+            MessageShow.error(`获取文件列表失败: ${response.status}`)
+            return response
+        } else {
+            if (response.bOver == false) {
+                MessageShow.info(`正在处理...`)
+                return response
+            }
+        }
+        appStore.videoList = response.data?.files || []
+        return response
+    }
+
+    async tags_get(
+        reqParam: DataTypes.TagsReq | null
+    ): Promise<DataTypes.Resp<DataTypes.TagsResp>> {
+        const req: DataTypes.Req<DataTypes.TagsReq> = {
+            cmd: 'tags_get',
+            data: reqParam == null ? new DataTypes.TagsReq() : reqParam
+        }
+        const response: DataTypes.Resp<DataTypes.TagsResp> = await IpcApi.trigger_event(req)
+        if (response.code !== 0) {
+            MessageShow.error(`获取标签列表失败: ${response.status}`)
+            return response
+        } else {
+            if (response.bOver == false) {
+                MessageShow.info(`正在处理...`)
+                return response
+            }
+        }
+        appStore.tags = response.data?.tags || []
+        return response
+    }
+
+    async file_tags_set(fileTags: DataTypes.FileTagsReq): Promise<void> {
+        const req: DataTypes.Req<DataTypes.FileTagsReq> = {
+            cmd: 'file_tags_set',
+            data: fileTags
+        }
+        const response: DataTypes.Resp = await IpcApi.trigger_event(req)
+        if (response.code !== 0) {
+            MessageShow.error(`设置标签失败: ${response.status}`)
+        } else {
+            if (response.bOver == false) {
+                MessageShow.info(`正在处理...`)
+                return
+            }
+            await this.files_get(null)
+            await this.tags_get(null)
         }
     }
 
@@ -776,12 +837,12 @@ class Util {
         return splitInfo
     }
 
-    async search_file(): Promise<DataTypes.Resp<DataTypes.SearchFileResp>> {
-        const req: DataTypes.Req<DataTypes.SearchFileReq> = {
+    async search_file(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
+        const req: DataTypes.Req<DataTypes.FilesReq> = {
             cmd: 'search_file'
         }
-        req.data = DataTypes.SearchFileReq.makeReqStatusNotDel(null, null)
-        const response: DataTypes.Resp<DataTypes.SearchFileResp> = await IpcApi.trigger_event(req)
+        req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
+        const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
             MessageShow.error(`search file failed: ${response.status}`)
             console.log(`search file failed: ${response.status}`)

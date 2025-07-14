@@ -30,13 +30,15 @@ import VideoInfo from './video_view/work_panel/VideoInfo.vue'
 import ThumbnailView from './video_view/ThumbnailView.vue'
 import PlayProgressBar from './video_view/PlayProgressBar.vue'
 import PlayCtrl from './video_view/PlayCtrl.vue'
-import { ref, onMounted, watch, onBeforeMount, computed, onUnmounted, onBeforeUnmount } from 'vue'
-import util from '../utils/util'
 import { PlayReq } from '../utils/util'
-import { useAppStore } from '../stores/AppStore'
+import { ref, onMounted, watch, onBeforeMount, computed, onUnmounted, onBeforeUnmount } from 'vue'
+// import MessageShow from '@renderer/components/util/MessageShow.vue'
+import util from '@renderer/utils/util'
+import { useAppStore } from '@renderer/stores/AppStore'
+const appStore = useAppStore()
 import * as DataTypes from '../../../bridge/dataTypedef'
 // import MessageShow from './util/MessageShow'
-const appStore = useAppStore()
+
 
 let rightPanel = computed(() => appStore.rightPanel)
 

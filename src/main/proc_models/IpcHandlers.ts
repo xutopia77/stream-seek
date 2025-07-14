@@ -448,7 +448,7 @@ export class IpcHandlers {
             }
             case 'search_file': {
                 logger.info(`cmd:${cmd}:${cseq}`)
-                const cmdReq = convertCmdRequest<DataTypes.SearchFileReq>(req)
+                const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
                 return make_cmd_response(await appProc.search_file(cmdReq))
             }
             // case 'traversal_folder': {
@@ -490,6 +490,21 @@ export class IpcHandlers {
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
             //     return make_cmd_response(await recordsProc.start_sync_trash(cmdReq))
             // }
+            case 'file_tags_set': {
+                const cmdReq = convertCmdRequest<DataTypes.FileTagsReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}, fileTags len:${cmdReq.data?.fileTags.length}`)
+                return make_cmd_response(await appProc.handle_file_tags_set(cmdReq))
+            }
+            case 'tags_get': {
+                const cmdReq = convertCmdRequest<DataTypes.TagsReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}`)
+                return make_cmd_response(await appProc.handle_tags_get(cmdReq))
+            }
+            case 'files_get': {
+                const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}`)
+                return make_cmd_response(await appProc.handle_files_get(cmdReq))
+            }
             default: {
                 console.log(`Unknown event: ${cmd}:${cseq}`)
                 const resp = new DataTypes.Resp()

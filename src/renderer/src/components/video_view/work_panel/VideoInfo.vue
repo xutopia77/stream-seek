@@ -1,11 +1,51 @@
 <template>
     <div class="page-container">
         <div class="tag-info">
-            <input class="xc-text-input" type="text" placeholder="设置标签" />
+            <input
+                v-model="newTag"
+                placeholder="输入标签确认添加"
+                class="xc-text-input"
+                type="text"
+                @keyup.enter="btn_addTag"
+            />
         </div>
     </div>
 </template>
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import MessageShow from '@renderer/components/util/MessageShow.vue'
+// import util from '@renderer/utils/util'
+import { ref } from 'vue'
+import { useAppStore } from '@renderer/stores/AppStore'
+const appStore = useAppStore()
+import * as DataTypes from '../../../../../bridge/dataTypedef'
+import util from '@renderer/utils/util'
+
+const newTag = ref('')
+const btn_addTag = async (): Promise<void> => {
+    const req = new DataTypes.FileTagsReq()
+    let tagName = ''
+    if (newTag.value.trim()) {
+        tagName = newTag.value.trim()
+    }
+    if (tagName == '') {
+        MessageShow.warn(`标签名不能为空`)
+        return
+    }
+    for (const item of appStore.curCheckedVideo) {
+        const fileTag: DataTypes.FileTagsReqItem = {
+            fileId: item.id,
+            tagName: tagName
+        }
+        req.fileTags.push(fileTag)
+    }
+    if (req.fileTags.length === 0) {
+        MessageShow.warn(`请选择文件`)
+        return
+    }
+    await util.file_tags_set(req)
+    newTag.value = ''
+}
+</script>
 
 <style scoped>
 /* 原有的样式保持不变 */

@@ -50,6 +50,7 @@ export class File {
     status: FileStatus = FileStatus.Normal // 数据状态
     repo: string = '' // 数据仓库名称
     description?: string = '' // file description
+    tags: Tag[] = []
     static makePlayUrl(finfo: File): string {
         return `file://${finfo.path}`
     }
@@ -99,6 +100,31 @@ export class FileModel {
     }
 }
 
+export class FileViewModel {
+    id?: number // 视频 ID，新增时可省略
+    name: string = '' // 视频名称
+    path: string = '' // 视频文件路径
+    startTimeSec: number = 0 // 视频开始时间，单位秒
+    endTimeSec: number = 0 // 视频结束时间，单位秒
+    duration: number = 0 // 视频时长
+    size: number = 0 // 视频大小，单位字节
+    mediaInfo: string = '' // 以json字符串的形式存储在数据库
+    splitInfo: string = '' // 以json字符串的形式存储在数据库
+    frameInfo: string = '' // 以json字符串的形式存储在数据库
+    thumbnail: string = '' // 以json字符串的形式存储在数据库
+    eventInfo: string = '' // 以json字符串的形式存储在数据库
+    type: FileType = FileType.Mp4 // 数据类型
+    status: FileStatus = FileStatus.Normal // 数据状态
+    repo: string = '' // 数据仓库名称
+    infoHash?: string = '' // data info hash value, calculate way: repo+path
+    description?: string = '' // file description
+    created_at?: string = '' // create time, add when insert
+    updated_at?: string = '' // update time, add when update
+    deleted_at?: string = '' // delete time, add when delete
+    tagName: string = ''
+    tagColor: string = ''
+}
+
 export class Tag {
     id: number = 0
     name: string = ''
@@ -117,14 +143,14 @@ export class TagModel {
 export class FileTag {
     id: number = 0
     fileId: number = 0
-    tagName: string = ''
+    tagId: number = 0
 }
 
 export class FileTagModel {
     id?: number
     fileId: number = 0
-    tagName: string = ''
-    uniqueHash: string = '' // fileId + tagName
+    tagId: number = 0
+    uniqueHash: string = '' // fileId + tagId
     created_at?: string = '' // create time, add when insert
     updated_at?: string = '' // update time, add when update
     deleted_at?: string = '' // delete time, add when delete
@@ -132,39 +158,6 @@ export class FileTagModel {
 
 export class CreatePrjReq {
     dataRepo: DataRepo[] = []
-}
-
-export class SearchFileReq {
-    page?: number | null = null // 页码，从 1 开始
-    pageSize: number | null = null
-    path: string | null = null
-    repo: string | null = null
-    status: FileStatus[] = []
-    startTimeSecMin: number | null = null
-    startTimeSecMax: number | null = null
-    endTimeSecMin: number | null = null
-    endTimeSecMax: number | null = null
-    durationMin: number | null = null
-    durationMax: number | null = null
-    sizeMin: number | null = null
-    sizeMax: number | null = null
-    type: FileType[] = []
-    // 升序，降序
-    order: 'asc' | 'desc' = 'asc' // 枚举值直接传入数据库
-    orderBy: 'id' | 'name' | 'startTimeSec' | 'created_at' | 'updated_at' = 'startTimeSec' // 枚举值直接传入数据库
-
-    static makeReqStatusNotDel(path: string | null, repo: string | null): SearchFileReq {
-        const req = new SearchFileReq()
-        req.path = path
-        req.repo = repo
-        req.status = [FileStatus.Normal]
-        return req
-    }
-}
-
-export class SearchFileResp {
-    total: number = 0
-    files: File[] = []
 }
 
 export interface SplitInfo {
@@ -352,6 +345,66 @@ export interface Req_SyncTrash {
     folder: string
 }
 
+export class FileTagsReqItem {
+    fileId: number = 0
+    tagName: string = ''
+}
+
+export class FileTagsReq {
+    fileTags: FileTagsReqItem[] = []
+}
+
+export class FilesReq {
+    page?: number | null = null // 页码，从 1 开始
+    pageSize: number | null = null
+    path: string | null = null
+    repo: string | null = null
+    status: FileStatus[] = []
+    startTimeSecMin: number | null = null
+    startTimeSecMax: number | null = null
+    endTimeSecMin: number | null = null
+    endTimeSecMax: number | null = null
+    durationMin: number | null = null
+    durationMax: number | null = null
+    sizeMin: number | null = null
+    sizeMax: number | null = null
+    type: FileType[] = []
+    // 升序，降序
+    order: 'asc' | 'desc' = 'asc' // 枚举值直接传入数据库
+    orderBy: 'id' | 'name' | 'startTimeSec' | 'created_at' | 'updated_at' = 'startTimeSec' // 枚举值直接传入数据库
+
+    static makeReqStatusNotDel(path: string | null, repo: string | null): FilesReq {
+        const req = new FilesReq()
+        req.path = path
+        req.repo = repo
+        req.status = [FileStatus.Normal]
+        return req
+    }
+}
+
+export class FilesResp {
+    total: number = 0
+    files: File[] = []
+}
+
+export class TagsReq {
+    page?: number | null = null // 页码，从 1 开始
+    pageSize: number | null = null
+    name: string | null = null
+    color: string | null = null
+    order: 'asc' | 'desc' = 'asc' // 枚举值直接传入数据库
+    orderBy: 'id' | 'name' | 'created_at' | 'updated_at' = 'created_at' // 枚举值直接传入数据库
+    static makeReq(page: number, pageSize: number): TagsReq {
+        const req = new TagsReq()
+        req.page = page
+        req.pageSize = pageSize
+        return req
+    }
+}
+export class TagsResp {
+    total: number = 0
+    tags: Tag[] = []
+}
 // ======================== main
 
 export class DbInsertResp {

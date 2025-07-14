@@ -92,9 +92,9 @@ class TraversalFolder {
         return this.traversal_folder()
     }
 
-    async get_folder_files(): Promise<DataTypes.Resp<DataTypes.SearchFileResp>> {
-        const resp = new DataTypes.Resp<DataTypes.SearchFileResp>()
-        resp.data = new DataTypes.SearchFileResp()
+    async get_folder_files(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
+        const resp = new DataTypes.Resp<DataTypes.FilesResp>()
+        resp.data = new DataTypes.FilesResp()
         const folderPath = this.repo.path
         if (!folderPath) {
             return resp.err('folder is null')
@@ -173,6 +173,70 @@ class AppProc {
 
     async quiteApp(): Promise<void> {
         this.saveAppCfg()
+    }
+
+    async handle_file_tags_set(req: DataTypes.Req<DataTypes.FileTagsReq>): Promise<DataTypes.Resp> {
+        const resp = new DataTypes.Resp()
+        resp.success('success')
+        let tagResp = await appDb.tag_search(null)
+        if (tagResp.code !== 0) {
+            return resp.err(`tag search err: ${tagResp.status}`)
+        }
+        let tags = tagResp.data?.tags ?? []
+        for (const item of req.data?.fileTags ?? []) {
+            let tagInfo = tags.find((tag) => tag.name === item.tagName)
+            if (tagInfo == null) {
+                const tag: DataTypes.Tag = {
+                    id: 0,
+                    name: item.tagName,
+                    color: '#FF5733'
+                }
+                const respInsert = await appDb.tag_insert(tag)
+                if (respInsert.code !== 0) {
+                    logger.error(`insert tag err: ${respInsert.status}`)
+                    resp.err('insert tag error')
+                } else {
+                    logger.info(`insert tag success: ${item.tagName}`)
+                }
+                tagResp = await appDb.tag_search(null)
+                if (tagResp.code !== 0) {
+                    return resp.err(`tag search err: ${tagResp.status}`)
+                }
+                tags = tagResp.data?.tags ?? []
+                tagInfo = tags.find((tag) => tag.name === item.tagName)
+                if (tagInfo == null) {
+                    logger.error(
+                        `tag search err, iteam tag name: ${item.tagName}, tagInfo: ${tagInfo}`
+                    )
+                    return resp.err(`tag search err: ${tagResp.status}`)
+                }
+            }
+            const fileTag: DataTypes.FileTag = {
+                id: 0,
+                fileId: item.fileId,
+                tagId: tagInfo?.id ?? 0
+            }
+            const respUpdate = await appDb.file_tag_insert(fileTag)
+            if (respUpdate.code !== 0) {
+                logger.error(`insert file tag err: ${respUpdate.status}`)
+                resp.err('insert file tags error')
+            } else {
+                logger.info(
+                    `insert file tag success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
+                )
+            }
+        }
+        return resp
+    }
+    async handle_tags_get(
+        req: DataTypes.Req<DataTypes.TagsReq>
+    ): Promise<DataTypes.Resp<DataTypes.TagsResp>> {
+        return await appDb.tag_search(req.data == null ? null : req.data)
+    }
+    async handle_files_get(
+        req: DataTypes.Req<DataTypes.FilesReq>
+    ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
+        return await appDb.file_view_search(req.data == null ? null : req.data)
     }
 
     async create_prj(
@@ -283,15 +347,15 @@ class AppProc {
         return resp
     }
     async search_file(
-        req: DataTypes.Req<DataTypes.SearchFileReq>
-    ): Promise<DataTypes.Resp<DataTypes.SearchFileResp>> {
-        return appDb.search_file(req.data == null ? null : req.data)
+        req: DataTypes.Req<DataTypes.FilesReq>
+    ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
+        return appDb.file_view_search(req.data == null ? null : req.data)
     }
 
     async start_gen_thumbnail(): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
         logger.log('start gen thumbnail')
-        const searchRe = await appDb.search_file(null)
+        const searchRe = await appDb.file_view_search(null)
         if (searchRe.code !== 0) {
             return resp.err('search file error')
         }
@@ -417,9 +481,9 @@ class AppProc {
         if (video_path == null) {
             return resp.err('filepath is null')
         }
-        const searchReq = new DataTypes.SearchFileReq()
+        const searchReq = new DataTypes.FilesReq()
         searchReq.path = video_path
-        const searchRe = await appDb.search_file(searchReq)
+        const searchRe = await appDb.file_view_search(searchReq)
         if (searchRe.code !== 0) {
             return resp.err('search file error')
         }
@@ -506,8 +570,8 @@ class AppProc {
                     return resp.err(resp_str)
                 }
             }
-            const searchReq = DataTypes.SearchFileReq.makeReqStatusNotDel(item.path, item.repo)
-            const searchResp = await appDb.search_file(searchReq)
+            const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(item.path, item.repo)
+            const searchResp = await appDb.file_view_search(searchReq)
             if (searchResp.code !== 0) {
                 logger.error(`search file ${item.repo} ${item.path} err: ${searchResp.status}`)
                 continue
