@@ -33,6 +33,30 @@
   scrollbar-color: #555 #333;
 }
 
+/* --------------------------------------------------------- tag */
+.xc-tag {
+  display: inline-block;
+  margin: 2px;
+  padding: 0px;
+  padding-right: 6px;
+  border: var(--xc-border);
+  border-radius: 4px;
+  background-color: var(--xc-background-color);
+  transition: all 0.3s;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.xc-tag:hover {
+  background-color: var(--xc-background-color-hover);
+  border: var(--xc-border-hover);
+}
+
+/* 选中状态样式 */
+.xc-tag.selected {
+  background-color: #2196F3;
+  color: white;
+}
 
 /* --------------------------------------------------------- */
 /* 通用按钮样式 */

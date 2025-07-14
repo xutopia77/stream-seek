@@ -8,18 +8,44 @@
                 type="text"
                 @keyup.enter="btn_addTag"
             />
+            <br />
+            <div
+                v-for="(tag, index) in fileTags"
+                :key="index"
+                class="xc-tag"
+                :style="{
+                    backgroundColor: tag.color
+                }"
+            >
+                {{ tag.name }}
+                <span class="xc-text tag-btn-del" @click="btn_removeTag(tag)"> ❌ </span>
+            </div>
         </div>
     </div>
 </template>
 <script setup lang="ts">
 import MessageShow from '@renderer/components/util/MessageShow.vue'
 // import util from '@renderer/utils/util'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
 import * as DataTypes from '../../../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
-
+// ------------------------------------
+const fileTags = computed(() => {
+    if (appStore.curSltVideo == null) return []
+    return appStore.curSltVideo.tags
+})
+function btn_removeTag(tag: DataTypes.Tag): void {
+    console.log(`remove tag ${tag.name}`)
+    // if (appStore.curSltFile?.id == null) return
+    // const req: DatType.FilesTagSetReq = {
+    //     fileIds: [appStore.curSltFile.id],
+    //     tagName: tag.name
+    // }
+    // Utils.files_tag_delete(req)
+}
+// ------------------------------------
 const newTag = ref('')
 const btn_addTag = async (): Promise<void> => {
     const req = new DataTypes.FileTagsReq()
@@ -74,5 +100,12 @@ const btn_addTag = async (): Promise<void> => {
 .page-container {
     scrollbar-width: thin;
     scrollbar-color: #555 #333;
+}
+
+.tag-btn-del {
+    font-size: 12px;
+}
+.tag-btn-del:hover {
+    background-color: var(--xc-text-color);
 }
 </style>

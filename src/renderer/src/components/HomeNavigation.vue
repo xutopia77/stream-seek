@@ -1,38 +1,42 @@
 <template>
     <div class="home-navigation">
-        <div class="menu-item dropdown" @click="toggleDropdown($event, 'home')">
-            <!-- 文件 -->
-            <span class="xc-text">文件</span>
-            <div
-                ref="dropdownMenuRefHome"
-                class="dropdown-menu"
-                :class="{ show: isDropdownOpen['home'] }"
-            >
-                <button class="xc-button menu-button" @click="btn_createPrj">创建项目</button>
-                <button class="xc-button menu-button" @click="btn_openPrj">打开项目</button>
-                <button class="xc-button menu-button" @click="exitApp">退出</button>
+        <div class="btn-container">
+            <div class="menu-item dropdown" @click="toggleDropdown($event, 'home')">
+                <!-- 文件 -->
+                <span class="xc-text">文件</span>
+                <div
+                    ref="dropdownMenuRefHome"
+                    class="dropdown-menu"
+                    :class="{ show: isDropdownOpen['home'] }"
+                >
+                    <button class="xc-button menu-button" @click="btn_createPrj">创建项目</button>
+                    <button class="xc-button menu-button" @click="btn_openPrj">打开项目</button>
+                    <button class="xc-button menu-button" @click="exitApp">退出</button>
+                </div>
+            </div>
+            <div class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
+                <span class="xc-text">视图</span>
+                <div
+                    ref="dropdownMenuRefView"
+                    class="dropdown-menu"
+                    :class="{ show: isDropdownOpen['view'] }"
+                >
+                    <button class="xc-button menu-button" @click="showFileList">文件列表</button>
+                    <button class="xc-button menu-button" @click="showOperationPanel">
+                        操作面板
+                    </button>
+                </div>
+            </div>
+            <div class="menu-item">
+                <span class="xc-text" @click="btn_function()">功能</span>
+            </div>
+            <div class="menu-item" @click="showAboutModal">
+                <span class="xc-text">关于</span>
             </div>
         </div>
-        <div class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
-            <span class="xc-text">视图</span>
-            <div
-                ref="dropdownMenuRefView"
-                class="dropdown-menu"
-                :class="{ show: isDropdownOpen['view'] }"
-            >
-                <button class="xc-button menu-button" @click="showFileList">文件列表</button>
-                <button class="xc-button menu-button" @click="showOperationPanel">
-                    操作面板
-                </button>
-            </div>
-        </div>
-        <div class="menu-item">
-            <router-link to="/admin" class="no-underline-link">
-                <span class="xc-text">功能</span>
-            </router-link>
-        </div>
-        <div class="menu-item" @click="showAboutModal">
-            <span class="xc-text">关于</span>
+
+        <div class="info-container">
+            <span class="xc-text">{{ statusInfo }}</span>
         </div>
     </div>
     <!-- 关于模态框 -->
@@ -46,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAppStore } from '../stores/AppStore'
 import '../assets/common.css'
 import util from '../utils/util'
@@ -150,6 +154,16 @@ const handleClickOutside = (event: MouseEvent): void => {
     }
 }
 
+function btn_function(): void {
+    router.push('/admin')
+}
+
+const statusInfo = computed(() => {
+    const curSltVideoName =
+        appStore.curSltVideo == null ? '' : DataTypes.File.makeDisplayName(appStore.curSltVideo)
+    return curSltVideoName
+})
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutside)
 })
@@ -168,6 +182,12 @@ onUnmounted(() => {
     background-color: #252526;
     color: #ccc;
     align-items: center;
+}
+
+.btn-container {
+    display: flex;
+    /*  防止按钮缩小 */
+    flex-shrink: 0;
 }
 
 /* 菜单项样式 */
@@ -260,5 +280,9 @@ onUnmounted(() => {
 
 .modal-content button:hover {
     background-color: #444;
+}
+
+.info-container {
+    margin-left: auto;
 }
 </style>
