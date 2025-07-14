@@ -10,16 +10,6 @@
             >
                 <button class="common-button menu-button" @click="btn_createPrj">创建项目</button>
                 <button class="common-button menu-button" @click="btn_openPrj">打开项目</button>
-                <button class="common-button menu-button" @click="openFolder">打开文件夹</button>
-                <button class="common-button menu-button" @click="btnclk_save_project">
-                    保存项目
-                </button>
-                <button class="common-button menu-button" @click="btnclk_clean_project">
-                    清理项目
-                </button>
-                <button class="common-button menu-button" @click="btnclk_clean_work">
-                    清理工程
-                </button>
                 <button class="common-button menu-button" @click="exitApp">退出</button>
             </div>
         </div>
@@ -94,53 +84,6 @@ const toggleDropdown = (event: MouseEvent, menu: string): void => {
     isDropdownOpen.value[menu] = !isDropdownOpen.value[menu]
 }
 
-// 打开文件的处理函数
-const btnclk_save_project = (): void => {
-    isDropdownOpen.value.home = false
-    util.save_project()
-}
-
-function btnclk_clean_project(): void {
-    if (appStore.curSltVideo == null) return MessageShow.error('请先选择一个视频')
-    const confirmDelete = confirm(`确定要清理 ${appStore.curSltVideo.name} 项目吗？`)
-    if (!confirmDelete) {
-        return
-    }
-    const reqFiles: DataTypes.File[] = []
-    reqFiles.push(appStore.curSltVideo)
-    util.clean_project(reqFiles)
-        .then((resp) => {
-            if (resp.code == 0) {
-                MessageShow.success('清理成功')
-            } else {
-                MessageShow.error(resp.status)
-            }
-        })
-        .catch((error) => {
-            MessageShow.error(error)
-        })
-    MessageShow.info('清理中...')
-}
-
-function btnclk_clean_work(): void {
-    const confirmDelete = confirm(`确定要清理整个工程吗？`)
-    if (!confirmDelete) {
-        return
-    }
-    util.clean_work()
-        .then((resp) => {
-            if (resp.code == 0) {
-                MessageShow.success('清理成功')
-            } else {
-                MessageShow.error(resp.status)
-            }
-        })
-        .catch((error) => {
-            MessageShow.error(error)
-        })
-    MessageShow.info('清理中...')
-}
-
 const btn_createPrj = async (): Promise<void> => {
     router.push('/create_prj')
 }
@@ -162,23 +105,6 @@ const btn_openPrj = async (): Promise<void> => {
                 return
             }
             MessageShow.success('打开项目成功')
-        }
-    }
-}
-
-// 打开文件夹的处理函数
-const openFolder = async (): Promise<void> => {
-    const req: DataTypes.Req = {
-        cmd: 'open_folder'
-    }
-    const response: DataTypes.Resp<DataTypes.TraversalFolder> = await IpcApi.trigger_event(req)
-    if (response.code != 0) {
-        console.log('打开文件夹失败')
-    } else {
-        if (response.bOver == false) {
-            MessageShow.success('后台执行中...')
-        } else {
-            util.folder_file_proc(response)
         }
     }
 }

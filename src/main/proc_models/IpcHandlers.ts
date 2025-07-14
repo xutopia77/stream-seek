@@ -446,10 +446,6 @@ export class IpcHandlers {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
                 return make_cmd_response(await handle_open_prj(this.mainWindow!))
             }
-            // case 'open_folder': {
-            //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-            //     return make_cmd_response(await handle_open_folder(this.mainWindow!, req))
-            // }
             case 'search_file': {
                 logger.info(`cmd:${cmd}:${cseq}`)
                 const cmdReq = convertCmdRequest<DataTypes.SearchFileReq>(req)
@@ -463,11 +459,6 @@ export class IpcHandlers {
             // case 'slt_video_event': {
             //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
             //     return make_cmd_response(await handle_video_event_detect())
-            // }
-            // case 'save_prj': {
-            //     const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
-            //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
-            //     return make_cmd_response(await handle_save_prj(cmdReq))
             // }
             // case 'cut_video': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
@@ -488,11 +479,6 @@ export class IpcHandlers {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq}`)
             //     return make_cmd_response(await handle_query_video(cmdReq))
-            // }
-            // case 'clean_work': {
-            //     const cmdReq = convertCmdRequest<DataTypes.Req_ClearWork>(req)
-            //     logger.info(`cmd:${cmd}:${cseq}, files len:${cmdReq.data?.files?.length}`)
-            //     return make_cmd_response(await handle_clean_work(cmdReq))
             // }
             case 'sync_prj': {
                 const cmdReq = convertCmdRequest<DataTypes.SyncPrjReq>(req)

@@ -206,24 +206,6 @@ async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
     return prjInfo
 }
 
-const save_project = async (): Promise<void> => {
-    const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
-    if (prjInfo == null) {
-        MessageShow.success(`当前没有选择视频文件`)
-        return
-    }
-    const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
-        cmd: 'save_prj',
-        data: prjInfo
-    }
-    const response = await IpcApi.trigger_event(req)
-    if (response.code !== 0) {
-        MessageShow.success(`保存失败: ${response.status}`)
-    } else {
-        MessageShow.success(`保存成功`)
-    }
-}
-
 function calculateCurFrameIdx(curTime: number): number {
     if (appStore?.curVideoInfo === null) return 0
     if (appStore?.curVideoInfo?.mediaInfo === null) return 0
@@ -406,23 +388,6 @@ function toggle_play(videoRef: HTMLVideoElement): void {
     }
 }
 
-async function clean_work(): Promise<DataTypes.Resp> {
-    const req: DataTypes.Req<DataTypes.Req_ClearWork> = {
-        cmd: 'clean_work'
-    }
-    return IpcApi.trigger_event(req)
-}
-
-async function clean_project(files: DataTypes.File[]): Promise<DataTypes.Resp> {
-    const req: DataTypes.Req<DataTypes.Req_ClearWork> = {
-        cmd: 'clean_work',
-        data: {
-            files: files
-        }
-    }
-    return IpcApi.trigger_event(req)
-}
-
 function update_bar_clips(): DataTypes.BarClip[] {
     const barClips: DataTypes.BarClip[] = []
 
@@ -523,7 +488,6 @@ class Util {
     set_video_cur_time = set_video_cur_time
     update_bar_clips = update_bar_clips
     updateKeyframeSplitInfo = updateKeyframeSplitInfo
-    save_project = save_project
     formatSecond2Time = formatSecond2Time
 
     private async updateAppInfo(appStartResp: DataTypes.AppStartResp): Promise<void> {
@@ -710,8 +674,6 @@ class Util {
     play_video = play_video
     toggle_play = toggle_play
     setupVideoEventListeners = setupVideoEventListeners
-    clean_project = clean_project
-    clean_work = clean_work
     setAppStore(store): void {
         appStore = store
     }

@@ -24,14 +24,11 @@ export class FileInfo {
 export enum FileStatus {
     Normal = 0, // 正常
     Deleted = 1, // 删除
-    Error = 2, // 错误
-    Pending = 3, // 待处理
-    // Processing = 4 // 处理中
-    Finished = 5 // 处理完成
+    Error = 2 // 错误
 }
 
 export enum FileType {
-    Video = 0,
+    Mp4 = 0,
     Image = 1,
     Txt = 2
 }
@@ -49,9 +46,10 @@ export class File {
     frameInfo: FrameInfo | null = null // 以json字符串的形式存储在数据库
     thumbnail: ThumbnailInfo | null = null // 以json字符串的形式存储在数据库
     eventInfo: FileEventInfo | null = null // 以json字符串的形式存储在数据库
-    type: FileType = FileType.Video // 数据类型
+    type: FileType = FileType.Mp4 // 数据类型
     status: FileStatus = FileStatus.Normal // 数据状态
     repo: string = '' // 数据仓库名称
+    description?: string = '' // file description
     static makePlayUrl(finfo: File): string {
         return `file://${finfo.path}`
     }
@@ -75,27 +73,61 @@ export class File {
     }
 }
 
-export interface FileModel {
+export class FileModel {
     id?: number // 视频 ID，新增时可省略
-    name: string // 视频名称
-    path: string // 视频文件路径
-    startTimeSec: number // 视频开始时间，单位秒
-    endTimeSec: number // 视频结束时间，单位秒
-    duration: number // 视频时长
-    size: number // 视频大小，单位字节
-    mediaInfo: string // 以json字符串的形式存储在数据库
-    splitInfo: string // 以json字符串的形式存储在数据库
-    frameInfo: string // 以json字符串的形式存储在数据库
-    thumbnail: string // 以json字符串的形式存储在数据库
-    eventInfo: string // 以json字符串的形式存储在数据库
-    type: FileType // 数据类型
-    status: FileStatus // 数据状态
-    repo: string // 数据仓库名称
-    // [todo] 新增字段
-    // infoHash: string // 数据的信息哈希值，计算方式 repo+path
-    created_at?: string // 创建时间，新增时可省略
-    updated_at?: string // 更新时间，新增时可省略
-    deleted_at?: string // 删除时间，新增时可省略
+    name: string = '' // 视频名称
+    path: string = '' // 视频文件路径
+    startTimeSec: number = 0 // 视频开始时间，单位秒
+    endTimeSec: number = 0 // 视频结束时间，单位秒
+    duration: number = 0 // 视频时长
+    size: number = 0 // 视频大小，单位字节
+    mediaInfo: string = '' // 以json字符串的形式存储在数据库
+    splitInfo: string = '' // 以json字符串的形式存储在数据库
+    frameInfo: string = '' // 以json字符串的形式存储在数据库
+    thumbnail: string = '' // 以json字符串的形式存储在数据库
+    eventInfo: string = '' // 以json字符串的形式存储在数据库
+    type: FileType = FileType.Mp4 // 数据类型
+    status: FileStatus = FileStatus.Normal // 数据状态
+    repo: string = '' // 数据仓库名称
+    infoHash?: string = '' // data info hash value, calculate way: repo+path
+    description?: string = '' // file description
+    created_at?: string = '' // create time, add when insert
+    updated_at?: string = '' // update time, add when update
+    deleted_at?: string = '' // delete time, add when delete
+    static makeInfoHash(repo: string, fPath: string): string {
+        return `${repo}+${fPath}`
+    }
+}
+
+export class Tag {
+    id: number = 0
+    name: string = ''
+    color: string = ''
+}
+
+export class TagModel {
+    id?: number
+    name: string = ''
+    color: string = ''
+    created_at?: string = '' // create time, add when insert
+    updated_at?: string = '' // update time, add when update
+    deleted_at?: string = '' // delete time, add when delete
+}
+
+export class FileTag {
+    id: number = 0
+    fileId: number = 0
+    tagName: string = ''
+}
+
+export class FileTagModel {
+    id?: number
+    fileId: number = 0
+    tagName: string = ''
+    uniqueHash: string = '' // fileId + tagName
+    created_at?: string = '' // create time, add when insert
+    updated_at?: string = '' // update time, add when update
+    deleted_at?: string = '' // delete time, add when delete
 }
 
 export class CreatePrjReq {
@@ -125,7 +157,7 @@ export class SearchFileReq {
         const req = new SearchFileReq()
         req.path = path
         req.repo = repo
-        req.status = [FileStatus.Normal, FileStatus.Finished]
+        req.status = [FileStatus.Normal]
         return req
     }
 }

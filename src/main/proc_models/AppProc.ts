@@ -35,7 +35,7 @@ class TraversalFolder {
             frameInfo: '',
             thumbnail: '',
             eventInfo: '',
-            type: DataTypes.FileType.Video,
+            type: DataTypes.FileType.Mp4,
             status: DataTypes.FileStatus.Normal,
             repo: this.repo.name
         }
