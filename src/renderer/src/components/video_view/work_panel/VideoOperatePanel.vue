@@ -1,9 +1,9 @@
 <template>
     <div class="work-panel-contianer">
         <div class="video-info-contianer">
-            <!-- <span class="common-text"></span> -->
+            <!-- <span class="xc-text"></span> -->
         </div>
-        <span class="common-text"
+        <span class="xc-text"
             >{{
                 `${util.getFilenameFromPath(appStore.curSltVideo ? appStore.curSltVideo.path : null)}`
             }} </span
@@ -31,15 +31,15 @@
             }"
             @click="selectSplitInfo(splitInfo)"
         >
-            <span class="common-text"
+            <span class="xc-text"
                 >{{
                     `${util.formatTime(splitInfo.startTime)} - ${util.formatTime(splitInfo.endTime)}`
                 }} </span
             ><br />
-            <span class="common-text" style="margin-right: 2px; color: #669999"
+            <span class="xc-text" style="margin-right: 2px; color: #669999"
                 >{{ `时长:${util.formatTime(splitInfo.duration)}` }}
             </span>
-            <span class="common-text" style="color: #990033">{{ `${splitInfo.frameNum}帧` }} </span>
+            <span class="xc-text" style="color: #990033">{{ `${splitInfo.frameNum}帧` }} </span>
             <br />
         </div>
     </div>

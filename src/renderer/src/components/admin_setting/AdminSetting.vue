@@ -1,8 +1,8 @@
 <template>
     <div class="admin-setting-container">
         <div class="search-title-info">
-            <span class="common-text">文件管理 </span>
-            <span class="common-text">{{ searchFolder }}</span>
+            <span class="xc-text">文件管理 </span>
+            <span class="xc-text">{{ searchFolder }}</span>
         </div>
         <hr style="height: 1px; background-color: var(--xc-text-color)" />
         <button class="xc-button" type="button" @click="btnclk_sync_work">同步项目</button>

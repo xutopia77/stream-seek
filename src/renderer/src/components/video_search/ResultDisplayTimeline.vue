@@ -1,6 +1,6 @@
 <template>
   <div v-for="(dailyClips, date) in groupedClips" :key="date">
-    <span class="common-text" style="background-color: #252526">{{ date }}</span>
+    <span class="xc-text" style="background-color: #252526">{{ date }}</span>
     <div class="daily-timeline">
       <ProgressBar :clips="dailyClips" :height="20" />
     </div>

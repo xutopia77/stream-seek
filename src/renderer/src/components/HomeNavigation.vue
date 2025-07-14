@@ -2,7 +2,7 @@
     <div class="home-navigation">
         <div class="menu-item dropdown" @click="toggleDropdown($event, 'home')">
             <!-- 文件 -->
-            <span class="common-text">文件</span>
+            <span class="xc-text">文件</span>
             <div
                 ref="dropdownMenuRefHome"
                 class="dropdown-menu"
@@ -14,7 +14,7 @@
             </div>
         </div>
         <div class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
-            <span class="common-text">视图</span>
+            <span class="xc-text">视图</span>
             <div
                 ref="dropdownMenuRefView"
                 class="dropdown-menu"
@@ -28,11 +28,11 @@
         </div>
         <div class="menu-item">
             <router-link to="/admin" class="no-underline-link">
-                <span class="common-text">功能</span>
+                <span class="xc-text">功能</span>
             </router-link>
         </div>
         <div class="menu-item" @click="showAboutModal">
-            <span class="common-text">关于</span>
+            <span class="xc-text">关于</span>
         </div>
     </div>
     <!-- 关于模态框 -->

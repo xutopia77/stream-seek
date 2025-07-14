@@ -4,8 +4,8 @@
             <button class="xc-button">返回主页</button>
         </router-link>
         <div class="search-title-info">
-            <span class="common-text">录像片段管理</span>
-            <span class="common-text">{{ searchFolder }}</span>
+            <span class="xc-text">录像片段管理</span>
+            <span class="xc-text">{{ searchFolder }}</span>
         </div>
 
         <div class="query-action">

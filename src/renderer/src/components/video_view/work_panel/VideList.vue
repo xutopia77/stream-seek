@@ -1,5 +1,5 @@
 <template>
-    <div class="page-container common-scrollbar">
+    <div class="page-container xc-scrollbar">
         <ul>
             <!-- 修改部分：添加动态类名和 checkbox -->
             <li
@@ -17,7 +17,7 @@
                     />
                     <span class="checkmark"></span>
                 </label>
-                <span class="common-text" @click="playVideo(video)">{{
+                <span class="xc-text" @click="playVideo(video)">{{
                     `${index + 1}:${DataTypes.File.makeDisplayName(video)}`
                 }}</span>
             </li>

@@ -1,9 +1,9 @@
 <template>
-    <div class="thumbnail-container common-scrollbar">
+    <div class="thumbnail-container xc-scrollbar">
         <div v-for="thumb in thumbnailImages" :key="thumb.path" class="thumbnail-card">
             <img :src="thumb.path" :alt="thumb.name" />
-            <span class="common-text" @click="btnclk_card_check(thumb)">{{ thumb.btnName }}</span>
-            <span class="common-text">{{ DataTypes.Thumbnail.makeDisplayName(thumb.name) }}</span>
+            <span class="xc-text" @click="btnclk_card_check(thumb)">{{ thumb.btnName }}</span>
+            <span class="xc-text">{{ DataTypes.Thumbnail.makeDisplayName(thumb.name) }}</span>
         </div>
     </div>
 </template>

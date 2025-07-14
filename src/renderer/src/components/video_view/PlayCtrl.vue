@@ -21,7 +21,7 @@
         <!-- 倍速选择 -->
         <select
             v-model="appStore.videoPlayCtrl.playbackRate"
-            class="common-select"
+            class="xc-select"
             @change="changePlaybackRate"
         >
             <option value="0.5">0.5x</option>
@@ -32,7 +32,7 @@
             <option value="6">6x</option>
         </select>
         <!-- 播放时间 -->
-        <span class="common-text" style="padding-right: 3px"
+        <span class="xc-text" style="padding-right: 3px"
             >{{ curTime }}/{{ videoDuration }}</span
         >
         <!-- 帧控制播放 -->
@@ -40,8 +40,8 @@
             ◀️
         </button>
         <button class="xc-button btn-noborder" title="前进一帧" @click="nextFrame">▶️</button>
-        <span class="common-text" style="padding-right: 3px; color: darkcyan">{{ frameInfo }}</span>
-        <span class="common-text" style="padding-right: 3px; color: chocolate">{{
+        <span class="xc-text" style="padding-right: 3px; color: darkcyan">{{ frameInfo }}</span>
+        <span class="xc-text" style="padding-right: 3px; color: chocolate">{{
             frameRate
         }}</span>
         <!-- 显示i帧 -->

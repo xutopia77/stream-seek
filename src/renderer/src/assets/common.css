@@ -9,26 +9,26 @@
 }
 
 /* --------------------------------------------------------- */
-.common-scrollbar::-webkit-scrollbar {
+.xc-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.common-scrollbarr::-webkit-scrollbar-track {
+.xc-scrollbar::-webkit-scrollbar-track {
   background: #333;
 }
 
-.common-scrollbar::-webkit-scrollbar-thumb {
+.xc-scrollbar::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 4px;
 }
 
-.common-scrollbar::-webkit-scrollbar-thumb:hover {
+.xc-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #777;
 }
 
 /* 兼容 Firefox */
-.common-scrollbar {
+.xc-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #555 #333;
 }
@@ -67,7 +67,7 @@
 }
 
 /* 通用下拉选择框样式 */
-.common-select {
+.xc-select {
   margin: 0 5px;
   padding: 2px 5px;
   background-color: #333;
@@ -78,12 +78,12 @@
   outline: none;
 }
 
-.common-select:hover {
+.xc-select:hover {
   border-color: #007acc;
 }
 
 
-.common-text {
+.xc-text {
   color: var(--xc-text-color);
   font-size: small;
 }
