@@ -54,7 +54,7 @@ const playVideo = (video: DataTypes.File): void => {
 /* 原有的样式保持不变 */
 .video-list {
     height: 100%;
-    width: 100%;
+    width: calc(100% - 1px);
     padding: 0;
     margin: 0;
     background-color: var(--xc-page-background-color);

@@ -118,13 +118,13 @@ const exitApp = (): void => {
 // 显示文件列表的处理函数
 const showFileList = (): void => {
     isDropdownOpen.value.view = false
-    appStore.rightPanel = 'list'
+    appStore.rightPanel = DataTypes.WorkPanel.List
 }
 
 // 显示操作面板的处理函数
 const showOperationPanel = (): void => {
     isDropdownOpen.value.view = false
-    appStore.rightPanel = 'workPanel'
+    appStore.rightPanel = DataTypes.WorkPanel.Operate
 }
 
 // 显示关于模态框

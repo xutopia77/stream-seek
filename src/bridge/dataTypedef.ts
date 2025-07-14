@@ -359,6 +359,13 @@ export class DbInsertResp {
 }
 
 // ======================== render
+
+export enum WorkPanel {
+    List = 'list',
+    Operate = 'operate',
+    VideoInfo = 'videoInfo'
+}
+
 export class ClearSltInfoReq {
     clearModel?: string
     bNotClear_curSltVideo?: boolean

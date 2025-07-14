@@ -18,7 +18,7 @@ export type AppStore = {
     func_nextFrame: (() => void) | null
     func_prevFrame: (() => void) | null
     func_get_ele_video: (() => HTMLVideoElement | null) | null
-    rightPanel: 'list' | 'workPanel'
+    rightPanel: DataTypes.WorkPanel
     videoList: DataTypes.File[]
     curCheckedVideo: Set<DataTypes.File>
     curSltVideo: DataTypes.File | null // 在列表中，鼠标选中后，更新
@@ -59,7 +59,7 @@ export const useAppStore = defineStore('app', {
         func_prevFrame: null,
         func_get_ele_video: null,
         // ------
-        rightPanel: 'list', //list, workPanel
+        rightPanel: DataTypes.WorkPanel.List,
         videoList: [],
         curCheckedVideo: new Set<DataTypes.File>(), // 当前选中的视频列表
         curSltVideo: null, // 当前选中的视频

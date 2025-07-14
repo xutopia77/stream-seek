@@ -59,21 +59,21 @@
             <button
                 class="common-button btn-noborder"
                 title="显示文件列表"
-                @click="btnclk_chg_panel('list')"
+                @click="btnclk_chg_panel(DataTypes.WorkPanel.List)"
             >
                 🛢️
             </button>
             <button
                 class="common-button btn-noborder"
                 title="显示文件处理"
-                @click="btnclk_chg_panel('workPanel')"
+                @click="btnclk_chg_panel(DataTypes.WorkPanel.Operate)"
             >
                 🛠️
             </button>
             <button
                 class="common-button btn-noborder"
                 title="处理文件标签"
-                @click="btnclk_chg_panel('workPanel')"
+                @click="btnclk_chg_panel(DataTypes.WorkPanel.VideoInfo)"
             >
                 🏷️
             </button>
@@ -208,8 +208,8 @@ function changeFile(flag: string): void {
     }
 }
 
-function btnclk_chg_panel(model: string): void {
-    appStore.rightPanel = model as 'list' | 'workPanel'
+function btnclk_chg_panel(model: DataTypes.WorkPanel): void {
+    appStore.rightPanel = model
 }
 
 function btnclk_del_cur_video(): void {

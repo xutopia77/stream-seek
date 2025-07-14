@@ -237,9 +237,7 @@ const exportVideoRecord = async (): Promise<void> => {
 <style scoped>
 .work-panel-contianer {
     height: 100%;
-    width: 10%;
-    min-width: 200px;
-    max-width: 300px;
+    width: 100%;
     padding: 0;
     margin: 0;
     background-color: #1e1e1e;
