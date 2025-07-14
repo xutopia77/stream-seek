@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts" setup>
-import '../../assets/common.css'
+import '@renderer/assets/common.css'
 </script>
 
 <style scoped>

@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import '../../assets/common.css'
+import '@renderer/assets/common.css'
 
 import { useAppStore } from '../../stores/AppStore'
 import ResultDisplayTimeline from './ResultDisplayTimeline.vue'

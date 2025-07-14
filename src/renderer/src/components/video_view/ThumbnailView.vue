@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
-import '../../assets/common.css'
+import '@renderer/assets/common.css'
 import util from '../../utils/util'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 // import { IpcApi } from '../../utils/IpcApi'

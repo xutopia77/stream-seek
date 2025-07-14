@@ -70,6 +70,13 @@
             >
                 🛠️
             </button>
+            <button
+                class="common-button btn-noborder"
+                title="处理文件标签"
+                @click="btnclk_chg_panel('workPanel')"
+            >
+                🏷️
+            </button>
         </div>
     </div>
 </template>
@@ -77,7 +84,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
-import '../../assets/common.css'
+import '@renderer/assets/common.css'
 import MessageShow from '../util/MessageShow'
 import util from '@renderer/utils/util'
 const appStore = useAppStore()

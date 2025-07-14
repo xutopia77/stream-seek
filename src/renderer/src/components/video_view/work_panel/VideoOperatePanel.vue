@@ -47,13 +47,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useAppStore } from '../../stores/AppStore'
+import { useAppStore } from '../../../stores/AppStore'
 const appStore = useAppStore()
-import '../../assets/common.css'
-import util from '../../utils/util.js'
+import '@renderer/assets/common.css'
+import util from '../../../utils/util.js'
 // import { IpcApi } from '../../utils/IpcApi'
-import MessageShow from '../util/MessageShow'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import MessageShow from '../../util/MessageShow'
+import * as DataTypes from '../../../../../bridge/dataTypedef'
 
 // ------ 切换视图
 const curViewBtn = computed(() => {

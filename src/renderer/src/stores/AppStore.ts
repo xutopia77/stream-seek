@@ -32,6 +32,8 @@ export type AppStore = {
     queryCtrl: {
         displayOption: 'single' | 'daily'
     }
+    // ------
+    tags: DataTypes.Tag[]
     // ================
     barColorDictionary: ['#FF5733', '#33FF57', '#5733FF', '#FF33E0', '#33E0FF']
 }
@@ -76,6 +78,8 @@ export const useAppStore = defineStore('app', {
         queryCtrl: {
             displayOption: 'daily' //single, daily
         },
+        // ------
+        tags: [],
         // ==============
         barColorDictionary: ['#FF5733', '#33FF57', '#5733FF', '#FF33E0', '#33E0FF']
     }),

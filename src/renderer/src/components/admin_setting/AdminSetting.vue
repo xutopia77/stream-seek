@@ -1,8 +1,5 @@
 <template>
     <div class="admin-setting-container">
-        <router-link to="/" class="no-underline-link">
-            <button class="common-button">返回主页</button>
-        </router-link>
         <div class="search-title-info">
             <span class="common-text">文件管理 </span>
             <span class="common-text">{{ searchFolder }}</span>
@@ -15,7 +12,7 @@
 
 <script lang="ts" setup>
 // import { computed } from 'vue'
-import '../../assets/common.css'
+import '@renderer/assets/common.css'
 import MessageShow from '../util/MessageShow'
 import { IpcApi } from '../../utils/IpcApi'
 import * as DataTypes from '../../../../bridge/dataTypedef'

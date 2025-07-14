@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import ProgressBar from './ProgressBar.vue'
-import '../../assets/common.css'
+import '@renderer/assets/common.css'
 
 // 定义 Clip 类型
 interface Clip {

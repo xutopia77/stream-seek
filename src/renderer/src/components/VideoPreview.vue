@@ -10,8 +10,10 @@
                 ></video>
                 <ThumbnailView v-show="viewModel === 'thumbnail'"></ThumbnailView>
             </div>
-            <VideList v-if="rightPanel === 'list'" />
-            <VideoWorkPanel v-if="rightPanel === 'workPanel'" />
+            <div class="work-panel">
+                <VideList v-if="rightPanel === 'list'" />
+                <VideoOperatePanel v-if="rightPanel === 'workPanel'" />
+            </div>
         </div>
         <div class="control-container">
             <PlayProgressBar />
@@ -21,8 +23,8 @@
 </template>
 
 <script lang="ts" setup>
-import VideList from './video_view/VideList.vue'
-import VideoWorkPanel from './video_view/VideoWorkPanel.vue'
+import VideList from './video_view/work_panel/VideList.vue'
+import VideoOperatePanel from './video_view/work_panel/VideoOperatePanel.vue'
 import ThumbnailView from './video_view/ThumbnailView.vue'
 import PlayProgressBar from './video_view/PlayProgressBar.vue'
 import PlayCtrl from './video_view/PlayCtrl.vue'
@@ -282,7 +284,7 @@ onUnmounted(() => {
 
 <style scoped>
 .video-preview-container {
-    height: calc(100% - 30px);
+    height: calc(100% - var(--xc-home-nac-height));
     width: 100%;
     padding: 0;
     margin: 0;
@@ -308,6 +310,14 @@ onUnmounted(() => {
     justify-content: center;
     align-items: center;
     background-color: black;
+}
+
+.work-panel {
+    height: 100%;
+    min-width: 120px;
+    max-width: 300px;
+    padding: 0;
+    margin: 0;
 }
 
 .preview-image video {

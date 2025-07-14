@@ -27,10 +27,10 @@
 
 <script setup lang="ts">
 import { computed, onBeforeMount } from 'vue'
-import { useAppStore } from '../../stores/AppStore'
+import { useAppStore } from '../../../stores/AppStore'
 const appStore = useAppStore()
-import '../../assets/common.css'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import '@renderer/assets/common.css'
+import * as DataTypes from '../../../../../bridge/dataTypedef'
 const videoList = computed<DataTypes.File[]>(() => appStore.videoList)
 
 // 切换视频的选中状态
@@ -54,9 +54,7 @@ const playVideo = (video: DataTypes.File): void => {
 /* 原有的样式保持不变 */
 .video-list {
     height: 100%;
-    width: 10%;
-    min-width: 200px;
-    max-width: 300px;
+    width: 100%;
     padding: 0;
     margin: 0;
     background-color: var(--xc-page-background-color);
