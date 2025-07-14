@@ -316,7 +316,7 @@ onUnmounted(() => {
 
 .work-panel {
     height: 100%;
-    min-width: 120px;
+    min-width: 200px;
     max-width: 300px;
     padding: 0;
     margin: 0;

@@ -22,8 +22,8 @@ import AdminNav from './admin_setting/AdminNav.vue'
     height: calc(100% - var(--xc-home-nac-height));
     margin: 0;
     padding: 0;
-    background-color: var(--xc-page-background-color);
-    color: var(--xc-page-text-color);
+    background-color: var(--xc-background-color);
+    color: var(--xc-text-color);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 

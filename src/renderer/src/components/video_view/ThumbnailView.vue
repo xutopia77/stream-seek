@@ -95,7 +95,7 @@ onMounted(async (): Promise<void> => {
     height: 100%;
     padding: 0;
     margin: 0;
-    color: var(--xc-page-text-color);
+    color: var(--xc-text-color);
     overflow-y: auto;
     /* 添加竖向滚动条 */
     /* 计算卡片的总高度（3 行卡片 + 2 个间隙） */
@@ -110,7 +110,7 @@ onMounted(async (): Promise<void> => {
     border-radius: 4px;
     padding: 1px;
     box-sizing: border-box;
-    background-color: var(--xc-page-background-color);
+    background-color: var(--xc-background-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     /* 计算卡片的高度，使每行显示 3 行 */
     height: calc((100% - 8px) / 3);

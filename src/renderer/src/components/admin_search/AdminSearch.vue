@@ -1,7 +1,7 @@
 <template>
     <div class="admin-container">
         <router-link to="/" class="no-underline-link">
-            <button class="common-button">返回主页</button>
+            <button class="xc-button">返回主页</button>
         </router-link>
         <div class="search-title-info">
             <span class="common-text">录像片段管理</span>
@@ -32,8 +32,8 @@ const searchFolder = ''
     height: calc(100% - 30px);
     margin: 0;
     padding: 0;
-    background-color: var(--xc-page-background-color);
-    color: var(--xc-page-text-color);
+    background-color: var(--xc-background-color);
+    color: var(--xc-text-color);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;

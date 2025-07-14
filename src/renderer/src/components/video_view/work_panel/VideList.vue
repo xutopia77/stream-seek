@@ -1,5 +1,5 @@
 <template>
-    <div class="video-list common-scrollbar">
+    <div class="page-container common-scrollbar">
         <ul>
             <!-- 修改部分：添加动态类名和 checkbox -->
             <li
@@ -52,14 +52,14 @@ const playVideo = (video: DataTypes.File): void => {
 
 <style scoped>
 /* 原有的样式保持不变 */
-.video-list {
+.page-container {
     height: 100%;
     width: calc(100% - 1px);
     padding: 0;
     margin: 0;
-    background-color: var(--xc-page-background-color);
+    background-color: var(--xc-background-color);
     /* VSCode 侧边栏背景色 */
-    color: #ccc;
+    color: var(--xc-text-color);
     /* 文字颜色 */
     white-space: nowrap;
     overflow-x: auto;
@@ -68,18 +68,18 @@ const playVideo = (video: DataTypes.File): void => {
 }
 
 /* 兼容 Firefox */
-.video-list {
+.page-container {
     scrollbar-width: thin;
     scrollbar-color: #555 #333;
 }
 
-.video-list ul {
+.page-container ul {
     list-style-type: none;
     padding: 0;
     margin: 0;
 }
 
-.video-list li {
+.page-container li {
     cursor: pointer;
     padding: 2px 2px;
     /* 增加内边距 */
@@ -87,18 +87,18 @@ const playVideo = (video: DataTypes.File): void => {
     /* 底部边框 */
 }
 
-.video-list li:hover {
+.page-container li:hover {
     background-color: #37373d;
     /* 鼠标悬停背景色 */
 }
 
-.video-list li:active {
+.page-container li:active {
     background-color: #094771;
     /* 鼠标点击背景色 */
 }
 
 /* 修改部分：添加选中样式 */
-.video-list li.selected {
+.page-container li.selected {
     background-color: #094771;
     /* VSCode 选中项背景色 */
     color: white;

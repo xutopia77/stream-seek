@@ -1,13 +1,13 @@
 <template>
     <div class="page-contianer">
         <router-link to="/" class="no-underline-link">
-            <button class="common-button">返回主页</button>
+            <button class="xc-button">返回主页</button>
         </router-link>
         <router-link to="/admin/prj_set" class="no-underline-link">
-            <button class="common-button">项目设置</button>
+            <button class="xc-button">项目设置</button>
         </router-link>
         <router-link to="/admin/tag_mng" class="no-underline-link">
-            <button class="common-button">标签管理</button>
+            <button class="xc-button">标签管理</button>
         </router-link>
     </div>
 </template>

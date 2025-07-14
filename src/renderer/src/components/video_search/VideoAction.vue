@@ -1,6 +1,6 @@
 <template>
   <div class="video-action-contianer">
-    <button class="common-button">开始检测</button>
+    <button class="xc-button">开始检测</button>
   </div>
 </template>
 

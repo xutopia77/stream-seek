@@ -1,21 +1,21 @@
 <template>
     <div class="play-ctrl">
         <!-- 播放/暂停按钮 -->
-        <button class="common-button btn-noborder" title="播放/暂停" @click="btnclk_toggle_play">
+        <button class="xc-button btn-noborder" title="播放/暂停" @click="btnclk_toggle_play">
             {{ appStore.videoPlayCtrl.isPlay ? '⏸' : '▶' }}
         </button>
         <!-- 文件切换 -->
         <button
-            class="common-button btn-noborder"
+            class="xc-button btn-noborder"
             title="上一个文件"
             @click="changeFile('previous')"
         >
             ⏮
         </button>
-        <button class="common-button btn-noborder" title="停止播放" @click="btnclk_stop_play()">
+        <button class="xc-button btn-noborder" title="停止播放" @click="btnclk_stop_play()">
             ⏹
         </button>
-        <button class="common-button btn-noborder" title="下一个文件" @click="changeFile('next')">
+        <button class="xc-button btn-noborder" title="下一个文件" @click="changeFile('next')">
             ⏭
         </button>
         <!-- 倍速选择 -->
@@ -36,42 +36,42 @@
             >{{ curTime }}/{{ videoDuration }}</span
         >
         <!-- 帧控制播放 -->
-        <button class="common-button btn-noborder" title="后退一帧" @click="previousFrame">
+        <button class="xc-button btn-noborder" title="后退一帧" @click="previousFrame">
             ◀️
         </button>
-        <button class="common-button btn-noborder" title="前进一帧" @click="nextFrame">▶️</button>
+        <button class="xc-button btn-noborder" title="前进一帧" @click="nextFrame">▶️</button>
         <span class="common-text" style="padding-right: 3px; color: darkcyan">{{ frameInfo }}</span>
         <span class="common-text" style="padding-right: 3px; color: chocolate">{{
             frameRate
         }}</span>
         <!-- 显示i帧 -->
-        <button class="common-button btn-noborder" title="显示关键帧" @click="showKeyFrame">
+        <button class="xc-button btn-noborder" title="显示关键帧" @click="showKeyFrame">
             🔑
         </button>
         <div class="right-area-ctrl">
             <button
-                class="common-button btn-noborder"
+                class="xc-button btn-noborder"
                 title="删除当前所选的文件"
                 @click="btnclk_del_cur_video"
             >
                 🗑
             </button>
             <button
-                class="common-button btn-noborder"
+                class="xc-button btn-noborder"
                 title="显示文件列表"
                 @click="btnclk_chg_panel(DataTypes.WorkPanel.List)"
             >
                 🛢️
             </button>
             <button
-                class="common-button btn-noborder"
+                class="xc-button btn-noborder"
                 title="显示文件处理"
                 @click="btnclk_chg_panel(DataTypes.WorkPanel.Operate)"
             >
                 🛠️
             </button>
             <button
-                class="common-button btn-noborder"
+                class="xc-button btn-noborder"
                 title="处理文件标签"
                 @click="btnclk_chg_panel(DataTypes.WorkPanel.VideoInfo)"
             >

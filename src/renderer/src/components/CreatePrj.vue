@@ -1,7 +1,7 @@
 <template>
     <div class="create-prj-comtainer">
         <router-link to="/" class="no-underline-link">
-            <button class="common-button">返回主页</button>
+            <button class="xc-button">返回主页</button>
         </router-link>
         <br />
         <div v-for="(repo, index) in dataRepo" :key="index" class="input-container">
@@ -19,7 +19,7 @@
             />
         </div>
 
-        <button class="common-button" @click="btnclk_create_prj">创建项目</button>
+        <button class="xc-button" @click="btnclk_create_prj">创建项目</button>
         <label>项目创建成功后，需要到 功能 界面中，项目同步</label>
     </div>
 </template>
@@ -74,8 +74,8 @@ async function btnclk_create_prj(): Promise<void> {
     height: calc(100% - var(--xc-home-nac-height));
     margin: 0;
     padding: 0;
-    background-color: var(--xc-page-background-color);
-    color: var(--xc-page-text-color);
+    background-color: var(--xc-background-color);
+    color: var(--xc-text-color);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .input-container {

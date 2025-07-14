@@ -4,9 +4,9 @@
             <span class="common-text">文件管理 </span>
             <span class="common-text">{{ searchFolder }}</span>
         </div>
-        <hr style="height: 1px; background-color: var(--xc-page-text-color)" />
-        <button class="common-button" type="button" @click="btnclk_sync_work">同步项目</button>
-        <button class="common-button" type="button" @click="btnclk_sync_trash">整理回收站</button>
+        <hr style="height: 1px; background-color: var(--xc-text-color)" />
+        <button class="xc-button" type="button" @click="btnclk_sync_work">同步项目</button>
+        <button class="xc-button" type="button" @click="btnclk_sync_trash">整理回收站</button>
     </div>
 </template>
 
@@ -62,8 +62,8 @@ async function btnclk_sync_trash(): Promise<void> {
     width: 100%;
     padding: 0;
     margin: 0;
-    background-color: var(--xc-page-background-color);
-    color: var(--xc-page-text-color);
+    background-color: var(--xc-background-color);
+    color: var(--xc-text-color);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 </style>

@@ -1,9 +1,11 @@
 /* 定义通用的字体颜色变量 */
 :root {
   --xc-text-color: #ccc;
-  --xc-page-background-color: #1e1e1e;
-  --xc-page-text-color: #d4d4d4;
+  --xc-background-color: #1e1e1e;
+  --xc-text-color: #d4d4d4;
   --xc-home-nac-height: 30px;
+  --xc-border: 1px solid #2a2c3a;
+  --xc-border-hover: 1px solid #44465a;
 }
 
 /* --------------------------------------------------------- */
@@ -34,7 +36,7 @@
 
 /* --------------------------------------------------------- */
 /* 通用按钮样式 */
-.common-button {
+.xc-button {
   margin: 1px;
   padding: 2px 10px;
   background-color: #333;
@@ -45,17 +47,17 @@
   cursor: pointer;
 }
 
-.common-button:hover {
+.xc-button:hover {
   background-color: #37373d;
   border-color: #007acc;
 }
 
-.common-button:active {
+.xc-button:active {
   background-color: #094771;
 }
 
 /* 禁用状态下的按钮样式 */
-.common-button:disabled {
+.xc-button:disabled {
   background-color: #252526;
   /* 参考 VSCode 侧边栏背景色 */
   color: #555;
@@ -95,4 +97,22 @@ a.router-link-active {
 
 .no-underline-link {
   text-decoration: none;
+}
+
+/* ------------------------------------ input */
+.xc-text-input {
+  width: 160px;
+  background-color: var(--xc-background-color);
+  color: var(--xc-text-color);
+  border: var(--xc-border);
+  border-radius: 4px;
+  outline: none;
+  padding: var(--xc-normal-padding);
+  margin: var(--xc-normal-margin);
+}
+
+.xc-text-input:hover {
+  background-color: var(--xc-background-color);
+  /* 设置鼠标悬停时的背景颜色 */
+  border: var(--xc-border-hover);
 }

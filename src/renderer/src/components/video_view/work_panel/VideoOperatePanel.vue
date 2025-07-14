@@ -8,19 +8,19 @@
                 `${util.getFilenameFromPath(appStore.curSltVideo ? appStore.curSltVideo.path : null)}`
             }} </span
         ><br />
-        <button class="common-button" title="切换视图" @click="btnclk_change_view_model">
+        <button class="xc-button" title="切换视图" @click="btnclk_change_view_model">
             {{ curViewBtn }}
         </button>
         <br />
-        <button class="common-button" title="在光标处拆分片段" @click="btnclk_splitVideo">
+        <button class="xc-button" title="在光标处拆分片段" @click="btnclk_splitVideo">
             ➕
         </button>
-        <button class="common-button" title="去掉此片段的拆分信息" @click="removeVideosplit">
+        <button class="xc-button" title="去掉此片段的拆分信息" @click="removeVideosplit">
             ➖
         </button>
-        <button class="common-button" title="去掉此片段" @click="removeVideoRecord">❌</button>
-        <button class="common-button" title="恢复此片段" @click="restoreVideoRecord">🔃</button>
-        <button class="common-button" title="导出剪辑" @click="exportVideoRecord">✂</button>
+        <button class="xc-button" title="去掉此片段" @click="removeVideoRecord">❌</button>
+        <button class="xc-button" title="恢复此片段" @click="restoreVideoRecord">🔃</button>
+        <button class="xc-button" title="导出剪辑" @click="exportVideoRecord">✂</button>
         <div
             v-for="splitInfo in videoSplitInfo"
             :key="splitInfo.percent"
