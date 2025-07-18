@@ -69,8 +69,8 @@ import appCfg from './AppCfg.js'
 async function handle_create_prj(
     req: DataTypes.Req<DataTypes.CreatePrjReq>,
     mainWindow: Electron.BrowserWindow
-): Promise<DataTypes.Resp<DataTypes.Prj>> {
-    const resp = new DataTypes.Resp<DataTypes.Prj>()
+): Promise<DataTypes.Resp<DataTypes.CreatePrjResp>> {
+    const resp = new DataTypes.Resp<DataTypes.CreatePrjResp>()
     try {
         // 显示文件夹选择对话框
         const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {

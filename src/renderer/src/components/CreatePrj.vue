@@ -25,21 +25,25 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useAppStore } from '../stores/AppStore'
-const appStore = useAppStore()
+// import { useAppStore } from '../stores/AppStore'
+// const appStore = useAppStore()
 import '../assets/common.css'
 // import util from '../utils/util'
 import { useRouter } from 'vue-router'
 const router = useRouter()
-import { IpcApi } from '../utils/IpcApi'
 import MessageShow from './util/MessageShow'
 import * as DataTypes from '../../../bridge/dataTypedef'
+import util from '@renderer/utils/util'
 
 // 创建一个ref数组 3个元素， 用于上面的v-model的绑定
 const dataRepo = ref<DataTypes.DataRepo[]>([
-    { name: 'test_data', path: 'D:/02_workspace/05_timeCapsule/02_stream_manager/test_data' },
-    { name: '', path: '' },
-    { name: '', path: '' }
+    {
+        name: 'test_data',
+        path: 'D:/02_workspace/05_timeCapsule/02_stream_manager/test_data',
+        thumbnailPath: ''
+    },
+    { name: '', path: '', thumbnailPath: '' },
+    { name: '', path: '', thumbnailPath: '' }
 ])
 
 async function btnclk_create_prj(): Promise<void> {
@@ -48,14 +52,7 @@ async function btnclk_create_prj(): Promise<void> {
     if (relRepo == null || relRepo.length === 0) {
         return MessageShow.error('请输入数据路径')
     }
-    appStore.prj.dataRepo = relRepo
-    const req: DataTypes.Req<DataTypes.CreatePrjReq> = {
-        cmd: 'create_prj',
-        data: {
-            dataRepo: relRepo
-        }
-    }
-    const response: DataTypes.Resp = await IpcApi.trigger_event(req)
+    const response = await util.create_prj(relRepo)
     if (response.code === 0) {
         if (response.bOver === false) {
             MessageShow.info(`正在处理ing`)

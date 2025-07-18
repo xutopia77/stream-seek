@@ -1,33 +1,66 @@
 <template>
     <div class="admin-setting-container">
         <div class="search-title-info">
-            <span class="xc-text">文件管理 </span>
-            <span class="xc-text">{{ searchFolder }}</span>
+            <span class="xc-text">工程路径: </span>
+            <span class="xc-text">{{ appStore.prj.path }}: </span><br />
+            <span class="xc-text">仓库: </span><br />
+            <div v-for="(repo, index) in dataRepo" :key="index" class="input-container">
+                <span class="xc-text">{{ repo.name }}: </span>
+                <span class="xc-text">{{ repo.path }} </span>
+                <br />
+                <span class="xc-text">缩略图路径: </span>
+                <input
+                    v-model="repo.thumbnailPath"
+                    type="text"
+                    style="width: 80%"
+                    class="xc-text-input"
+                />
+            </div>
         </div>
         <hr style="height: 1px; background-color: var(--xc-text-color)" />
-        <button class="xc-button" type="button" @click="btnclk_sync_work">同步项目</button>
+        <button
+            class="xc-button"
+            type="button"
+            @click="btnclk_sync_work(DataTypes.SyncType.prjInfo)"
+        >
+            保存项目参数
+        </button>
+        <button class="xc-button" type="button" @click="btnclk_sync_work(DataTypes.SyncType.all)">
+            同步项目
+        </button>
         <button class="xc-button" type="button" @click="btnclk_sync_trash">整理回收站</button>
     </div>
 </template>
 
 <script lang="ts" setup>
-// import { computed } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import '@renderer/assets/common.css'
 import MessageShow from '../util/MessageShow'
 import { IpcApi } from '../../utils/IpcApi'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 import { useAppStore } from '../../stores/AppStore'
+import util from '@renderer/utils/util'
 const appStore = useAppStore()
-const searchFolder = ''
 
-async function btnclk_sync_work(): Promise<void> {
-    const req: DataTypes.Req<DataTypes.SyncPrjReq> = {
-        cmd: 'sync_prj',
-        data: {
-            prj: appStore.prj
-        }
+const dataRepo = ref<DataTypes.DataRepo[]>([
+    {
+        name: 'test_data',
+        path: 'D:/02_workspace/05_timeCapsule/02_stream_manager/test_data',
+        thumbnailPath: ''
+    },
+    { name: '', path: '', thumbnailPath: '' },
+    { name: '', path: '', thumbnailPath: '' }
+])
+
+watch(
+    () => appStore.prj,
+    (prj: DataTypes.Prj) => {
+        dataRepo.value = prj.dataRepo
     }
-    const response = await IpcApi.trigger_event(req)
+)
+
+async function btnclk_sync_work(type: DataTypes.SyncType): Promise<void> {
+    const response = await util.sync_prj(type)
     if (response.code !== 0) {
         MessageShow.error(`同步项目失败: ${response.status}`)
     } else {
@@ -54,6 +87,10 @@ async function btnclk_sync_trash(): Promise<void> {
         }
     }
 }
+
+onMounted(() => {
+    dataRepo.value = appStore.prj.dataRepo
+})
 </script>
 
 <style scoped>

@@ -160,6 +160,10 @@ export class CreatePrjReq {
     dataRepo: DataRepo[] = []
 }
 
+export class CreatePrjResp {
+    prj: Prj = new Prj()
+}
+
 export interface SplitInfo {
     startTime: number
     endTime: number // 原数据中为字符串，这里统一为数字类型，若需要字符串类型可修改
@@ -258,6 +262,7 @@ export interface MediaItem {
 export class DataRepo {
     path: string = ''
     name: string = '' // 需要唯一
+    thumbnailPath: string = ''
     static getRepoByPath(name: string, repos: DataRepo[]): DataRepo | null {
         for (const repo of repos) {
             if (repo.name == name) {
@@ -268,10 +273,18 @@ export class DataRepo {
     }
 }
 
+export enum ThumbStrategy {
+    ByTime = 'time',
+    BySize = 'size'
+}
+
 export class Prj {
     name: string = ''
     version: string = '1.0.0'
     path: string = '' //  project path
+    thumbStrategy: ThumbStrategy = ThumbStrategy.BySize // 缩略图策略
+    thumbEachSec: number = 0.1 // 每多少秒生成一张缩略图
+    thumbEachSize: number = 1024 * 1024 * 10 // 每多少字节生成一张缩略图
     dataRepo: DataRepo[] = []
 }
 
@@ -338,8 +351,17 @@ export interface Req_SearchFile {
 export interface Req_ClearWork {
     files?: File[]
 }
+
+export enum SyncType {
+    all = 'all',
+    prjInfo = 'prjInfo'
+}
 export interface SyncPrjReq {
+    type: SyncType
     prj: Prj
+}
+export class SyncPrjResp {
+    prj: Prj | null = null
 }
 export interface Req_SyncTrash {
     folder: string

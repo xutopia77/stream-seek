@@ -239,11 +239,37 @@ class AppProc {
         return await appDb.file_view_search(req.data == null ? null : req.data)
     }
 
+    async save_prj_info(prjInfo: DataTypes.Prj): Promise<DataTypes.Resp> {
+        const resp = new DataTypes.Resp()
+        if (prjInfo == null) {
+            return resp.err('prj is null')
+        }
+        if (prjInfo.path == '') {
+            return resp.err('prj path is empty')
+        }
+
+        for (const repo of prjInfo.dataRepo) {
+            repo.thumbnailPath = path.posix.normalize(repo.thumbnailPath)
+            if (!fs.existsSync(repo.thumbnailPath)) {
+                fs.mkdirSync(repo.thumbnailPath, { recursive: true })
+            }
+        }
+        const projectFilePath = path.join(prjInfo.path, 'project.json')
+        const jsonContent = JSON.stringify(prjInfo, null, 2)
+        await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
+        resp.success('Project file created successfully')
+        appCfg.appInfo.prjFile = projectFilePath
+        appCfg.prj = prjInfo
+        this.saveAppCfg()
+        return resp
+    }
+
     async create_prj(
         req: DataTypes.Req<DataTypes.CreatePrjReq>,
         folderPath: string
-    ): Promise<DataTypes.Resp<DataTypes.Prj>> {
-        const resp = new DataTypes.Resp<DataTypes.Prj>()
+    ): Promise<DataTypes.Resp<DataTypes.CreatePrjResp>> {
+        const resp = new DataTypes.Resp<DataTypes.CreatePrjResp>()
+        resp.data = new DataTypes.CreatePrjResp()
         if (req.data == null) {
             return resp.err('req.data is null')
         }
@@ -277,20 +303,16 @@ class AppProc {
             }
 
             for (const repo of prjInfo.dataRepo) {
-                const thumbDir = recordsProc.thumbnail_make_path(folderPath, repo.name)
-                if (!fs.existsSync(thumbDir)) {
-                    fs.mkdirSync(thumbDir, { recursive: true })
-                }
+                repo.thumbnailPath = path.join(folderPath, 'thumbnail', repo.name)
             }
         }
         // 5, write prj info to file
-        const projectFilePath = path.join(folderPath, 'project.json')
-        const jsonContent = JSON.stringify(prjInfo, null, 2)
-        await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
-        resp.success('Project file created successfully').data = prjInfo
-        appCfg.appInfo.prjFile = projectFilePath
-        appCfg.prj = prjInfo
-        this.saveAppCfg()
+        const saveResp = await this.save_prj_info(prjInfo)
+        if (saveResp.code != 0) {
+            return resp.err('save prj info error ' + saveResp.status)
+        }
+        resp.data.prj = prjInfo
+        resp.success('Project file created successfully')
         return resp
     }
 
@@ -354,14 +376,21 @@ class AppProc {
 
     async start_gen_thumbnail(): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
-        logger.log('start gen thumbnail')
         const searchRe = await appDb.file_view_search(null)
         if (searchRe.code !== 0) {
             return resp.err('search file error')
         }
+        logger.log('start gen thumbnail total=', searchRe.data?.total)
+        let count = 0
         for (const fileInfo of searchRe.data?.files ?? []) {
+            const startTime = Date.now()
             const respThumb = await recordsProc.gen_thumbnail(fileInfo)
-            logger.info(`gen thumbnail ${respThumb.status} `, fileInfo.path)
+            const endTime = Date.now()
+            const duration = ((endTime - startTime) / 1000).toFixed(3)
+            count++
+            logger.info(
+                `gen thumbnail ${respThumb.status} ${fileInfo.path},num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} ms, ${count}/${searchRe.data?.total}`
+            )
             if (respThumb.code !== 0) {
                 logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
                 continue
@@ -375,10 +404,29 @@ class AppProc {
         return resp
     }
 
-    async start_sync_work(req: DataTypes.Req<DataTypes.SyncPrjReq>): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
+    async start_sync_work(
+        req: DataTypes.Req<DataTypes.SyncPrjReq>
+    ): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
+        const resp = new DataTypes.Resp<DataTypes.SyncPrjResp>()
         if (req.data == null) {
             return resp.err('req.data is null')
+        }
+        resp.data = new DataTypes.SyncPrjResp()
+
+        if (req.data.type == 'all' || req.data.type == 'prjInfo') {
+            const prjInfo = req.data.prj
+            if (prjInfo == null) {
+                return resp.err('prjInfo is null')
+            }
+            const saveResp = await this.save_prj_info(prjInfo)
+            if (saveResp.code !== 0) {
+                return resp.err(`save prj info error ${saveResp.status}`)
+            }
+            resp.data.prj = prjInfo
+            if (req.data.type == 'prjInfo') {
+                workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+                return resp
+            }
         }
 
         for (const repo of req.data.prj.dataRepo) {
@@ -497,11 +545,7 @@ class AppProc {
         resp.success('success').data = fInfo
         if (resp.data.thumbnail?.path == null) {
             const tra = new TraversalFolder()
-            tra.repo.path = recordsProc.thumbnail_make_mp4_path(
-                appCfg.prj.path,
-                fInfo?.repo,
-                fInfo?.path
-            )
+            tra.repo.path = recordsProc.thumbnail_path_get_mp4(fInfo?.repo, fInfo?.path)
             const fRe = await tra.get_folder_files()
             if (fRe.code != 0) {
                 logger.warn(`thumbnail not exist ${fInfo.path}`)

@@ -242,11 +242,16 @@ class RecordsProc {
     // start_cut_video = start_cut_video
     // start_sync_trash = start_sync_trash
 
-    thumbnail_make_path(prjPath: string, repoName: string): string {
-        return path.join(prjPath, 'thumbnail', repoName)
-    }
-    thumbnail_make_mp4_path(prjPath: string, repoName: string, fPath: string): string {
-        return path.join(this.thumbnail_make_path(prjPath, repoName), path.basename(fPath, '.mp4'))
+
+    thumbnail_path_get_mp4(repoName: string, fPath: string): string {
+        const repo = DataTypes.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
+        if (repo == null) {
+            return ''
+        }
+        if (repo.thumbnailPath == '') {
+            return ''
+        }
+        return path.join(repo.thumbnailPath, path.basename(fPath, '.mp4'))
     }
 
     async thumbnail_get_mp4_path(fPath: string): Promise<DataTypes.Resp<string>> {
@@ -260,11 +265,7 @@ class RecordsProc {
         if (searchResp.data?.files == null || searchResp.data.files.length === 0) {
             return resp.err('search file error')
         }
-        resp.data = this.thumbnail_make_mp4_path(
-            appCfg.prj.path,
-            searchResp.data.files[0].repo,
-            fPath
-        )
+        resp.data = this.thumbnail_path_get_mp4(searchResp.data.files[0].repo, fPath)
         return resp.success('success')
     }
 
@@ -273,15 +274,16 @@ class RecordsProc {
         resp.data = []
         const filepath = fileInfo.path
         const filename = fileInfo.name
-        const thumbnail_dir = this.thumbnail_make_path(appCfg.prj.path, fileInfo.repo)
+        const repo = DataTypes.DataRepo.getRepoByPath(fileInfo.repo, appCfg.prj.dataRepo)
+        if (repo == null) {
+            return resp.err('repo is null')
+        }
+
+        const thumbnail_dir = repo.thumbnailPath
         if (thumbnail_dir === '') {
             return resp.err('thumbnail dir is empty')
         }
-        const file_thubmbnail_dir = this.thumbnail_make_mp4_path(
-            appCfg.prj.path,
-            fileInfo.repo,
-            filepath
-        )
+        const file_thubmbnail_dir = this.thumbnail_path_get_mp4(fileInfo.repo, filepath)
         // logger.info(`gen thumbnail: ${filepath}, ${file_thubmbnail_dir}`)
         let bExist = true
         //1, 检查对应的文件的缩略图是否已经存在
@@ -293,6 +295,20 @@ class RecordsProc {
         }
         if (bExist) {
             return resp.success('thumbnail exist')
+        }
+
+        let timePeriod = 10
+        {
+            const size = fileInfo.size
+            const duration = fileInfo.duration
+            const totalThumbNum = Math.floor(duration * appCfg.prj.thumbEachSec)
+            if (totalThumbNum > 24) {
+                timePeriod = duration / 24
+                timePeriod = Math.floor(timePeriod)
+            }
+            logger.info(
+                `thumb size=${size},duration=${duration},total=${totalThumbNum}, period=${timePeriod}`
+            )
         }
 
         //2, 先删除临时文件夹，再创建新文件夹
@@ -365,7 +381,7 @@ class RecordsProc {
                 bOver = false
                 break
             }
-            time += 10
+            time += timePeriod
         }
         if (!bOver) {
             return resp.err(`gen thumbnail error, ${filename}`)

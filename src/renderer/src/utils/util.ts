@@ -663,6 +663,41 @@ class Util {
         }
     }
 
+    async create_prj(
+        dataRepo: DataTypes.DataRepo[]
+    ): Promise<DataTypes.Resp<DataTypes.CreatePrjResp>> {
+        const req: DataTypes.Req<DataTypes.CreatePrjReq> = {
+            cmd: 'create_prj',
+            data: {
+                dataRepo: dataRepo
+            }
+        }
+        const response: DataTypes.Resp<DataTypes.CreatePrjResp> = await IpcApi.trigger_event(req)
+        if (response.code == 0) {
+            if (response.data?.prj != null) {
+                appStore.prj = response.data.prj
+            }
+        }
+        return response
+    }
+
+    async sync_prj(type: DataTypes.SyncType): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
+        const req: DataTypes.Req<DataTypes.SyncPrjReq> = {
+            cmd: 'sync_prj',
+            data: {
+                type: type,
+                prj: appStore.prj
+            }
+        }
+        const response: DataTypes.Resp<DataTypes.SyncPrjResp> = await IpcApi.trigger_event(req)
+        if (response.code == 0) {
+            if (response.data?.prj != null) {
+                appStore.prj = response.data?.prj
+            }
+        }
+        return response
+    }
+
     async files_get(
         reqParam: DataTypes.FilesReq | null
     ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
