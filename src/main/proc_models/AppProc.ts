@@ -22,6 +22,15 @@ class TraversalFolder {
             logger.warn(`traversal skip: ${fPath}`)
             return resp.err(`traversal skip: ${fPath}`)
         }
+        const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(fPath, this.repo.name)
+        const respSearch = await appDb.file_search(searchReq)
+        if (respSearch.code == 0) {
+            if (respSearch.data?.files.length != null && respSearch.data.files.length > 0) {
+                logger.info(`file already exists: ${fPath}`)
+                return resp.success(`file already exists: ${fPath}`)
+            }
+        }
+
         const respMediaInfo = await mediaProc.getVideoInfo(fPath)
         const fileModel: DataTypes.FileModel = {
             name: fName,
@@ -52,29 +61,36 @@ class TraversalFolder {
             return resp.err('folder is null')
         }
         try {
-            const fileInfos: DataTypes.FileInfo[] = []
-            const traverseRecursive = async (currentPath: string): Promise<void> => {
-                const currentFiles = await fs.promises.readdir(currentPath)
-                for (const file of currentFiles) {
-                    const filePath = path.join(currentPath, file)
-                    const stats = await fs.promises.stat(filePath)
-                    if (stats.isDirectory()) {
-                        // 判断目录的名称，如果目录的名称是trash，则跳过
-                        if (file === '.trash') {
-                            // logger.log(`traversal skip: ${filePath}`)
-                            continue
+            const stack: string[] = [folderPath]
+            while (stack.length > 0) {
+                const currentPath = stack.pop()!
+                try {
+                    const currentFiles = await fs.promises.readdir(currentPath)
+                    for (const file of currentFiles) {
+                        const filePath = path.join(currentPath, file)
+                        try {
+                            const stats = await fs.promises.stat(filePath)
+                            if (stats.isDirectory()) {
+                                // 判断目录的名称，如果目录的名称是trash，则跳过
+                                if (file === '.trash') {
+                                    // logger.log(`traversal skip: ${filePath}`)
+                                    continue
+                                }
+                                stack.push(filePath)
+                            } else {
+                                try {
+                                    await this.proc_one_file(filePath, file, stats)
+                                } catch (procError) {
+                                    console.error(`Error processing file ${filePath}:`, procError)
+                                }
+                            }
+                        } catch (statError) {
+                            console.error(`Error getting stats for ${filePath}:`, statError)
                         }
-                        await traverseRecursive(filePath)
-                    } else {
-                        await this.proc_one_file(filePath, file, stats)
                     }
+                } catch (readdirError) {
+                    console.error(`Error reading directory ${currentPath}:`, readdirError)
                 }
-            }
-            await traverseRecursive(folderPath)
-            if (this.bSort) {
-                fileInfos.sort((a, b) => {
-                    return a.title.localeCompare(b.title)
-                })
             }
             resp.success('success')
             return resp
@@ -376,7 +392,9 @@ class AppProc {
 
     async start_gen_thumbnail(): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
-        const searchRe = await appDb.file_view_search(null)
+        const searchRe = await appDb.file_view_search(
+            DataTypes.FilesReq.makeReqStatusNotDel(null, null)
+        )
         if (searchRe.code !== 0) {
             return resp.err('search file error')
         }
@@ -404,6 +422,81 @@ class AppProc {
         return resp
     }
 
+    async start_classify_file(repos: DataTypes.DataRepo[]): Promise<DataTypes.Resp> {
+        const resp = new DataTypes.Resp()
+        for (const repo of repos) {
+            if (repo.name == '' || repo.path == '') {
+                logger.error(`repo name or path is empty: ${repo.name}, ${repo.path}`)
+                continue
+            }
+            // 1, start traversal folder
+            const traversalFolder = new TraversalFolder()
+            traversalFolder.type = null
+            traversalFolder.repo = repo
+            await traversalFolder.start()
+            // 2, start search file from db
+            const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
+            searchReq.order = 'asc'
+            searchReq.orderBy = 'startTimeSec'
+            let searchResp = await appDb.file_view_search(searchReq)
+            if (searchResp.code !== 0) {
+                logger.error(`search file error: ${searchResp.status}`)
+                continue
+            }
+            // 3, Start checking whether the files recorded in the database exist
+            let fileList = searchResp.data?.files ?? []
+            for (const fileInfo of fileList) {
+                if (!fs.existsSync(fileInfo.path)) {
+                    logger.error(`file not exist: ${fileInfo.path}`)
+                    fileInfo.status = DataTypes.FileStatus.Deleted
+                    await appDb.file_update(fileInfo)
+                    continue
+                }
+            }
+            // 4, search file from db again
+            searchResp = await appDb.file_view_search(searchReq)
+            if (searchResp.code !== 0) {
+                logger.error(`search file error: ${searchResp.status}`)
+                continue
+            }
+            fileList = searchResp.data?.files ?? []
+
+            // 把searchResp.data?.files 中的文件按照10个一组，先计算有多少组
+            // 5, start classify file
+            // 5.1, make folder first
+            const batchSize = 10
+            const groupNum = Math.ceil(fileList.length / batchSize) + 1
+            for (let i = 0; i < groupNum; i++) {
+                const grpPath = path.join(repo.path, `${i + 1}`)
+                if (!fs.existsSync(grpPath)) {
+                    fs.mkdirSync(grpPath)
+                }
+            }
+            // 5.2, Classify the files into groups of 10
+            for (let i = 0; i < fileList.length; i += batchSize) {
+                const batch = fileList.slice(i, i + batchSize)
+                for (const fileInfo of batch) {
+                    const grpIdx = Math.floor(i / batchSize)
+                    const grpPath = path.join(repo.path, `${grpIdx + 1}`)
+                    const fileName = path.basename(fileInfo.path)
+                    const dstPath = path.join(grpPath, fileName)
+                    if (fileInfo.path == dstPath) {
+                        continue
+                    }
+                    fs.renameSync(fileInfo.path, dstPath)
+                    fileInfo.path = dstPath
+                    const updateResp = await appDb.file_update(fileInfo)
+                    if (updateResp.code !== 0) {
+                        logger.error(`update file error: ${updateResp.status}`)
+                        continue
+                    }
+                    logger.info(`update file success: ${fileInfo.path}`)
+                }
+            }
+        }
+        return resp
+    }
+
     async start_sync_work(
         req: DataTypes.Req<DataTypes.SyncPrjReq>
     ): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
@@ -413,7 +506,28 @@ class AppProc {
         }
         resp.data = new DataTypes.SyncPrjResp()
 
-        if (req.data.type == 'all' || req.data.type == 'prjInfo') {
+        let bNeedSavePrjInfo = false
+        let bNeedGenThumb = false
+        let bNeedClassifyFile = false
+        for (const type of req.data.type) {
+            if (type == DataTypes.SyncType.all) {
+                bNeedSavePrjInfo = true
+                bNeedGenThumb = true
+                bNeedClassifyFile = true
+                break
+            }
+            if (type == DataTypes.SyncType.prjInfo) {
+                bNeedSavePrjInfo = true
+            }
+            if (type == DataTypes.SyncType.thumbnail) {
+                bNeedGenThumb = true
+            }
+            if (type == DataTypes.SyncType.classify) {
+                bNeedClassifyFile = true
+            }
+        }
+
+        if (bNeedSavePrjInfo) {
             const prjInfo = req.data.prj
             if (prjInfo == null) {
                 return resp.err('prjInfo is null')
@@ -423,46 +537,51 @@ class AppProc {
                 return resp.err(`save prj info error ${saveResp.status}`)
             }
             resp.data.prj = prjInfo
-            if (req.data.type == 'prjInfo') {
-                workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-                return resp
+        }
+
+        if (bNeedClassifyFile) {
+            const classifyResp = await this.start_classify_file(req.data.prj.dataRepo)
+            if (classifyResp.code !== 0) {
+                return resp.err(`classify file error ${classifyResp.status}`)
+            }
+            logger.log('classify file success')
+        }
+
+        if (bNeedGenThumb) {
+            for (const repo of req.data.prj.dataRepo) {
+                if (repo.name == '' || repo.path == '') {
+                    return resp.err('repo name or path is empty')
+                }
+                const traversalFolder = new TraversalFolder()
+                traversalFolder.type = null
+                traversalFolder.repo = repo
+                await traversalFolder.start()
+                await this.start_gen_thumbnail()
+                // traversalFolder
+                //   .start()
+                //   .then(async (resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+                //     if (resp.data?.files != null) {
+                //       logger.log('traversal folder:', resp.status, resp.data.files?.length)
+                //       const resp_classify = await recordsProc.start_file_classify(req, resp.data.files)
+                //       if (resp_classify.code !== 0) {
+                //         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+                //         return
+                //       }
+                //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+                //     } else {
+                //       logger.log('traversal folder:', resp.status)
+                //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+                //     }
+                //   })
+                //   .catch((error: unknown) => {
+                //     logger.error('open folder err:', error)
+                //     workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+                //   })
+                // return resp.success('success')
             }
         }
 
-        for (const repo of req.data.prj.dataRepo) {
-            if (repo.name == '' || repo.path == '') {
-                return resp.err('repo name or path is empty')
-            }
-            const traversalFolder = new TraversalFolder()
-            traversalFolder.type = null
-            traversalFolder.repo = repo
-            await traversalFolder.start()
-            await this.start_gen_thumbnail()
-
-            // traversalFolder
-            //   .start()
-            //   .then(async (resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
-            //     if (resp.data?.files != null) {
-            //       logger.log('traversal folder:', resp.status, resp.data.files?.length)
-            //       const resp_classify = await recordsProc.start_file_classify(req, resp.data.files)
-            //       if (resp_classify.code !== 0) {
-            //         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-            //         return
-            //       }
-            //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-            //     } else {
-            //       logger.log('traversal folder:', resp.status)
-            //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-            //     }
-            //   })
-            //   .catch((error: unknown) => {
-            //     logger.error('open folder err:', error)
-            //     workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
-            //   })
-            // return resp.success('success')
-        }
         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-
         return resp
     }
 

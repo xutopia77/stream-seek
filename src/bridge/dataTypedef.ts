@@ -67,10 +67,31 @@ export class File {
         const minute = fileNameInfo?.startTime.slice(10, 12)
         const second = fileNameInfo?.startTime.slice(12, 14)
 
-        const endhour = fileNameInfo?.endTime.slice(8, 10)
-        const endminute = fileNameInfo?.endTime.slice(10, 12)
-        const endsecond = fileNameInfo?.endTime.slice(12, 14)
-        return `${year}${month}${day}-${hour}:${minute}:${second}_${endhour}:${endminute}:${endsecond}`
+        // const endhour = fileNameInfo?.endTime.slice(8, 10)
+        // const endminute = fileNameInfo?.endTime.slice(10, 12)
+        // const endsecond = fileNameInfo?.endTime.slice(12, 14)
+
+        let durationStr = ''
+        if (f.duration < 60) {
+            durationStr = `${f.duration}s`
+        } else if (f.duration < 60 * 60) {
+            const minutes = Math.floor(f.duration / 60)
+            const seconds = Math.floor(f.duration % 60)
+            durationStr = `${minutes}m ${seconds}s`
+        } else if (f.duration < 60 * 60 * 24) {
+            const hours = Math.floor(f.duration / (60 * 60))
+            const minutes = Math.floor((f.duration % (60 * 60)) / 60)
+            const seconds = Math.floor(f.duration % 60)
+            durationStr = `${hours}h ${minutes}m ${seconds}s`
+        } else {
+            const days = Math.floor(f.duration / (60 * 60 * 24))
+            const hours = Math.floor((f.duration % (60 * 60 * 24)) / (60 * 60))
+            const minutes = Math.floor((f.duration % (60 * 60)) / 60)
+            const seconds = Math.floor(f.duration % 60)
+            durationStr = `${days}d ${hours}h ${minutes}m ${seconds}s`
+        }
+
+        return `${year}${month}${day}-${hour}:${minute}:${second}_${durationStr}`
     }
 }
 
@@ -97,6 +118,10 @@ export class FileModel {
     deleted_at?: string = '' // delete time, add when delete
     static makeInfoHash(repo: string, fPath: string): string {
         return `${repo}+${fPath}`
+    }
+    static makeInfoHashDel(repo: string, fPath: string): string {
+        const currentTime = Date.now()
+        return `${repo}+${fPath}+del+${currentTime}`
     }
 }
 
@@ -285,6 +310,7 @@ export class Prj {
     thumbStrategy: ThumbStrategy = ThumbStrategy.BySize // 缩略图策略
     thumbEachSec: number = 0.1 // 每多少秒生成一张缩略图
     thumbEachSize: number = 1024 * 1024 * 10 // 每多少字节生成一张缩略图
+    numEachFolder: number = 10 // 每个文件夹多少视频文件
     dataRepo: DataRepo[] = []
 }
 
@@ -354,11 +380,14 @@ export interface Req_ClearWork {
 
 export enum SyncType {
     all = 'all',
-    prjInfo = 'prjInfo'
+    prjInfo = 'prjInfo',
+    classify = 'classify',
+    thumbnail = 'thumbnail',
+    trash = 'trash'
 }
-export interface SyncPrjReq {
-    type: SyncType
-    prj: Prj
+export class SyncPrjReq {
+    type: SyncType[] = [SyncType.all]
+    prj: Prj = new Prj()
 }
 export class SyncPrjResp {
     prj: Prj | null = null

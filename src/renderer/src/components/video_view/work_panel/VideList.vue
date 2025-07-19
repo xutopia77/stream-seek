@@ -17,7 +17,7 @@
                     />
                     <span class="checkmark"></span>
                 </label>
-                <span class="xc-text" @click="playVideo(video)">{{
+                <span class="xc-text" @click="btn_playVideo(video)">{{
                     `${index + 1}:${DataTypes.File.makeDisplayName(video)}`
                 }}</span>
             </li>
@@ -45,7 +45,7 @@ const toggleVideoSelection = (video: DataTypes.File, isChecked: boolean): void =
 
 onBeforeMount(() => {})
 
-const playVideo = (video: DataTypes.File): void => {
+const btn_playVideo = (video: DataTypes.File): void => {
     appStore.curSltVideo = video
 }
 </script>

@@ -319,6 +319,23 @@ class AppDb {
                 updateFields.push('description =?')
                 sqlParams.push(fInfo.description)
             }
+            let infoHash = DataTypes.FileModel.makeInfoHash(fInfo.repo, fInfo.path)
+            const curTimeStr = new Date().toLocaleString()
+            if (fInfo.status == DataTypes.FileStatus.Deleted) {
+                updateFields.push('deleted_at =?')
+                sqlParams.push(curTimeStr)
+                infoHash = DataTypes.FileModel.makeInfoHashDel(fInfo.repo, fInfo.path)
+            } else {
+                updateFields.push('updated_at =?')
+                // 获取当前时间，这种形式 2025-07-18 15:14:41
+                sqlParams.push(curTimeStr)
+                updateFields.push('deleted_at =?')
+                sqlParams.push(null)
+            }
+            {
+                updateFields.push('infoHash = ?')
+                sqlParams.push(infoHash)
+            }
             sqlCmd += updateFields.join(', ')
             sqlCmd += ' WHERE id =?'
             sqlParams.push(fInfo.id)

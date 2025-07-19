@@ -18,17 +18,14 @@
             </div>
         </div>
         <hr style="height: 1px; background-color: var(--xc-text-color)" />
-        <button
-            class="xc-button"
-            type="button"
-            @click="btnclk_sync_work(DataTypes.SyncType.prjInfo)"
-        >
-            保存项目参数
-        </button>
-        <button class="xc-button" type="button" @click="btnclk_sync_work(DataTypes.SyncType.all)">
-            同步项目
-        </button>
-        <button class="xc-button" type="button" @click="btnclk_sync_trash">整理回收站</button>
+        <input v-model="bNeedClassifyFile" type="checkbox" class="xc-check-input" />
+        <span class="xc-text">文件规整</span>
+        <input v-model="bNeedGenThumbnail" type="checkbox" class="xc-check-input" />
+        <span class="xc-text">生成缩略图</span>
+        <input v-model="bNeedClassifyTrash" type="checkbox" class="xc-check-input" />
+        <span class="xc-text">回收站规整</span>
+
+        <button class="xc-button" type="button" @click="btnclk_sync_work()">同步项目</button>
     </div>
 </template>
 
@@ -36,7 +33,7 @@
 import { onMounted, ref, watch } from 'vue'
 import '@renderer/assets/common.css'
 import MessageShow from '../util/MessageShow'
-import { IpcApi } from '../../utils/IpcApi'
+// import { IpcApi } from '../../utils/IpcApi'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 import { useAppStore } from '../../stores/AppStore'
 import util from '@renderer/utils/util'
@@ -59,8 +56,22 @@ watch(
     }
 )
 
-async function btnclk_sync_work(type: DataTypes.SyncType): Promise<void> {
-    const response = await util.sync_prj(type)
+const bNeedGenThumbnail = ref<boolean>(true)
+const bNeedClassifyFile = ref<boolean>(true)
+const bNeedClassifyTrash = ref<boolean>(false)
+
+async function btnclk_sync_work(): Promise<void> {
+    const syncTypes: DataTypes.SyncType[] = [DataTypes.SyncType.prjInfo]
+    if (bNeedGenThumbnail.value) {
+        syncTypes.push(DataTypes.SyncType.thumbnail)
+    }
+    if (bNeedClassifyFile.value) {
+        syncTypes.push(DataTypes.SyncType.classify)
+    }
+    if (bNeedClassifyTrash.value) {
+        syncTypes.push(DataTypes.SyncType.trash)
+    }
+    const response = await util.sync_prj(syncTypes)
     if (response.code !== 0) {
         MessageShow.error(`同步项目失败: ${response.status}`)
     } else {
@@ -68,22 +79,6 @@ async function btnclk_sync_work(type: DataTypes.SyncType): Promise<void> {
             MessageShow.info('后台执行中...')
         } else {
             MessageShow.success('同步项目')
-        }
-    }
-}
-
-async function btnclk_sync_trash(): Promise<void> {
-    const req: DataTypes.Req<DataTypes.Req_SyncTrash> = {
-        cmd: 'sync_trash'
-    }
-    const response = await IpcApi.trigger_event(req)
-    if (response.code !== 0) {
-        MessageShow.error(`整理回收站: ${response.status}`)
-    } else {
-        if (response.bOver === false) {
-            MessageShow.info('后台执行中...')
-        } else {
-            MessageShow.success('整理回收站成功')
         }
     }
 }

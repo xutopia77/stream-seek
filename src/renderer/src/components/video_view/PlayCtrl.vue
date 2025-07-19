@@ -2,14 +2,10 @@
     <div class="play-ctrl">
         <!-- 播放/暂停按钮 -->
         <button class="xc-button btn-noborder" title="播放/暂停" @click="btnclk_toggle_play">
-            {{ appStore.videoPlayCtrl.isPlay ? '⏸' : '▶' }}
+            {{ iconPlayPause }}
         </button>
         <!-- 文件切换 -->
-        <button
-            class="xc-button btn-noborder"
-            title="上一个文件"
-            @click="changeFile('previous')"
-        >
+        <button class="xc-button btn-noborder" title="上一个文件" @click="changeFile('previous')">
             ⏮
         </button>
         <button class="xc-button btn-noborder" title="停止播放" @click="btnclk_stop_play()">
@@ -32,22 +28,14 @@
             <option value="6">6x</option>
         </select>
         <!-- 播放时间 -->
-        <span class="xc-text" style="padding-right: 3px"
-            >{{ curTime }}/{{ videoDuration }}</span
-        >
+        <span class="xc-text" style="padding-right: 3px">{{ curTime }}/{{ videoDuration }}</span>
         <!-- 帧控制播放 -->
-        <button class="xc-button btn-noborder" title="后退一帧" @click="previousFrame">
-            ◀️
-        </button>
+        <button class="xc-button btn-noborder" title="后退一帧" @click="previousFrame">◀️</button>
         <button class="xc-button btn-noborder" title="前进一帧" @click="nextFrame">▶️</button>
         <span class="xc-text" style="padding-right: 3px; color: darkcyan">{{ frameInfo }}</span>
-        <span class="xc-text" style="padding-right: 3px; color: chocolate">{{
-            frameRate
-        }}</span>
+        <span class="xc-text" style="padding-right: 3px; color: chocolate">{{ frameRate }}</span>
         <!-- 显示i帧 -->
-        <button class="xc-button btn-noborder" title="显示关键帧" @click="showKeyFrame">
-            🔑
-        </button>
+        <button class="xc-button btn-noborder" title="显示关键帧" @click="showKeyFrame">🔑</button>
         <div class="right-area-ctrl">
             <button
                 class="xc-button btn-noborder"
@@ -82,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 import '@renderer/assets/common.css'
 import MessageShow from '../util/MessageShow'
@@ -161,6 +149,18 @@ const btnclk_toggle_play = (): void => {
     }
     appStore.videoPlayCtrl.isPlay = !appStore.videoPlayCtrl.isPlay
 }
+
+const iconPlayPause = ref('▶')
+watch(
+    () => appStore.videoPlayCtrl.isPlay,
+    (isPlay: boolean) => {
+        if (isPlay) {
+            iconPlayPause.value = '⏸'
+        } else {
+            iconPlayPause.value = '▶'
+        }
+    }
+)
 
 // ====================================
 

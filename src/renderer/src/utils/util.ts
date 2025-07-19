@@ -276,13 +276,14 @@ function setupVideoEventListeners(videoRef: HTMLVideoElement, bRemoveEvent: bool
     }
     videoRef.addEventListener('timeupdate', onTimeUpdate)
 
-    // 监听视频播放事件，更新播放状态
+    // Listen for video play events and update the playback status
     const onPlay = (): void => {
         console.log(`on play ${videoRef.currentTime}`)
+        appStore.videoPlayCtrl.isPlay = true
     }
     videoRef.addEventListener('play', onPlay)
 
-    // 监听视频暂停事件，更新播放状态
+    // Listen for video pause events and update the playback status
     const onPause = (): void => {
         appStore.videoPlayCtrl.isPlay = false
     }
@@ -681,11 +682,11 @@ class Util {
         return response
     }
 
-    async sync_prj(type: DataTypes.SyncType): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
+    async sync_prj(types: DataTypes.SyncType[]): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
         const req: DataTypes.Req<DataTypes.SyncPrjReq> = {
             cmd: 'sync_prj',
             data: {
-                type: type,
+                type: types,
                 prj: appStore.prj
             }
         }
