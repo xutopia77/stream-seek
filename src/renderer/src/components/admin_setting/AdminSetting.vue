@@ -22,9 +22,6 @@
         <span class="xc-text">文件规整</span>
         <input v-model="bNeedGenThumbnail" type="checkbox" class="xc-check-input" />
         <span class="xc-text">生成缩略图</span>
-        <input v-model="bNeedClassifyTrash" type="checkbox" class="xc-check-input" />
-        <span class="xc-text">回收站规整</span>
-
         <button class="xc-button" type="button" @click="btnclk_sync_work()">同步项目</button>
     </div>
 </template>
@@ -56,9 +53,8 @@ watch(
     }
 )
 
-const bNeedGenThumbnail = ref<boolean>(true)
+const bNeedGenThumbnail = ref<boolean>(false)
 const bNeedClassifyFile = ref<boolean>(true)
-const bNeedClassifyTrash = ref<boolean>(false)
 
 async function btnclk_sync_work(): Promise<void> {
     const syncTypes: DataTypes.SyncType[] = [DataTypes.SyncType.prjInfo]
@@ -67,9 +63,6 @@ async function btnclk_sync_work(): Promise<void> {
     }
     if (bNeedClassifyFile.value) {
         syncTypes.push(DataTypes.SyncType.classify)
-    }
-    if (bNeedClassifyTrash.value) {
-        syncTypes.push(DataTypes.SyncType.trash)
     }
     const response = await util.sync_prj(syncTypes)
     if (response.code !== 0) {

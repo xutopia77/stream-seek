@@ -242,7 +242,7 @@ class RecordsProc {
     // start_cut_video = start_cut_video
     // start_sync_trash = start_sync_trash
 
-
+    // get file thumbnail full path by file path
     thumbnail_path_get_mp4(repoName: string, fPath: string): string {
         const repo = DataTypes.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
         if (repo == null) {
@@ -252,6 +252,17 @@ class RecordsProc {
             return ''
         }
         return path.join(repo.thumbnailPath, path.basename(fPath, '.mp4'))
+    }
+
+    thumbnail_trash_path_get_mp4(repoName: string, fPath: string): string {
+        const repo = DataTypes.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
+        if (repo == null) {
+            return ''
+        }
+        if (repo.thumbnailPath == '') {
+            return ''
+        }
+        return path.join(repo.thumbnailPath, '.trash', path.basename(fPath, '.mp4'))
     }
 
     async thumbnail_get_mp4_path(fPath: string): Promise<DataTypes.Resp<string>> {
@@ -293,6 +304,24 @@ class RecordsProc {
             if (!error) console.log(error)
             bExist = false
         }
+        if (!bExist) {
+            try {
+                const trashThumbnailDir = this.thumbnail_trash_path_get_mp4(fileInfo.repo, filepath)
+                await fs.promises.access(trashThumbnailDir)
+                try {
+                    await fs.promises.rename(trashThumbnailDir, file_thubmbnail_dir)
+                    logger.info('find thumbnail in trash, move to thumbnail dir', fileInfo.path)
+                    bExist = true
+                } catch (error) {
+                    if (!error) console.log(error)
+                    bExist = false
+                }
+            } catch (error) {
+                if (!error) console.log(error)
+                bExist = false
+            }
+        }
+
         if (bExist) {
             return resp.success('thumbnail exist')
         }

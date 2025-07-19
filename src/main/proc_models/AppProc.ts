@@ -493,6 +493,46 @@ class AppProc {
                     logger.info(`update file success: ${fileInfo.path}`)
                 }
             }
+            // 6, start classify trash folder
+            {
+                // 1, search deleted file
+                const searchReq = DataTypes.FilesReq.makeReqStatusDel(repo.name)
+                const searchResp = await appDb.file_view_search(searchReq)
+                if (searchResp.code !== 0) {
+                    logger.error(`search del file error: ${searchResp.status}`)
+                    continue
+                }
+                const fileList = searchResp.data?.files ?? []
+                for (const fInfo of fileList) {
+                    // 2, get file thumbnail full path
+                    const file_thubmbnail_dir = recordsProc.thumbnail_path_get_mp4(
+                        fInfo.repo,
+                        fInfo.path
+                    )
+                    // 3, check thumb folder exist
+                    if (fs.existsSync(file_thubmbnail_dir)) {
+                        const repo = DataTypes.DataRepo.getRepoByPath(
+                            fInfo.repo,
+                            appCfg.prj.dataRepo
+                        )
+                        if (repo == null) {
+                            continue
+                        }
+                        if (repo.thumbnailPath == '') {
+                            continue
+                        }
+                        // 4, make thumb trash directory
+                        const thumbTrash = path.join(repo.thumbnailPath, '.trash')
+                        if (!fs.existsSync(thumbTrash)) {
+                            fs.mkdirSync(thumbTrash)
+                        }
+                        // 5, move thumbnail to trash directory
+                        const targetDir = path.join(thumbTrash, path.basename(file_thubmbnail_dir))
+                        fs.renameSync(file_thubmbnail_dir, targetDir)
+                        logger.info(`move file success: ${file_thubmbnail_dir} to ${targetDir}`)
+                    }
+                }
+            }
         }
         return resp
     }

@@ -382,8 +382,7 @@ export enum SyncType {
     all = 'all',
     prjInfo = 'prjInfo',
     classify = 'classify',
-    thumbnail = 'thumbnail',
-    trash = 'trash'
+    thumbnail = 'thumbnail'
 }
 export class SyncPrjReq {
     type: SyncType[] = [SyncType.all]
@@ -429,6 +428,12 @@ export class FilesReq {
         req.path = path
         req.repo = repo
         req.status = [FileStatus.Normal]
+        return req
+    }
+    static makeReqStatusDel(repo: string | null): FilesReq {
+        const req = new FilesReq()
+        req.repo = repo
+        req.status = [FileStatus.Deleted]
         return req
     }
 }
