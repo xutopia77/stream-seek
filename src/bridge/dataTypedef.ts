@@ -24,7 +24,12 @@ export class FileInfo {
 export enum FileStatus {
     Normal = 0, // 正常
     Deleted = 1, // 删除
-    Error = 2 // 错误
+    Error = 2, // 错误
+    /**
+     * 数据库中存在，但是文件夹中不存在
+     * 记录不正确，例如是删除的文件记录，但是在文件夹中仍然存在
+     */
+    Destroy = 3 // 销毁
 }
 
 export enum FileType {
@@ -129,6 +134,10 @@ export class FileModel {
     static makeInfoHashDel(repo: string, fPath: string): string {
         const currentTime = Date.now()
         return `${repo}+${fPath}+del+${currentTime}`
+    }
+    static makeInfoHashDestroy(repo: string, fPath: string): string {
+        const currentTime = Date.now()
+        return `${repo}+${fPath}+destroy+${currentTime}`
     }
 }
 
@@ -291,6 +300,11 @@ export interface MediaItem {
     filePath: string
 }
 
+export enum RepoType {
+    Normal = 'normal',
+    Trash = 'trash'
+}
+
 export class DataRepo {
     path: string = ''
     name: string = '' // 需要唯一
@@ -312,13 +326,14 @@ export enum ThumbStrategy {
 
 export class Prj {
     name: string = ''
-    version: string = '1.0.0'
+    version: string = '1.0.1'
     path: string = '' //  project path
     thumbStrategy: ThumbStrategy = ThumbStrategy.BySize // 缩略图策略
     thumbEachSec: number = 0.1 // 每多少秒生成一张缩略图
     thumbEachSize: number = 1024 * 1024 * 10 // 每多少字节生成一张缩略图
     numEachFolder: number = 10 // 每个文件夹多少视频文件
     dataRepo: DataRepo[] = []
+    repoType: RepoType = RepoType.Normal
 }
 
 export interface WorkResp {

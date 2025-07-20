@@ -55,7 +55,7 @@ class AppCfg {
 
     folderClassifyNum: number = 10
     appDir: string = ''
-
+    bPrtWorkQueue: boolean = false
     constructor() {
         this.appData = './appData'
     }

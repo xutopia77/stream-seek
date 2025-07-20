@@ -159,8 +159,12 @@ function btn_function(): void {
 }
 
 const statusInfo = computed(() => {
-    const curSltVideoName =
+    let curSltVideoName =
         appStore.curVideoInfo == null ? '' : DataTypes.File.makeDisplayName(appStore.curVideoInfo)
+    if (appStore.prj.repoType != null) {
+        const repoStr = appStore.prj.repoType == DataTypes.RepoType.Normal ? '🗄️' : '🗑️'
+        curSltVideoName = `${repoStr} ${curSltVideoName}`
+    }
     return curSltVideoName
 })
 

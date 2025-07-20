@@ -2,6 +2,7 @@
 // import * as fs from 'fs'
 import logger from './Logger'
 import * as DataTypes from '../../bridge/dataTypedef'
+import appCfg from './AppCfg'
 
 // 定义工作队列请求类型
 interface WorkQueueRequest {
@@ -29,10 +30,14 @@ class WorkQueue {
     // 添加任务到队列
     addTask(req: WorkQueueRequest | null): void {
         if (req !== null) {
-            // logger.info('add task to queue', req?.cmd)
+            if (appCfg.bPrtWorkQueue) {
+                logger.info('add task to queue', req?.cmd)
+            }
         } else {
             if (this.curReq != null) {
-                // logger.info('clean task in queue', this.curReq?.cmd)
+                if (appCfg.bPrtWorkQueue) {
+                    logger.info('clean task in queue', this.curReq?.cmd)
+                }
             }
         }
         this.curReq = req

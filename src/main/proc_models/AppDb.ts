@@ -325,6 +325,10 @@ class AppDb {
                 updateFields.push('deleted_at =?')
                 sqlParams.push(curTimeStr)
                 infoHash = DataTypes.FileModel.makeInfoHashDel(fInfo.repo, fInfo.path)
+            } else if (fInfo.status == DataTypes.FileStatus.Destroy) {
+                updateFields.push('deleted_at =?')
+                sqlParams.push(curTimeStr)
+                infoHash = DataTypes.FileModel.makeInfoHashDestroy(fInfo.repo, fInfo.path)
             } else {
                 updateFields.push('updated_at =?')
                 // 获取当前时间，这种形式 2025-07-18 15:14:41

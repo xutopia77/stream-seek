@@ -404,6 +404,9 @@ function make_cmd_response<T>(cmdResp: DataTypes.Resp<T>): DataTypes.Resp<string
         resp[key] = cmdResp[key]
     }
     resp.data = JSON.stringify(cmdResp.data)
+    if (appCfg.bPrtWorkQueue) {
+        logger.info(`cmd response: ${cmdResp.bOver}, cur cmd ${workQueue.curReq?.cmd}`)
+    }
     if (!(cmdResp.bOver == false)) {
         workQueue.addTask(null)
     }
@@ -431,7 +434,7 @@ export class IpcHandlers {
         switch (cmd) {
             case 'app_start':
                 logger.info(`cmd:${cmd}:${cseq}`)
-                return make_cmd_response(await appProc.app_start())
+                return make_cmd_response(await appProc.handle_app_start())
             case 'get_key_frame_info': {
                 const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
@@ -449,7 +452,7 @@ export class IpcHandlers {
             case 'search_file': {
                 logger.info(`cmd:${cmd}:${cseq}`)
                 const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
-                return make_cmd_response(await appProc.search_file(cmdReq))
+                return make_cmd_response(await appProc.handle_search_file(cmdReq))
             }
             // case 'traversal_folder': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
@@ -520,7 +523,7 @@ export class IpcHandlers {
         if (!event) {
             console.log(`event is null`)
         }
-        // console.log(`Handling event: ${event}`);
+        // console.log(`Handling event----: ${event}`)
         const req: DataTypes.Req<string> = JSON.parse(args[0])
         if (req.cmd != 'heart_beat') {
             // console.log(`Arguments: ${args}`);

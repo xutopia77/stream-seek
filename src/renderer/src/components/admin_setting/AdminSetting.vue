@@ -23,6 +23,14 @@
         <input v-model="bNeedGenThumbnail" type="checkbox" class="xc-check-input" />
         <span class="xc-text">生成缩略图</span>
         <button class="xc-button" type="button" @click="btnclk_sync_work()">同步项目</button>
+
+        <select v-model="repoType" class="xc-select">
+            <option :value="DataTypes.RepoType.Normal">正常</option>
+            <option :value="DataTypes.RepoType.Trash">回收站</option>
+        </select>
+        <button class="xc-button" type="button" @click="btnclk_set_repo_type()">
+            设置仓库模式
+        </button>
     </div>
 </template>
 
@@ -56,14 +64,20 @@ watch(
 const bNeedGenThumbnail = ref<boolean>(false)
 const bNeedClassifyFile = ref<boolean>(true)
 
-async function btnclk_sync_work(): Promise<void> {
-    const syncTypes: DataTypes.SyncType[] = [DataTypes.SyncType.prjInfo]
-    if (bNeedGenThumbnail.value) {
-        syncTypes.push(DataTypes.SyncType.thumbnail)
+async function btnclk_sync_work(types: DataTypes.SyncType[] = []): Promise<void> {
+    let syncTypes: DataTypes.SyncType[] = []
+    if (types != null && types.length > 0) {
+        syncTypes = types
+    } else {
+        syncTypes = [DataTypes.SyncType.prjInfo]
+        if (bNeedGenThumbnail.value) {
+            syncTypes.push(DataTypes.SyncType.thumbnail)
+        }
+        if (bNeedClassifyFile.value) {
+            syncTypes.push(DataTypes.SyncType.classify)
+        }
     }
-    if (bNeedClassifyFile.value) {
-        syncTypes.push(DataTypes.SyncType.classify)
-    }
+
     const response = await util.sync_prj(syncTypes)
     if (response.code !== 0) {
         MessageShow.error(`同步项目失败: ${response.status}`)
@@ -76,8 +90,18 @@ async function btnclk_sync_work(): Promise<void> {
     }
 }
 
+// ------------------------------------------------
+const repoType = ref<DataTypes.RepoType>(DataTypes.RepoType.Normal)
+async function btnclk_set_repo_type(): Promise<void> {
+    appStore.prj.repoType = repoType.value
+    await btnclk_sync_work([DataTypes.SyncType.prjInfo])
+    console.log(`repoType: ${repoType.value}`)
+}
+// ------------------------------------------------
+
 onMounted(() => {
     dataRepo.value = appStore.prj.dataRepo
+    repoType.value = appStore.prj.repoType
 })
 </script>
 

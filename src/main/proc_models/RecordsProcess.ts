@@ -242,6 +242,18 @@ class RecordsProc {
     // start_cut_video = start_cut_video
     // start_sync_trash = start_sync_trash
 
+    file_trash_path_get(fInfo: DataTypes.File): string {
+        const repo = DataTypes.DataRepo.getRepoByPath(fInfo.repo, appCfg.prj.dataRepo)
+        if (repo == null) {
+            return ''
+        }
+        if (repo.thumbnailPath == '') {
+            return ''
+        }
+        const fTrashPath = path.join(repo.path, '.trash', fInfo.name)
+        return fTrashPath
+    }
+
     // get file thumbnail full path by file path
     thumbnail_path_get_mp4(repoName: string, fPath: string): string {
         const repo = DataTypes.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)

@@ -24,8 +24,14 @@ class TraversalFolder {
     type: string | null = null // search时才遍历子文件夹
     repo: DataTypes.DataRepo = new DataTypes.DataRepo()
     bSort: boolean = false
+    fileCount: number = 0
 
     async proc_one_file(fPath: string, fName: string, stats: fs.Stats): Promise<DataTypes.Resp> {
+        this.fileCount++
+        const now = Date.now()
+        if ((now % 10) * 1000 === 0) {
+            logger.info(`traversal file count: ${this.fileCount}`)
+        }
         const resp: DataTypes.Resp = new DataTypes.Resp()
         const fileTimeInfo = DataTypes.FileTools.parse_filename_mi(fName)
         if (fileTimeInfo == null) {
@@ -342,7 +348,7 @@ class AppProc {
         return resp
     }
 
-    async app_start(): Promise<DataTypes.Resp<DataTypes.AppStartResp>> {
+    async handle_app_start(): Promise<DataTypes.Resp<DataTypes.AppStartResp>> {
         const resp = new DataTypes.Resp<DataTypes.AppStartResp>()
         resp.data = new DataTypes.AppStartResp()
         const cfgPath = path.join(appCfg.appData, 'prj.json')
@@ -406,7 +412,7 @@ class AppProc {
         }
         return resp
     }
-    async search_file(
+    async handle_search_file(
         req: DataTypes.Req<DataTypes.FilesReq>
     ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         return appDb.file_view_search(req.data == null ? null : req.data)
@@ -455,68 +461,110 @@ class AppProc {
                 logger.error(`repo name or path is empty: ${repo.name}, ${repo.path}`)
                 continue
             }
-            // 1, start traversal folder
-            const traversalFolder = new TraversalFolder()
-            traversalFolder.type = null
-            traversalFolder.repo = repo
-            await traversalFolder.start()
-            logger.info('start async folder:', repo.path)
-            // 2, start search file from db
-            const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
-            searchReq.order = 'asc'
-            searchReq.orderBy = 'startTimeSec'
-            let searchResp = await appDb.file_view_search(searchReq)
-            if (searchResp.code !== 0) {
-                logger.error(`search file error: ${searchResp.status}`)
-                continue
+            // 1, start traversal folder, Automatically insert the files in the folder into the database
+            {
+                const traversalFolder = new TraversalFolder()
+                traversalFolder.type = null
+                traversalFolder.repo = repo
+                await traversalFolder.start()
             }
-            // 3, Start checking whether the files recorded in the database exist
-            let fileList = searchResp.data?.files ?? []
-            for (const fileInfo of fileList) {
-                if (!fs.existsSync(fileInfo.path)) {
-                    logger.error(`file not exist: ${fileInfo.path}`)
-                    fileInfo.status = DataTypes.FileStatus.Deleted
-                    await appDb.file_update(fileInfo)
+
+            // 2, start search file from db
+            {
+                logger.info('start async folder:', repo.path)
+                const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
+                searchReq.order = 'asc'
+                searchReq.orderBy = 'startTimeSec'
+                searchReq.status = []
+                const searchResp = await appDb.file_view_search(searchReq)
+                if (searchResp.code !== 0) {
+                    logger.error(`search file error: ${searchResp.status}`)
                     continue
+                }
+                // 3, Check whether the files in the database exist in the folder. If not, mark them as destroyed
+                const fileList = searchResp.data?.files ?? []
+                for (const fInfo of fileList) {
+                    if (!fs.existsSync(fInfo.path)) {
+                        if (fInfo.status == DataTypes.FileStatus.Normal) {
+                            logger.error(`file not exist destroy: ${fInfo.path}`)
+                            fInfo.status = DataTypes.FileStatus.Destroy
+                            await appDb.file_update(fInfo)
+                            continue
+                        }
+                        if (fInfo.status == DataTypes.FileStatus.Deleted) {
+                            const fTrashPath = recordsProc.file_trash_path_get(fInfo)
+                            if (fTrashPath == '' || !fs.existsSync(fTrashPath)) {
+                                logger.info(`file not exist destroy: ${fInfo.path}`)
+                                fInfo.status = DataTypes.FileStatus.Destroy
+                                await appDb.file_update(fInfo)
+                                continue
+                            } else {
+                                logger.info(`update file path: ${fTrashPath}`)
+                                fInfo.path = fTrashPath
+                                await appDb.file_update(fInfo)
+                                continue
+                            }
+                        }
+                        if (fInfo.status == DataTypes.FileStatus.Destroy) {
+                            continue
+                        }
+                    } else {
+                        if (fInfo.status == DataTypes.FileStatus.Deleted) {
+                            const fTrashPath = recordsProc.file_trash_path_get(fInfo)
+                            const tmp1 = path.posix.normalize(fInfo.path)
+                            const tmp2 = path.posix.normalize(fTrashPath)
+                            if (tmp1 == tmp2) {
+                                continue
+                            }
+                            logger.error(`file status ${fInfo.status} err : ${fInfo.path}`)
+                            fInfo.status = DataTypes.FileStatus.Destroy
+                            await appDb.file_update(fInfo)
+                            continue
+                        }
+                    }
                 }
             }
             // 4, search file from db again
-            searchResp = await appDb.file_view_search(searchReq)
-            if (searchResp.code !== 0) {
-                logger.error(`search file error: ${searchResp.status}`)
-                continue
-            }
-            fileList = searchResp.data?.files ?? []
-
-            // 5, start classify file
-            // 5.1, make folder first
-            const batchSize = 10
-            const groupNum = Math.ceil(fileList.length / batchSize) + 1
-            for (let i = 0; i < groupNum; i++) {
-                const grpPath = path.join(repo.path, `${i + 1}`)
-                if (!fs.existsSync(grpPath)) {
-                    fs.mkdirSync(grpPath)
+            {
+                const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
+                searchReq.order = 'asc'
+                searchReq.orderBy = 'startTimeSec'
+                const searchResp = await appDb.file_view_search(searchReq)
+                if (searchResp.code !== 0) {
+                    logger.error(`search file error: ${searchResp.status}`)
+                    continue
                 }
-            }
-            // 5.2, Classify the files into groups of 10
-            for (let i = 0; i < fileList.length; i += batchSize) {
-                const batch = fileList.slice(i, i + batchSize)
-                for (const fileInfo of batch) {
-                    const grpIdx = Math.floor(i / batchSize)
-                    const grpPath = path.join(repo.path, `${grpIdx + 1}`)
-                    const fileName = path.basename(fileInfo.path)
-                    const dstPath = path.join(grpPath, fileName)
-                    if (fileInfo.path == dstPath) {
-                        continue
+                const fileList = searchResp.data?.files ?? []
+                // 5, start classify file
+                // 5.1, make folder first
+                const batchSize = 10
+                const groupNum = Math.ceil(fileList.length / batchSize) + 1
+                for (let i = 0; i < groupNum; i++) {
+                    const grpPath = path.join(repo.path, `${i + 1}`)
+                    if (!fs.existsSync(grpPath)) {
+                        fs.mkdirSync(grpPath)
                     }
-                    fs.renameSync(fileInfo.path, dstPath)
-                    fileInfo.path = dstPath
-                    const updateResp = await appDb.file_update(fileInfo)
-                    if (updateResp.code !== 0) {
-                        logger.error(`update file error: ${updateResp.status}`)
-                        continue
+                }
+                // 5.2, Classify the files into groups of 10
+                for (let i = 0; i < fileList.length; i += batchSize) {
+                    const batch = fileList.slice(i, i + batchSize)
+                    for (const fileInfo of batch) {
+                        const grpIdx = Math.floor(i / batchSize)
+                        const grpPath = path.join(repo.path, `${grpIdx + 1}`)
+                        const fileName = path.basename(fileInfo.path)
+                        const dstPath = path.join(grpPath, fileName)
+                        if (fileInfo.path == dstPath) {
+                            continue
+                        }
+                        fs.renameSync(fileInfo.path, dstPath)
+                        fileInfo.path = dstPath
+                        const updateResp = await appDb.file_update(fileInfo)
+                        if (updateResp.code !== 0) {
+                            logger.error(`update file error: ${updateResp.status}`)
+                            continue
+                        }
+                        logger.info(`group file success: ${fileInfo.path}`)
                     }
-                    logger.info(`update file success: ${fileInfo.path}`)
                 }
             }
             // 6, start classify thumbnail trash folder
@@ -721,55 +769,49 @@ class AppProc {
         if (fInfo == null) {
             return resp.err('file info is null')
         }
-        resp.success('success').data = fInfo
-        if (resp.data.thumbnail?.path == null) {
-            const tra = new TraversalFolder()
-            tra.repo.path = recordsProc.thumbnail_path_get_mp4(fInfo?.repo, fInfo?.path)
-            const fRe = await tra.get_folder_files()
-            if (fRe.code != 0) {
-                logger.warn(`thumbnail not exist ${fInfo.path}`)
-            } else {
-                resp.data.thumbnail = new DataTypes.ThumbnailInfo()
-                for (const item of fRe.data?.files ?? []) {
-                    resp.data.thumbnail.path.push(item.path)
-                }
+        if (appCfg.prj.repoType == DataTypes.RepoType.Normal) {
+            if (fInfo.status != DataTypes.FileStatus.Normal) {
+                return resp.err('file status is not normal')
+            }
+        }
+        if (appCfg.prj.repoType == DataTypes.RepoType.Trash) {
+            if (fInfo.status != DataTypes.FileStatus.Deleted) {
+                return resp.err('file status is not delete')
             }
         }
 
-        // // 先读取文件的项目信息
-        // {
-        //     const filename = getFilenameFromPath(video_path)
-        //     const filePrjPath = make_file_prj_path(filename)
-        //     if (fs.existsSync(filePrjPath)) {
-        //         // 读取文件
-        //         let data = ''
-        //         try {
-        //             data = fs.readFileSync(filePrjPath, {
-        //                 encoding: 'utf-8'
-        //             })
-        //             const jsonData = JSON.parse(data)
-        //             resp.data = jsonData.fileInfo
-        //             // 读取成功了直接返回
-        //             logger.log('handle_select_video read file prj success')
-        //             return resp
-        //         } catch (error: unknown) {
-        //             console.error('not find video split info:', filePrjPath, error)
-        //         }
-        //     }
-        // }
-
-        // // get media info
-        // {
-        //     const mediaInfo = await mediaProc.getVideoInfo(video_path)
-        //     respData.mediaInfo = mediaInfo
-        // }
-        // {
-        //     const thubResp = await appProc.query_images(video_path)
-        //     // logger.info('handle_select_video', thubResp);
-        //     if (thubResp.code == 0) {
-        //         respData.thumbnail = thubResp.data?.files
-        //     }
-        // }
+        resp.success('success').data = fInfo
+        if (resp.data.thumbnail?.path == null) {
+            let bThumbExist = true
+            const tra = new TraversalFolder()
+            tra.repo.path = recordsProc.thumbnail_path_get_mp4(fInfo?.repo, fInfo?.path)
+            if (!fs.existsSync(tra.repo.path)) {
+                if (appCfg.prj.repoType == DataTypes.RepoType.Normal) {
+                    logger.warn(`thumbnail not exist in repo path ${tra.repo.path}`)
+                    bThumbExist = false
+                } else {
+                    tra.repo.path = recordsProc.thumbnail_trash_path_get_mp4(
+                        fInfo?.repo,
+                        fInfo?.path
+                    )
+                    if (!fs.existsSync(tra.repo.path)) {
+                        logger.warn(`thumbnail not exist in repo trash path ${tra.repo.path}`)
+                        bThumbExist = false
+                    }
+                }
+            }
+            if (bThumbExist) {
+                const fRe = await tra.get_folder_files()
+                if (fRe.code != 0) {
+                    logger.warn(`thumbnail not exist ${fInfo.path}`)
+                } else {
+                    resp.data.thumbnail = new DataTypes.ThumbnailInfo()
+                    for (const item of fRe.data?.files ?? []) {
+                        resp.data.thumbnail.path.push(item.path)
+                    }
+                }
+            }
+        }
         return resp
     }
 

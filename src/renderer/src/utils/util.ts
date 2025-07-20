@@ -891,6 +891,9 @@ class Util {
             cmd: 'search_file'
         }
         req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
+        if (appStore.prj.repoType == DataTypes.RepoType.Trash) {
+            req.data = DataTypes.FilesReq.makeReqStatusDel(null)
+        }
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
             MessageShow.error(`search file failed: ${response.status}`)
