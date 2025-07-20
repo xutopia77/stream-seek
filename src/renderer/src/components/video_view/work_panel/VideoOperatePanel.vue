@@ -12,12 +12,8 @@
             {{ curViewBtn }}
         </button>
         <br />
-        <button class="xc-button" title="在光标处拆分片段" @click="btnclk_splitVideo">
-            ➕
-        </button>
-        <button class="xc-button" title="去掉此片段的拆分信息" @click="removeVideosplit">
-            ➖
-        </button>
+        <button class="xc-button" title="在光标处拆分片段" @click="btnclk_splitVideo">➕</button>
+        <button class="xc-button" title="去掉此片段的拆分信息" @click="removeVideosplit">➖</button>
         <button class="xc-button" title="去掉此片段" @click="removeVideoRecord">❌</button>
         <button class="xc-button" title="恢复此片段" @click="restoreVideoRecord">🔃</button>
         <button class="xc-button" title="导出剪辑" @click="exportVideoRecord">✂</button>

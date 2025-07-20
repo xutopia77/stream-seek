@@ -39,7 +39,6 @@ const appStore = useAppStore()
 import * as DataTypes from '../../../bridge/dataTypedef'
 // import MessageShow from './util/MessageShow'
 
-
 let rightPanel = computed(() => appStore.rightPanel)
 
 const viewModel = computed(() => {
@@ -67,6 +66,12 @@ watch(
             return
         }
         util.play_video(videoRef.value, playReq)
+    }
+)
+watch(
+    () => appStore.curVideoInfo,
+    () => {
+        console.log('cur slt video info', appStore.curVideoInfo)
     }
 )
 

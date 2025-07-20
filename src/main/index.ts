@@ -27,8 +27,9 @@ function createWindow(): void {
         mainWindow.show()
     })
 
-    mainWindow.webContents.openDevTools() //debug_model open dev tools
-
+    if (is.dev) {
+        mainWindow.webContents.openDevTools()
+    }
     mainWindow.webContents.setWindowOpenHandler((details) => {
         shell.openExternal(details.url)
         return { action: 'deny' }
@@ -45,6 +46,8 @@ function createWindow(): void {
         handlers.mainWindow = mainWindow
     }
 }
+
+// app.disableHardwareAcceleration()
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

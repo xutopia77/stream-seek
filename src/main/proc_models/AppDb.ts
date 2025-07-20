@@ -558,7 +558,8 @@ class AppDb {
                     fileInfo.mediaInfo = JSON.parse(fileViewModel.mediaInfo || '{}')
                     fileInfo.splitInfo = JSON.parse(fileViewModel.splitInfo || '{}')
                     fileInfo.frameInfo = JSON.parse(fileViewModel.frameInfo || '{}')
-                    fileInfo.thumbnail = JSON.parse(fileViewModel.thumbnail || '{}')
+                    // fileInfo.thumbnail = JSON.parse(fileViewModel.thumbnail || '{}')
+                    fileInfo.thumbnail = null
                     fileInfo.eventInfo = JSON.parse(fileViewModel.eventInfo || '{}')
                     fileInfo.type = fileViewModel.type
                     fileInfo.status = fileViewModel.status

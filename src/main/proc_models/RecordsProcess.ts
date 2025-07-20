@@ -299,7 +299,7 @@ class RecordsProc {
         let bExist = true
         //1, 检查对应的文件的缩略图是否已经存在
         try {
-            await fs.promises.access(file_thubmbnail_dir)
+            await fs.promises.access(file_thubmbnail_dir, fs.constants.F_OK)
         } catch (error) {
             if (!error) console.log(error)
             bExist = false
@@ -307,10 +307,12 @@ class RecordsProc {
         if (!bExist) {
             try {
                 const trashThumbnailDir = this.thumbnail_trash_path_get_mp4(fileInfo.repo, filepath)
-                await fs.promises.access(trashThumbnailDir)
+                await fs.promises.access(trashThumbnailDir, fs.constants.F_OK)
                 try {
                     await fs.promises.rename(trashThumbnailDir, file_thubmbnail_dir)
-                    logger.info('find thumbnail in trash, move to thumbnail dir', fileInfo.path)
+                    logger.info(
+                        `find thumbnail in trash, move ${trashThumbnailDir} to ${file_thubmbnail_dir}`
+                    )
                     bExist = true
                 } catch (error) {
                     if (!error) console.log(error)
@@ -323,7 +325,9 @@ class RecordsProc {
         }
 
         if (bExist) {
-            return resp.success('thumbnail exist')
+            resp.success('thumbnail exist')
+            resp.code = DataTypes.RespCode.FileExist
+            return resp
         }
 
         let timePeriod = 10

@@ -482,7 +482,7 @@ export class IpcHandlers {
             // }
             case 'sync_prj': {
                 const cmdReq = convertCmdRequest<DataTypes.SyncPrjReq>(req)
-                logger.info(`cmd:${cmd}:${cseq}`)
+                logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.type}`)
                 return make_cmd_response(await appProc.start_sync_work(cmdReq))
             }
             // case 'sync_trash': {

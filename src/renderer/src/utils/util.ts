@@ -497,6 +497,7 @@ class Util {
             appStore.prj = appStartResp.prj
             console.log('get prj success ', appStartResp.prj)
             await util.search_file()
+            await util.tags_get(null)
         } else {
             console.log('get prj failed')
         }
@@ -741,7 +742,10 @@ class Util {
         return response
     }
 
-    async file_tags_set(fileTags: DataTypes.FileTagsReq): Promise<void> {
+    async file_tags_set(
+        fileTags: DataTypes.FileTagsReq,
+        param: DataTypes.FileTagsSetParam | null = null
+    ): Promise<void> {
         const req: DataTypes.Req<DataTypes.FileTagsReq> = {
             cmd: 'file_tags_set',
             data: fileTags
@@ -754,8 +758,17 @@ class Util {
                 MessageShow.info(`正在处理...`)
                 return
             }
-            await this.files_get(null)
-            await this.tags_get(null)
+            if (param != null) {
+                if (param.bNeedUpdate) {
+                    await this.files_get(null)
+                    await this.tags_get(null)
+                }
+                if (param.bNeedSltCurVideo) {
+                    await this.get_slt_video(appStore.curSltVideo)
+                }
+            }
+
+            MessageShow.info(`设置标签成功`)
         }
     }
 
@@ -876,6 +889,21 @@ class Util {
     async search_file(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         const req: DataTypes.Req<DataTypes.FilesReq> = {
             cmd: 'search_file'
+        }
+        req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
+        const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
+        if (response.code != 0) {
+            MessageShow.error(`search file failed: ${response.status}`)
+            console.log(`search file failed: ${response.status}`)
+            return response
+        }
+        console.info('search file success', response.data)
+        appStore.videoList = response.data?.files || []
+        return response
+    }
+    async search_tag(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
+        const req: DataTypes.Req<DataTypes.FilesReq> = {
+            cmd: 'search_tag'
         }
         req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)

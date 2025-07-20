@@ -41,3 +41,78 @@ async function trigger_event<T = string, R = string>(req: DataTypes.Req<T>): Pro
 发送时，入参是一个对象Req，返回值是一个Promise对象，Promise对象的resolve值是一个对象Resp
 
 至于Req和Resp中的Data，是一个泛型，具体的类型由调用方决定。
+
+
+```shell
+
+ffmpeg -hwaccel cuda -hwaccel_output_format cuda -i 00_20250301122432_20250301123046.mp4 -vf "fps=15,hwupload" -c:v hevc_nvenc -preset medium output.mp4
+
+
+ffmpeg -hwaccel cuda -hwaccel_output_format cuda -i 00_20250302134545_20250302135107.mp4 -vf "fps=5,hwupload" -c:v hevc_nvenc -preset medium output.mp4
+
+
+
+
+ffmpeg -hwaccel cuda -i input.mp4 \
+  -vf "mpdecimate,fps=5,hwupload" \
+  -c:v hevc_nvenc \
+  -preset slow \
+  -crf 32 \
+  -g 50 \
+  -sc_threshold 0 \
+  -tune zerolatency \  # 适用于实时监控
+  output.mp4
+
+
+
+
+
+ffmpeg -hwaccel cuda -i input.mp4 \
+  # 1. 视频滤镜：降低帧率+删除冗余帧（核心！）
+  -vf "mpdecimate=hi=64:lo=32:frac=0.3,fps=5,hwupload" \
+  # 2. 视频编码：H.265（HEVC）+ GPU加速+低码率控制
+  -c:v hevc_nvenc \
+  -preset slow \          # 慢预设，压缩效率更高（牺牲速度换体积）
+  -crf 30 \               # 恒定质量因子（值越大体积越小，建议28-35）
+  -g 100 \                # 关键帧间隔（每100帧1个I帧，适合静态场景）
+  -sc_threshold 0 \       # 禁用场景变化检测（固定视角无需频繁切关键帧）
+  # 3. 音频处理：监控多无需音频，直接删除
+  -an \
+  # 4. 容器格式（保证兼容性）
+  -f mp4 \
+  output_compressed.mp4
+
+
+
+ffmpeg -hwaccel cuda -i static.mp4 -vf "mpdecimate=hi=64:lo=32:frac=0.3,fps=5,hwupload" -c:v hevc_nvenc -preset slow -crf 30 -g 100 -sc_threshold 0 -an -f mp4 output_compressed.mp4
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+ffmpeg -i static.mp4 \
+  # 1. 视频处理：降帧率+去冗余+GPU加速
+  -vf "mpdecimate=hi=64:lo=32:frac=0.3,fps=5,hwupload" \
+  # 2. 编码参数：HEVC+极致压缩
+  -c:v hevc_nvenc \
+  -preset veryslow \    # 最慢但最高效的压缩
+  -crf 35 \             # 高CRF值（画质略有损失，但体积极小）
+  -g 50 \               # 关键帧间隔（每50帧1个I帧）
+  -sc_threshold 0 \     # 禁用场景变化检测
+  -b:v 2000k \          # 限制最大码率（防止体积暴涨）
+  -tune zero-latency \  # 针对监控场景优化
+  # 3. 音频处理：极低码率
+  -c:a aac -b:a 16k \   # 保留音频但压缩至16kbps
+  # 4. 输出格式优化
+  -movflags +faststart \
+  output_compressed.mp4
+
+ffmpeg -hwaccel cuda -i static.mp4 -vf "mpdecimate=hi=64:lo=32:frac=0.3,fps=5,hwupload" -c:v hevc_nvenc -preset veryslow -crf 35 -g 50 -sc_threshold 0 -b:v 2000k -tune zero-latency -movflags +faststart output_compressed.mp4
+
+ffmpeg -hwaccel cuda -i static.mp4 -vf "mpdecimate=hi=64:lo=32:frac=0.3,fps=5,hwupload" -c:v hevc_nvenc -preset slow -crf 30 -g 100 -sc_threshold 0 -b:v 2000k  -an -f mp4 output_compressed.mp4
+
+ffmpeg -hwaccel cuda -i static.mp4 -vf "mpdecimate=hi=64:lo=24:frac=0.5,fps=5,hwupload" -c:v hevc_nvenc -preset slow -crf 30 -g 360 -sc_threshold 0 -b:v 100k  -an -f mp4 output_compressed.mp4
+
+
+
+
+```

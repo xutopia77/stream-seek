@@ -22,7 +22,7 @@ export type AppStore = {
     videoList: DataTypes.File[]
     curCheckedVideo: Set<DataTypes.File>
     curSltVideo: DataTypes.File | null // 在列表中，鼠标选中后，更新
-    curVideoInfo: DataTypes.File | null // 根据 鼠标选中的视频，更新此信息
+    curVideoInfo: DataTypes.File | null // 根据 鼠标选中的视频，从后台获取信息，更新此信息
     //   videoSplitInfo: any[]
     bShowKeyFrameInfo: boolean
     barSeekTime: number

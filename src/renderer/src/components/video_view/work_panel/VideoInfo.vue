@@ -68,7 +68,7 @@ const btn_addTag = async (): Promise<void> => {
         MessageShow.warn(`请选择文件`)
         return
     }
-    await util.file_tags_set(req)
+    await util.file_tags_set(req, { bNeedUpdate: true })
     newTag.value = ''
 }
 </script>

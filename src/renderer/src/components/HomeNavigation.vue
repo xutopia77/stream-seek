@@ -160,7 +160,7 @@ function btn_function(): void {
 
 const statusInfo = computed(() => {
     const curSltVideoName =
-        appStore.curSltVideo == null ? '' : DataTypes.File.makeDisplayName(appStore.curSltVideo)
+        appStore.curVideoInfo == null ? '' : DataTypes.File.makeDisplayName(appStore.curVideoInfo)
     return curSltVideoName
 })
 

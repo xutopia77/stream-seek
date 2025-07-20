@@ -10,6 +10,16 @@ import recordsProc from './RecordsProcess.js'
 import * as DataTypes from '../../bridge/dataTypedef'
 import appCfg from './AppCfg.js'
 import { workQueue } from './Utils.js'
+
+function logRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
+    if (resp.code === 0) {
+        logger.info(resp.status)
+    } else {
+        logger.error(resp.status)
+    }
+    return resp
+}
+
 class TraversalFolder {
     type: string | null = null // search时才遍历子文件夹
     repo: DataTypes.DataRepo = new DataTypes.DataRepo()
@@ -26,7 +36,7 @@ class TraversalFolder {
         const respSearch = await appDb.file_search(searchReq)
         if (respSearch.code == 0) {
             if (respSearch.data?.files.length != null && respSearch.data.files.length > 0) {
-                logger.info(`file already exists: ${fPath}`)
+                // logger.info(`file already exists: ${fPath}`)
                 return resp.success(`file already exists: ${fPath}`)
             }
         }
@@ -372,6 +382,18 @@ class AppProc {
         if (respDb.code !== 0) {
             return resp.err('init db error')
         }
+        for (let i = 0; i < 11; i++) {
+            const tag: DataTypes.Tag = {
+                id: 0,
+                name: `level${i}`,
+                color: '#FF5733'
+            }
+            const insertResp = await appDb.tag_insert(tag)
+            if (insertResp.code != 0) {
+                return resp.err('insert tag error')
+            }
+        }
+
         // 4, read prj json
         try {
             const prjData = fs.readFileSync(appCfg.appInfo.prjFile, { encoding: 'utf-8' })
@@ -406,12 +428,16 @@ class AppProc {
             const endTime = Date.now()
             const duration = ((endTime - startTime) / 1000).toFixed(3)
             count++
-            logger.info(
-                `gen thumbnail ${respThumb.status} ${fileInfo.path},num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} ms, ${count}/${searchRe.data?.total}`
-            )
             if (respThumb.code !== 0) {
+                if (respThumb.code == DataTypes.RespCode.FileExist) {
+                    continue
+                }
                 logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
                 continue
+            } else {
+                logger.info(
+                    `gen thumbnail ${respThumb.status} ${fileInfo.path},num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} ms, ${count}/${searchRe.data?.total}`
+                )
             }
             if (respThumb.data != null && respThumb.data.length > 0) {
                 fileInfo.thumbnail = new DataTypes.ThumbnailInfo()
@@ -434,6 +460,7 @@ class AppProc {
             traversalFolder.type = null
             traversalFolder.repo = repo
             await traversalFolder.start()
+            logger.info('start async folder:', repo.path)
             // 2, start search file from db
             const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
             searchReq.order = 'asc'
@@ -461,7 +488,6 @@ class AppProc {
             }
             fileList = searchResp.data?.files ?? []
 
-            // 把searchResp.data?.files 中的文件按照10个一组，先计算有多少组
             // 5, start classify file
             // 5.1, make folder first
             const batchSize = 10
@@ -493,8 +519,9 @@ class AppProc {
                     logger.info(`update file success: ${fileInfo.path}`)
                 }
             }
-            // 6, start classify trash folder
+            // 6, start classify thumbnail trash folder
             {
+                logger.info(`start classify thumbnail trash folder: ${repo.thumbnailPath}`)
                 // 1, search deleted file
                 const searchReq = DataTypes.FilesReq.makeReqStatusDel(repo.name)
                 const searchResp = await appDb.file_view_search(searchReq)
@@ -504,6 +531,18 @@ class AppProc {
                 }
                 const fileList = searchResp.data?.files ?? []
                 for (const fInfo of fileList) {
+                    // logger.info(`file : ${fInfo.path}`)
+                    const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(fInfo.path, fInfo.repo)
+                    const searchResp = await appDb.file_view_search(searchReq)
+                    if (searchResp.code == 0) {
+                        if (
+                            searchResp.data?.files.length != null &&
+                            searchResp.data?.files.length > 0
+                        ) {
+                            // logger.info(`file not del, but exist: ${fInfo.path}`)
+                            continue
+                        }
+                    }
                     // 2, get file thumbnail full path
                     const file_thubmbnail_dir = recordsProc.thumbnail_path_get_mp4(
                         fInfo.repo,
@@ -529,7 +568,7 @@ class AppProc {
                         // 5, move thumbnail to trash directory
                         const targetDir = path.join(thumbTrash, path.basename(file_thubmbnail_dir))
                         fs.renameSync(file_thubmbnail_dir, targetDir)
-                        logger.info(`move file success: ${file_thubmbnail_dir} to ${targetDir}`)
+                        logger.info(`move thumb ${file_thubmbnail_dir} to ${targetDir}`)
                     }
                 }
             }
@@ -568,23 +607,26 @@ class AppProc {
         }
 
         if (bNeedSavePrjInfo) {
+            logger.info(`save prj info start`)
             const prjInfo = req.data.prj
             if (prjInfo == null) {
-                return resp.err('prjInfo is null')
+                return logRespReturn(resp.err('prjInfo is null'))
             }
             const saveResp = await this.save_prj_info(prjInfo)
             if (saveResp.code !== 0) {
-                return resp.err(`save prj info error ${saveResp.status}`)
+                return logRespReturn(resp.err(`save prj info error ${saveResp.status}`))
             }
             resp.data.prj = prjInfo
+            logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`)
         }
 
         if (bNeedClassifyFile) {
+            logger.log('classify file start')
             const classifyResp = await this.start_classify_file(req.data.prj.dataRepo)
             if (classifyResp.code !== 0) {
-                return resp.err(`classify file error ${classifyResp.status}`)
+                return logRespReturn(resp.err(`classify file error ${classifyResp.status}`))
             }
-            logger.log('classify file success')
+            logger.log('classify file ', classifyResp.status)
         }
 
         if (bNeedGenThumb) {
@@ -597,30 +639,8 @@ class AppProc {
                 traversalFolder.repo = repo
                 await traversalFolder.start()
                 await this.start_gen_thumbnail()
-                // traversalFolder
-                //   .start()
-                //   .then(async (resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
-                //     if (resp.data?.files != null) {
-                //       logger.log('traversal folder:', resp.status, resp.data.files?.length)
-                //       const resp_classify = await recordsProc.start_file_classify(req, resp.data.files)
-                //       if (resp_classify.code !== 0) {
-                //         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-                //         return
-                //       }
-                //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-                //     } else {
-                //       logger.log('traversal folder:', resp.status)
-                //       workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-                //     }
-                //   })
-                //   .catch((error: unknown) => {
-                //     logger.error('open folder err:', error)
-                //     workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
-                //   })
-                // return resp.success('success')
             }
         }
-
         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
         return resp
     }

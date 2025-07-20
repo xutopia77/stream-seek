@@ -55,43 +55,50 @@ export class File {
         return `file://${finfo.path}`
     }
     static makeDisplayName(f: File): string {
-        // 10_20250301105200_20250301105306.mp4
-        const fileNameInfo = FileTools.parse_filename_mi(f.name)
-        if (fileNameInfo === null) {
-            return this.name
+        let displayName = ''
+        {
+            // 10_20250301105200_20250301105306.mp4
+            const fileNameInfo = FileTools.parse_filename_mi(f.name)
+            if (fileNameInfo === null) {
+                return this.name
+            }
+
+            const year = fileNameInfo?.startTime.slice(0, 4)
+            const month = fileNameInfo?.startTime.slice(4, 6)
+            const day = fileNameInfo?.startTime.slice(6, 8)
+            const hour = fileNameInfo?.startTime.slice(8, 10)
+            const minute = fileNameInfo?.startTime.slice(10, 12)
+            const second = fileNameInfo?.startTime.slice(12, 14)
+
+            // const endhour = fileNameInfo?.endTime.slice(8, 10)
+            // const endminute = fileNameInfo?.endTime.slice(10, 12)
+            // const endsecond = fileNameInfo?.endTime.slice(12, 14)
+
+            let durationStr = ''
+            if (f.duration < 60) {
+                durationStr = `${f.duration}s`
+            } else if (f.duration < 60 * 60) {
+                const minutes = Math.floor(f.duration / 60)
+                const seconds = Math.floor(f.duration % 60)
+                durationStr = `${minutes}m ${seconds}s`
+            } else if (f.duration < 60 * 60 * 24) {
+                const hours = Math.floor(f.duration / (60 * 60))
+                const minutes = Math.floor((f.duration % (60 * 60)) / 60)
+                const seconds = Math.floor(f.duration % 60)
+                durationStr = `${hours}h ${minutes}m ${seconds}s`
+            } else {
+                const days = Math.floor(f.duration / (60 * 60 * 24))
+                const hours = Math.floor((f.duration % (60 * 60 * 24)) / (60 * 60))
+                const minutes = Math.floor((f.duration % (60 * 60)) / 60)
+                const seconds = Math.floor(f.duration % 60)
+                durationStr = `${days}d ${hours}h ${minutes}m ${seconds}s`
+            }
+            displayName = `${year}${month}${day}-${hour}:${minute}:${second}_${durationStr}`
         }
-        const year = fileNameInfo?.startTime.slice(0, 4)
-        const month = fileNameInfo?.startTime.slice(4, 6)
-        const day = fileNameInfo?.startTime.slice(6, 8)
-        const hour = fileNameInfo?.startTime.slice(8, 10)
-        const minute = fileNameInfo?.startTime.slice(10, 12)
-        const second = fileNameInfo?.startTime.slice(12, 14)
-
-        // const endhour = fileNameInfo?.endTime.slice(8, 10)
-        // const endminute = fileNameInfo?.endTime.slice(10, 12)
-        // const endsecond = fileNameInfo?.endTime.slice(12, 14)
-
-        let durationStr = ''
-        if (f.duration < 60) {
-            durationStr = `${f.duration}s`
-        } else if (f.duration < 60 * 60) {
-            const minutes = Math.floor(f.duration / 60)
-            const seconds = Math.floor(f.duration % 60)
-            durationStr = `${minutes}m ${seconds}s`
-        } else if (f.duration < 60 * 60 * 24) {
-            const hours = Math.floor(f.duration / (60 * 60))
-            const minutes = Math.floor((f.duration % (60 * 60)) / 60)
-            const seconds = Math.floor(f.duration % 60)
-            durationStr = `${hours}h ${minutes}m ${seconds}s`
-        } else {
-            const days = Math.floor(f.duration / (60 * 60 * 24))
-            const hours = Math.floor((f.duration % (60 * 60 * 24)) / (60 * 60))
-            const minutes = Math.floor((f.duration % (60 * 60)) / 60)
-            const seconds = Math.floor(f.duration % 60)
-            durationStr = `${days}d ${hours}h ${minutes}m ${seconds}s`
+        for (const tInfo of f.tags) {
+            displayName += ` ${tInfo.name}`
         }
-
-        return `${year}${month}${day}-${hour}:${minute}:${second}_${durationStr}`
+        return displayName
     }
 }
 
@@ -469,6 +476,11 @@ export class DbInsertResp {
 
 // ======================== render
 
+export interface FileTagsSetParam {
+    bNeedUpdate?: boolean
+    bNeedSltCurVideo?: boolean
+}
+
 export enum WorkPanel {
     List = 'list',
     Operate = 'operate',
@@ -504,8 +516,14 @@ export interface CutVideoReq {
 }
 
 // ========================
+export enum RespCode {
+    Success = 0,
+    Error = 1,
+    FileExist = 1001
+}
+
 export class Resp<T = string> {
-    code: number
+    code: RespCode
     status: string
     bOver?: boolean
     data?: T

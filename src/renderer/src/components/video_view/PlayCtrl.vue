@@ -39,6 +39,19 @@
         <div class="right-area-ctrl">
             <button
                 class="xc-button btn-noborder"
+                title="设置文件的等级"
+                @click="btnclk_set_file_level"
+            >
+                ⭐
+            </button>
+            <select v-model="fileLevel" class="xc-select">
+                <option v-for="index in 11" :key="index" :value="index - 1">
+                    level{{ index - 1 }}
+                </option>
+            </select>
+
+            <button
+                class="xc-button btn-noborder"
                 title="删除当前所选的文件"
                 @click="btnclk_del_cur_video"
             >
@@ -161,6 +174,25 @@ watch(
         }
     }
 )
+
+// ==================================== 文件等级设置
+const fileLevel = ref(0)
+async function btnclk_set_file_level(): Promise<void> {
+    const req = new DataTypes.FileTagsReq()
+    let tagName = `level${fileLevel.value}`
+    for (const item of appStore.curCheckedVideo) {
+        const fileTag: DataTypes.FileTagsReqItem = {
+            fileId: item.id,
+            tagName: tagName
+        }
+        req.fileTags.push(fileTag)
+    }
+    if (req.fileTags.length === 0) {
+        MessageShow.error(`请选择文件`)
+        return
+    }
+    await util.file_tags_set(req, { bNeedSltCurVideo: true })
+}
 
 // ====================================
 
