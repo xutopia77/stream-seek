@@ -11,9 +11,16 @@
 </template>
 
 <script lang="ts" setup>
+import { onMounted } from 'vue'
 // import AdminSearch from './admin_search/AdminSearch.vue'
 // import AdminSetting from './admin_setting/AdminSetting.vue'
 import AdminNav from './admin_setting/AdminNav.vue'
+import { useRouter } from 'vue-router'
+const router = useRouter()
+
+onMounted(() => {
+    router.push('/admin/prj_set')
+})
 </script>
 
 <style scoped>

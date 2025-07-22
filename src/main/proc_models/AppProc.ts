@@ -586,7 +586,13 @@ class AppProc {
                 const fileList = searchResp.data?.files ?? []
                 // 5, start classify file
                 // 5.1, make folder first
-                const batchSize = 10
+                let batchSize = appCfg.prj.numEachFolder
+                if (batchSize > 10000 || batchSize < 1) {
+                    logger.error(
+                        `batchSize err ${appCfg.prj.numEachFolder}, set to default value: ${batchSize}, repo: ${repo.name}`
+                    )
+                    batchSize = 10
+                }
                 const groupNum = Math.ceil(fileList.length / batchSize) + 1
                 for (let i = 0; i < groupNum; i++) {
                     const grpPath = path.join(repo.path, `${i + 1}`)
