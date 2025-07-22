@@ -34,43 +34,48 @@ class Logger {
     }
 
     // 封装 console.log 方法
-    log(...args: unknown[]): void {
+    log(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         // const callerInfo = this.getCallerInfo();
         // console.log(`[${timestamp}] [${callerInfo}]`, ...args);
         console.log(`[L][${timestamp}]`, ...args)
         const logMessage = `[L][${timestamp}] ${args.join(' ')}\n`
         fs.appendFileSync(this.make_log_file_path(), logMessage)
+        return `${args.join(' ')}`
     }
 
     // 封装 console.info 方法
-    info(...args: unknown[]): void {
+    info(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         console.info(`[I][${timestamp}]`, ...args)
         const logMessage = `[I][${timestamp}] ${args.join(' ')}\n`
         fs.appendFileSync(this.make_log_file_path(), logMessage)
+        return `${args.join(' ')}`
     }
 
     // 封装 console.warn 方法
-    warn(...args: unknown[]): void {
+    warn(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         console.warn(`[W][${timestamp}]`, ...args)
         const logMessage = `[W][${timestamp}] ${args.join(' ')}\n`
         fs.appendFileSync(this.make_log_file_path(), logMessage)
+        return `${args.join(' ')}`
     }
 
     // 封装 console.error 方法
-    error(...args: unknown[]): void {
+    error(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         console.error(`[E][${timestamp}]`, ...args)
         const logMessage = `[E][${timestamp}] ${args.join(' ')}\n`
         fs.appendFileSync(this.make_log_file_path(), logMessage)
+        return `${args.join(' ')}`
     }
-    debug(...args: unknown[]): void {
+    debug(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         console.debug(`[D][${timestamp}]`, ...args)
         const logMessage = `[D][${timestamp}] ${args.join(' ')}\n`
         fs.appendFileSync(this.make_log_file_path(), logMessage)
+        return `${args.join(' ')}`
     }
 }
 

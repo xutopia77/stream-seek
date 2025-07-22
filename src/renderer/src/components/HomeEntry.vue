@@ -41,6 +41,12 @@ watch(
             return
         }
         document.title = 'VideoPlayer' + '  ' + docTitle
+        // // 获取当前时间毫秒
+        // const now = new Date()
+        // const nowStr = now.toLocaleString()
+        // // 获取当前时间的毫秒数
+        // const nowMs = now.getTime()
+        // console.log('document.title', nowStr, nowMs, document.title)
     }
 )
 

@@ -9,13 +9,22 @@ import recordsProc from './RecordsProcess.js'
 // // import type { WorkResp } from './Utils.js'
 import * as DataTypes from '../../bridge/dataTypedef'
 import appCfg from './AppCfg.js'
-import { workQueue } from './Utils.js'
+import { workQueue } from './TaskEvent'
+import { Util } from './Utils.js'
+// function logRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
+//     if (resp.code === 0) {
+//         logger.info(resp.status)
+//     } else {
+//         logger.error(resp.status)
+//     }
+//     return resp
+// }
 
-function logRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
+function logStatusRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
     if (resp.code === 0) {
-        logger.info(resp.status)
+        workQueue.set_status(logger.info(resp.status))
     } else {
-        logger.error(resp.status)
+        workQueue.set_status(logger.error(resp.status))
     }
     return resp
 }
@@ -32,6 +41,7 @@ class TraversalFolder {
         if ((now % 10) * 1000 === 0) {
             logger.info(`traversal file count: ${this.fileCount}`)
         }
+        workQueue.set_status(`traversal file count: ${this.fileCount}`)
         const resp: DataTypes.Resp = new DataTypes.Resp()
         const fileTimeInfo = DataTypes.FileTools.parse_filename_mi(fName)
         if (fileTimeInfo == null) {
@@ -207,13 +217,37 @@ class AppProc {
         this.saveAppCfg()
     }
 
+    async handle_heartbeat(): Promise<DataTypes.Resp<DataTypes.HeartBeat>> {
+        const resp = new DataTypes.Resp<DataTypes.HeartBeat>()
+        const respData: DataTypes.HeartBeat = new DataTypes.HeartBeat()
+        respData.time = Util.getCurTime()
+        respData.appStatus = workQueue.status
+        respData.processing = workQueue.isBusy()
+        // while (workQueue.processing) {
+        //     await new Promise((resolve) => setTimeout(resolve, 10))
+        // }
+        // workQueue.processing = true
+        // if (workQueue.resps.length != 0) {
+        //     workQueue.addTask(null)
+        //     for (const item of workQueue.resps) {
+        //         logger.info(`work resp:cmd: ${item.cmd}`)
+        //     }
+        // }
+        respData.workRespose = workQueue.resps
+        // workQueue.resps = []
+        // workQueue.processing = false
+        resp.data = respData
+        return resp
+    }
+
     async handle_file_tags_set(req: DataTypes.Req<DataTypes.FileTagsReq>): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
         resp.success('success')
         let tagResp = await appDb.tag_search(null)
         if (tagResp.code !== 0) {
-            return resp.err(`tag search err: ${tagResp.status}`)
+            return logStatusRespReturn(resp.err(`tag search err: ${tagResp.status}`))
         }
+        workQueue.set_status(`start set file tags len= ${req.data?.fileTags.length}`)
         let tags = tagResp.data?.tags ?? []
         for (const item of req.data?.fileTags ?? []) {
             let tagInfo = tags.find((tag) => tag.name === item.tagName)
@@ -226,7 +260,6 @@ class AppProc {
                 const respInsert = await appDb.tag_insert(tag)
                 if (respInsert.code !== 0) {
                     logger.error(`insert tag err: ${respInsert.status}`)
-                    resp.err('insert tag error')
                 } else {
                     logger.info(`insert tag success: ${item.tagName}`)
                 }
@@ -240,7 +273,7 @@ class AppProc {
                     logger.error(
                         `tag search err, iteam tag name: ${item.tagName}, tagInfo: ${tagInfo}`
                     )
-                    return resp.err(`tag search err: ${tagResp.status}`)
+                    return logStatusRespReturn(resp.err(`tag search err: ${tagResp.status}`))
                 }
             }
             const fileTag: DataTypes.FileTag = {
@@ -250,14 +283,19 @@ class AppProc {
             }
             const respUpdate = await appDb.file_tag_insert(fileTag)
             if (respUpdate.code !== 0) {
-                logger.error(`insert file tag err: ${respUpdate.status}`)
+                workQueue.set_status(logger.error(`insert file tag err: ${respUpdate.status}`))
                 resp.err('insert file tags error')
             } else {
-                logger.info(
-                    `insert file tag success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
+                workQueue.set_status(
+                    logger.info(
+                        `insert file tag success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
+                    )
                 )
             }
         }
+        workQueue.set_status(
+            logger.info(`set file tags success: len= ${req.data?.fileTags.length}`)
+        )
         return resp
     }
     async handle_tags_get(
@@ -438,11 +476,15 @@ class AppProc {
                 if (respThumb.code == DataTypes.RespCode.FileExist) {
                     continue
                 }
-                logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
+                workQueue.set_status(
+                    logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
+                )
                 continue
             } else {
-                logger.info(
-                    `gen thumbnail ${respThumb.status} ${fileInfo.path},num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} ms, ${count}/${searchRe.data?.total}`
+                workQueue.set_status(
+                    logger.info(
+                        `${count}/${searchRe.data?.total} gen thumbnail ${respThumb.status} num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} s, ${fileInfo.path}`
+                    )
                 )
             }
             if (respThumb.data != null && respThumb.data.length > 0) {
@@ -467,11 +509,12 @@ class AppProc {
                 traversalFolder.type = null
                 traversalFolder.repo = repo
                 await traversalFolder.start()
+                logger.info(`traversal ${repo.name} success`)
             }
 
             // 2, start search file from db
             {
-                logger.info('start async folder:', repo.path)
+                workQueue.set_status(logger.info('start async folder:', repo.path))
                 const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
                 searchReq.order = 'asc'
                 searchReq.orderBy = 'startTimeSec'
@@ -486,7 +529,9 @@ class AppProc {
                 for (const fInfo of fileList) {
                     if (!fs.existsSync(fInfo.path)) {
                         if (fInfo.status == DataTypes.FileStatus.Normal) {
-                            logger.error(`file not exist destroy: ${fInfo.path}`)
+                            workQueue.set_status(
+                                logger.error(`file not exist destroy: ${fInfo.path}`)
+                            )
                             fInfo.status = DataTypes.FileStatus.Destroy
                             await appDb.file_update(fInfo)
                             continue
@@ -494,12 +539,14 @@ class AppProc {
                         if (fInfo.status == DataTypes.FileStatus.Deleted) {
                             const fTrashPath = recordsProc.file_trash_path_get(fInfo)
                             if (fTrashPath == '' || !fs.existsSync(fTrashPath)) {
-                                logger.info(`file not exist destroy: ${fInfo.path}`)
+                                workQueue.set_status(
+                                    logger.info(`file not exist destroy: ${fInfo.path}`)
+                                )
                                 fInfo.status = DataTypes.FileStatus.Destroy
                                 await appDb.file_update(fInfo)
                                 continue
                             } else {
-                                logger.info(`update file path: ${fTrashPath}`)
+                                workQueue.set_status(logger.info(`update file path: ${fTrashPath}`))
                                 fInfo.path = fTrashPath
                                 await appDb.file_update(fInfo)
                                 continue
@@ -516,7 +563,9 @@ class AppProc {
                             if (tmp1 == tmp2) {
                                 continue
                             }
-                            logger.error(`file status ${fInfo.status} err : ${fInfo.path}`)
+                            workQueue.set_status(
+                                logger.error(`file status ${fInfo.status} err : ${fInfo.path}`)
+                            )
                             fInfo.status = DataTypes.FileStatus.Destroy
                             await appDb.file_update(fInfo)
                             continue
@@ -545,10 +594,12 @@ class AppProc {
                         fs.mkdirSync(grpPath)
                     }
                 }
+                let fileCnt = 0
                 // 5.2, Classify the files into groups of 10
                 for (let i = 0; i < fileList.length; i += batchSize) {
                     const batch = fileList.slice(i, i + batchSize)
                     for (const fileInfo of batch) {
+                        fileCnt++
                         const grpIdx = Math.floor(i / batchSize)
                         const grpPath = path.join(repo.path, `${grpIdx + 1}`)
                         const fileName = path.basename(fileInfo.path)
@@ -563,7 +614,11 @@ class AppProc {
                             logger.error(`update file error: ${updateResp.status}`)
                             continue
                         }
-                        logger.info(`group file success: ${fileInfo.path}`)
+                        workQueue.set_status(
+                            logger.info(
+                                `${fileCnt}/${fileList.length} group file success: ${fileInfo.path}`
+                            )
+                        )
                     }
                 }
             }
@@ -578,7 +633,9 @@ class AppProc {
                     continue
                 }
                 const fileList = searchResp.data?.files ?? []
+                let fCnt = 0
                 for (const fInfo of fileList) {
+                    fCnt++
                     // logger.info(`file : ${fInfo.path}`)
                     const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(fInfo.path, fInfo.repo)
                     const searchResp = await appDb.file_view_search(searchReq)
@@ -616,7 +673,9 @@ class AppProc {
                         // 5, move thumbnail to trash directory
                         const targetDir = path.join(thumbTrash, path.basename(file_thubmbnail_dir))
                         fs.renameSync(file_thubmbnail_dir, targetDir)
-                        logger.info(`move thumb ${file_thubmbnail_dir} to ${targetDir}`)
+                        logger.info(
+                            `${fCnt}/${fileList.length} move thumb ${file_thubmbnail_dir} to ${targetDir}`
+                        )
                     }
                 }
             }
@@ -624,7 +683,7 @@ class AppProc {
         return resp
     }
 
-    async start_sync_work(
+    async handle_sync_work(
         req: DataTypes.Req<DataTypes.SyncPrjReq>
     ): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
         const resp = new DataTypes.Resp<DataTypes.SyncPrjResp>()
@@ -655,32 +714,32 @@ class AppProc {
         }
 
         if (bNeedSavePrjInfo) {
-            logger.info(`save prj info start`)
+            workQueue.set_status(logger.info(`save prj info start`))
             const prjInfo = req.data.prj
             if (prjInfo == null) {
-                return logRespReturn(resp.err('prjInfo is null'))
+                return logStatusRespReturn(resp.err('prjInfo is null,err'))
             }
             const saveResp = await this.save_prj_info(prjInfo)
             if (saveResp.code !== 0) {
-                return logRespReturn(resp.err(`save prj info error ${saveResp.status}`))
+                return logStatusRespReturn(resp.err(`save prj info error ${saveResp.status}`))
             }
             resp.data.prj = prjInfo
-            logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`)
+            workQueue.set_status(logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`))
         }
 
         if (bNeedClassifyFile) {
-            logger.log('classify file start')
+            workQueue.set_status(logger.log('classify file start'))
             const classifyResp = await this.start_classify_file(req.data.prj.dataRepo)
             if (classifyResp.code !== 0) {
-                return logRespReturn(resp.err(`classify file error ${classifyResp.status}`))
+                return logStatusRespReturn(resp.err(`classify file error ${classifyResp.status}`))
             }
-            logger.log('classify file ', classifyResp.status)
+            workQueue.set_status(logger.log('classify file ', classifyResp.status))
         }
 
         if (bNeedGenThumb) {
             for (const repo of req.data.prj.dataRepo) {
                 if (repo.name == '' || repo.path == '') {
-                    return resp.err('repo name or path is empty')
+                    return logStatusRespReturn(resp.err('repo name or path is empty'))
                 }
                 const traversalFolder = new TraversalFolder()
                 traversalFolder.type = null
@@ -689,6 +748,7 @@ class AppProc {
                 await this.start_gen_thumbnail()
             }
         }
+        workQueue.set_status('sync work success')
         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
         return resp
     }
@@ -820,8 +880,9 @@ class AppProc {
     ): Promise<DataTypes.Resp<DataTypes.DeleteFileResp>> {
         const resp = new DataTypes.Resp<DataTypes.DeleteFileResp>()
         if (!req.data?.files || req.data.files.length === 0) {
-            return resp.err('file is null')
+            return logStatusRespReturn(resp.err('file is null'))
         }
+        workQueue.set_status(logger.info(`delete file start`))
         for (const item of req.data.files) {
             const fRepo = DataTypes.DataRepo.getRepoByPath(item.repo, appCfg.prj.dataRepo)
             if (fRepo == null || fRepo.path == '') {
@@ -832,17 +893,21 @@ class AppProc {
                 const resp_str = await make_trash_folder(trashFolderPath)
                 if (resp_str.length > 0) {
                     logger.error('make trash folder error:', resp_str, item.path)
-                    return resp.err(resp_str)
+                    return logStatusRespReturn(resp.err(resp_str))
                 }
             }
             const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(item.path, item.repo)
             const searchResp = await appDb.file_view_search(searchReq)
             if (searchResp.code !== 0) {
-                logger.error(`search file ${item.repo} ${item.path} err: ${searchResp.status}`)
+                workQueue.set_status(
+                    logger.error(`search file ${item.repo} ${item.path} err: ${searchResp.status}`)
+                )
                 continue
             }
             if (searchResp.data?.files.length === 0) {
-                logger.error(`delete file ${item.repo} ${item.path} not found`)
+                workQueue.set_status(
+                    logger.error(`delete file ${item.repo} ${item.path} not found`)
+                )
                 continue
             }
 
@@ -858,23 +923,36 @@ class AppProc {
                         fInfo.status = DataTypes.FileStatus.Deleted
                         const respUp = await appDb.file_update(fInfo)
                         if (respUp.code != 0) {
-                            logger.error(`update file status error: ${respUp.status} ${filepath}`)
+                            workQueue.set_status(
+                                logger.error(
+                                    `update file status error: ${respUp.status} ${filepath}`
+                                )
+                            )
                         } else {
-                            logger.log(
-                                `delete original video: ${filepath}, move to ${distFilename}`
+                            workQueue.set_status(
+                                logger.log(
+                                    `delete original video: ${filepath}, move to ${distFilename}`
+                                )
                             )
                         }
                     } catch (err) {
                         attempts++
                         if (attempts < maxAttempts) {
-                            logger.error(
-                                `move original video attempt ${attempts} failed, retrying in 1 second...`,
-                                err
+                            workQueue.set_status(
+                                logger.error(
+                                    `move original video attempt ${attempts} failed, retrying in 1 second...`,
+                                    err
+                                )
                             )
                             await new Promise((resolve) => setTimeout(resolve, 1000))
                             await attemptRename()
                         } else {
-                            logger.error('move original video err after multiple attempts:', err)
+                            workQueue.set_status(
+                                logger.error(
+                                    'move original video err after multiple attempts:',
+                                    err
+                                )
+                            )
                             throw err
                         }
                     }
@@ -886,6 +964,7 @@ class AppProc {
                 }
             }
         }
+        workQueue.set_status(logger.info(`delete file over`))
         resp.data = {}
         return resp
     }
@@ -894,7 +973,6 @@ class AppProc {
         req: DataTypes.Req<DataTypes.DeleteFileReq>
     ): Promise<DataTypes.Resp<DataTypes.DeleteFileResp>> {
         const respDel = await this.delete_video(req)
-        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(respDel) })
         return respDel
     }
 }
@@ -902,3 +980,266 @@ class AppProc {
 const appProc = new AppProc()
 export default appProc
 export { TraversalFolder }
+
+// function make_file_prj_path(filename: string): string {
+//     let filePath = `${filename}_prj.json`
+//     filePath = path.join(appCfg.file_prj_dir, filePath)
+//     return filePath
+// }
+
+// async function handle_open_folder(
+//     mainWindow: Electron.BrowserWindow,
+//     req: DataTypes.Req
+// ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+//     let openType: string | null = null
+//     if (req.data != null) {
+//         openType = 'search'
+//     }
+
+//     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+//         properties: ['openDirectory']
+//         // modal: true
+//     })
+//     if (!canceled) {
+//         const folderPath = filePaths[0]
+//         if (openType != 'search') {
+//             // 查询文件夹的不用保存到工程文件
+//             appCfg.prj.dataFolder = folderPath
+//         }
+//         logger.info('handle open folder', folderPath)
+//         const traversalFolder = new TraversalFolder()
+//         traversalFolder.type = openType
+//         traversalFolder.bSort = true
+//         traversalFolder.folder = folderPath
+//         traversalFolder
+//             .start()
+//             .then((resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+//                 const workResp: DataTypes.WorkResp = {
+//                     cmd: req.cmd,
+//                     data: JSON.stringify(resp)
+//                 }
+//                 workQueue.addResp(workResp)
+//             })
+//             .catch((error: unknown) => {
+//                 workQueue.addResp({
+//                     cmd: req.cmd,
+//                     data: JSON.stringify({ code: 1, status: error })
+//                 })
+//                 logger.error('open folder err:', error)
+//             })
+//         const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
+//         resp.success('success').data = { folder: folderPath }
+//         resp.bOver = false
+//         logger.info('handle open folder', resp.status)
+//         return resp
+//     }
+//     return new DataTypes.Resp<DataTypes.TraversalFolder>().err('canceled')
+// }
+
+// async function handle_query_video(
+//     req: DataTypes.Req<DataTypes.Req_TraversalFolder>
+// ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+//     if (req.data == null) {
+//         return new DataTypes.Resp<DataTypes.TraversalFolder>().err('req.data is null')
+//     }
+//     const traversalFolder = new TraversalFolder()
+//     traversalFolder.type = null
+//     traversalFolder.folder = req.data?.folder
+//     traversalFolder
+//         .start()
+//         .then((resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+//             if (resp.data?.files != null) {
+//                 logger.info('traversal folder:', resp.status, resp.data.files?.length)
+//                 recordsProc
+//                     .start_file_classify(req, resp.data.files)
+//                     .then((resp: DataTypes.Resp) => {
+//                         logger.info('handle_query_video after classify:', resp)
+//                         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+//                     })
+//                     .catch((error: unknown) => {
+//                         logger.error('open folder err:', error)
+//                         workQueue.addResp({
+//                             cmd: req.cmd,
+//                             data: JSON.stringify({ code: 1, status: error })
+//                         })
+//                     })
+//             } else {
+//                 logger.info('traversal folder:', resp.status)
+//                 workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+//             }
+//         })
+//         .catch((error: unknown) => {
+//             logger.error('open folder err:', error)
+//             workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+//         })
+//     const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
+//     resp.success('success').bOver = false
+//     return resp
+// }
+
+// async function handle_clean_work(
+//     req: DataTypes.Req<DataTypes.Req_ClearWork>
+// ): Promise<DataTypes.Resp> {
+//     const resp = new DataTypes.Resp()
+//     if (req.data?.files == null) {
+//         console.log('clean all work')
+//         const thumbnailDir = appCfg.thumbnail_dir
+//         if (fs.existsSync(thumbnailDir)) {
+//             for (const file of fs.readdirSync(thumbnailDir)) {
+//                 const filePath = path.join(thumbnailDir, file)
+//                 await fs.promises.rm(filePath, { recursive: true })
+//             }
+//         }
+//         const filePrjDir = appCfg.file_prj_dir
+//         if (fs.existsSync(filePrjDir)) {
+//             for (const file of fs.readdirSync(filePrjDir)) {
+//                 const filePath = path.join(filePrjDir, file)
+//                 await fs.promises.rm(filePath, { recursive: true })
+//             }
+//         }
+//         return resp.success('success')
+//     }
+
+//     for (const item of req.data.files) {
+//         const filename = item.title
+//         const filePrjPath = make_file_prj_path(filename)
+//         if (fs.existsSync(filePrjPath)) {
+//             await fs.promises.rm(filePrjPath)
+//         }
+//         const thumbnailDir = path.join(appCfg.thumbnail_dir, filename)
+//         if (fs.existsSync(thumbnailDir)) {
+//             await fs.promises.rm(thumbnailDir, { recursive: true })
+//         }
+//     }
+//     return resp.success('success')
+// }
+
+// async function handle_video_event_detect(): Promise<DataTypes.Resp<DataTypes.FileEventInfo[][]>> {
+//     const resp = new DataTypes.Resp<DataTypes.FileEventInfo[][]>()
+
+//     const filePath =
+//         'D:/02_workspace/05_timeCapsule/02_stream_manager/stream_manager/src/main/proc_models/contour_records.json'
+//     let data = ''
+//     try {
+//         data = fs.readFileSync(filePath, {
+//             encoding: 'utf-8'
+//         })
+//     } catch (error: unknown) {
+//         console.error('读取文件时出错:', error)
+//         resp.code = 1
+//         resp.status = String(error)
+//         return resp
+//     }
+//     try {
+//         const jsonData = JSON.parse(data)
+//         resp.data = jsonData
+//         return resp
+//     } catch (error: unknown) {
+//         resp.code = 1
+//         resp.status = String(error)
+//         return resp
+//     }
+// }
+
+// function getFilenameFromPath(filePath: string): string {
+//     // 检查参数是否为字符串类型
+//     if (typeof filePath !== 'string') {
+//         throw new Error('filepath must be a string')
+//     }
+//     // 去除路径前后的空白字符
+//     filePath = filePath.trim()
+//     // 如果路径为空字符串，直接返回空字符串
+//     if (filePath === '') {
+//         return ''
+//     }
+//     // 使用正则表达式按照反斜杠或正斜杠分割路径
+//     const parts = filePath.split(/[\\/]/)
+//     // 返回数组的最后一个元素，即文件名
+//     return parts[parts.length - 1]
+// }
+
+// async function handle_select_video(
+//     req: DataTypes.Req<DataTypes.Req_SltFile>
+// ): Promise<DataTypes.Resp<DataTypes.File>> {
+//     const resp = new DataTypes.Resp<DataTypes.File>()
+//     resp.data = new DataTypes.File()
+//     if (req.data == null) {
+//         return resp.err('req.data is null')
+//     }
+//     if (resp.data == undefined) {
+//         return resp.err('resp.data is null')
+//     }
+//     const video_path = req.data?.filepath
+//     if (video_path == null) {
+//         return resp.err('filepath is null')
+//     }
+//     // 先读取文件的项目信息
+//     {
+//         const filename = getFilenameFromPath(video_path)
+//         const filePrjPath = make_file_prj_path(filename)
+//         if (fs.existsSync(filePrjPath)) {
+//             // 读取文件
+//             let data = ''
+//             try {
+//                 data = fs.readFileSync(filePrjPath, {
+//                     encoding: 'utf-8'
+//                 })
+//                 const jsonData = JSON.parse(data)
+//                 resp.data = jsonData.fileInfo
+//                 // 读取成功了直接返回
+//                 logger.info('handle_select_video read file prj success')
+//                 return resp
+//             } catch (error: unknown) {
+//                 console.error('not find video split info:', filePrjPath, error)
+//             }
+//         }
+//     }
+
+//     // get media info
+//     {
+//         const mediaInfo = await mediaProc.getVideoInfo(video_path)
+//         respData.mediaInfo = mediaInfo
+//     }
+//     {
+//         const thubResp = await appProc.query_images(video_path)
+//         // logger.info('handle_select_video', thubResp);
+//         if (thubResp.code == 0) {
+//             respData.thumbnail = thubResp.data?.files
+//         }
+//     }
+//     return resp
+// }
+
+// async function handle_save_prj(
+//     req: DataTypes.Req<DataTypes.Req_CutVideo>
+// ): Promise<DataTypes.Resp> {
+//     const resp = new DataTypes.Resp()
+//     if (req.data == null) {
+//         return resp.err('req.data is null')
+//     }
+//     const filePath = make_file_prj_path(req.data.filename)
+//     const data = JSON.stringify(req.data)
+//     try {
+//         fs.writeFileSync(filePath, data)
+//         return resp.success('success')
+//     } catch (error: unknown) {
+//         return resp.err(String(error))
+//     }
+// }
+
+/*
+async function traversal_folder(
+    req: DataTypes.Req<DataTypes.Req_TraversalFolder>
+): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+    const folderpath = req.data?.folder
+    if (folderpath == null) {
+        const resp = new DataTypes.Resp<DataTypes.TraversalFolder>()
+        return resp.err('folderpath is null')
+    }
+    const traversalFolder = new TraversalFolder()
+    traversalFolder.folder = folderpath
+    traversalFolder.bSort = true
+    return await traversalFolder.start()
+}
+
+*/

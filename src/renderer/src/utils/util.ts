@@ -353,7 +353,6 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
 function toggle_play(videoRef: HTMLVideoElement): void {
     // 首先判断是否有视频被选中
     if (appStore.curSltVideo == null) {
-        console.log('请选择视频文件1')
         return
     }
     if (!appStore.videoPlayCtrl.isPlay) {
@@ -361,7 +360,6 @@ function toggle_play(videoRef: HTMLVideoElement): void {
         return
     }
 
-    console.log('play video11111111111111111')
     function convert_filepath_to_linux_style(filepath: string | null): string | null {
         if (filepath == null) {
             return null
@@ -484,6 +482,9 @@ const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<v
     }
 }
 
+let heartbeatCnt = 0
+const runFlgArray: string[] = ['🏃🏼', '🚶🏼']
+
 class Util {
     export_cut_video = export_cut_video
     set_video_cur_time = set_video_cur_time
@@ -562,13 +563,16 @@ class Util {
         }
         const respData: DataTypes.HeartBeat = resp.data
         const curTime = respData.time
-        const appStatus = respData.appStatus
+        let titleStr = curTime + ' '
+        titleStr += respData.processing ? runFlgArray[heartbeatCnt++ % runFlgArray.length] : '🧍‍♂️'
+        titleStr += respData.appStatus
         if (appStore) {
-            appStore.documentTitle = `${curTime} ${appStatus != null ? appStatus : ''}`
+            appStore.documentTitle = titleStr
         }
+        // console.log('process heartbeat', appStore.documentTitle)
         if (respData.workRespose != null) {
             if (respData.workRespose.length > 0) {
-                console.log('process heartbeat', respData.workRespose)
+                // console.log('process heartbeat', respData.workRespose)
             }
             for (const item of respData.workRespose) {
                 util.process_work_response(item)

@@ -85,7 +85,8 @@ async function btnclk_sync_work(types: DataTypes.SyncType[] = []): Promise<void>
         if (response.bOver === false) {
             MessageShow.info('后台执行中...')
         } else {
-            MessageShow.success('同步项目')
+            MessageShow.success('同步项目成功')
+            await util.start_app()
         }
     }
 }

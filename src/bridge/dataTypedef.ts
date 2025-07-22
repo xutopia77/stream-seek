@@ -1,3 +1,11 @@
+export enum CmdType {
+    app_start = 'app_start',
+    get_key_frame_info = 'get_key_frame_info',
+    tags_get = 'tags_get',
+    files_get = 'files_get',
+    search_file = 'search_file'
+}
+
 export class AppInfo {
     prjFile: string = '' // 项目文件的路径，没有项目时，为空
 }
@@ -341,10 +349,11 @@ export interface WorkResp {
     data: string
 }
 
-export interface HeartBeat {
-    time: string
-    appStatus: string
-    workRespose?: WorkResp[]
+export class HeartBeat {
+    time: string = ''
+    appStatus: string = ''
+    processing: boolean = false
+    workRespose: WorkResp[] = []
 }
 
 export interface Req_TraversalFolder {

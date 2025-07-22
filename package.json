@@ -1,7 +1,7 @@
 {
   "name": "record-manager",
   "version": "2.0.6",
-  "description": "An Electron application with Vue and TypeScript",
+  "description": "An Mi camera video process application",
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
