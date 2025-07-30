@@ -12,7 +12,11 @@
                         type="checkbox"
                         :checked="appStore.curCheckedVideo.has(video)"
                         @change="
-                            toggleVideoSelection(video, ($event.target as HTMLInputElement).checked)
+                            toggleVideoSelection(
+                                video,
+                                ($event.target as HTMLInputElement).checked,
+                                index
+                            )
                         "
                     />
                     <span class="checkmark"></span>
@@ -26,21 +30,65 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount } from 'vue'
+import { computed, onBeforeMount, ref, onMounted, onUnmounted } from 'vue'
 import { useAppStore } from '../../../stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import * as DataTypes from '../../../../../bridge/dataTypedef'
 const videoList = computed<DataTypes.File[]>(() => appStore.videoList)
 
-// 切换视频的选中状态
-const toggleVideoSelection = (video: DataTypes.File, isChecked: boolean): void => {
-    console.log(`Video ${video.name} is ${isChecked ? 'selected' : 'deselected'}`)
-    if (isChecked) {
-        appStore.curCheckedVideo.add(video)
-    } else {
-        appStore.curCheckedVideo.delete(video)
+// 记录上一次选中的索引
+const lastSelectedIndex = ref(-1)
+// 记录 Shift 键是否按下
+const isShiftPressed = ref(false)
+
+// 监听键盘事件
+const handleKeyDown = (event: KeyboardEvent): void => {
+    if (event.shiftKey) {
+        isShiftPressed.value = true
     }
+}
+
+const handleKeyUp = (): void => {
+    isShiftPressed.value = false
+}
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+})
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+    window.removeEventListener('keyup', handleKeyUp)
+})
+
+// 切换视频的选中状态
+const toggleVideoSelection = (
+    video: DataTypes.File,
+    isChecked: boolean,
+    currentIndex: number
+): void => {
+    console.log(`Video ${video.name} is ${isChecked ? 'selected' : 'deselected'}`)
+    if (isShiftPressed.value && lastSelectedIndex.value !== -1) {
+        const start = Math.min(lastSelectedIndex.value, currentIndex)
+        const end = Math.max(lastSelectedIndex.value, currentIndex)
+        for (let i = start; i <= end; i++) {
+            const item = videoList.value[i]
+            if (isChecked) {
+                appStore.curCheckedVideo.add(item)
+            } else {
+                appStore.curCheckedVideo.delete(item)
+            }
+        }
+    } else {
+        if (isChecked) {
+            appStore.curCheckedVideo.add(video)
+        } else {
+            appStore.curCheckedVideo.delete(video)
+        }
+    }
+    lastSelectedIndex.value = currentIndex
 }
 
 onBeforeMount(() => {})

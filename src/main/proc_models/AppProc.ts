@@ -888,88 +888,177 @@ class AppProc {
         if (!req.data?.files || req.data.files.length === 0) {
             return logStatusRespReturn(resp.err('file is null'))
         }
-        workQueue.set_status(logger.info(`delete file start`))
-        for (const item of req.data.files) {
-            const fRepo = DataTypes.DataRepo.getRepoByPath(item.repo, appCfg.prj.dataRepo)
-            if (fRepo == null || fRepo.path == '') {
-                return resp.err(`repo not exist ${item.repo},${item.path}`)
-            }
-            const trashFolderPath = path.join(fRepo.path, '.trash')
-            {
-                const resp_str = await make_trash_folder(trashFolderPath)
-                if (resp_str.length > 0) {
-                    logger.error('make trash folder error:', resp_str, item.path)
-                    return logStatusRespReturn(resp.err(resp_str))
-                }
-            }
-            const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(item.path, item.repo)
-            const searchResp = await appDb.file_view_search(searchReq)
-            if (searchResp.code !== 0) {
-                workQueue.set_status(
-                    logger.error(`search file ${item.repo} ${item.path} err: ${searchResp.status}`)
-                )
-                continue
-            }
-            if (searchResp.data?.files.length === 0) {
-                workQueue.set_status(
-                    logger.error(`delete file ${item.repo} ${item.path} not found`)
-                )
-                continue
-            }
 
-            for (const fInfo of searchResp.data?.files || []) {
-                const filepath = fInfo.path
-                const filename = fInfo.name
-                const distFilename = path.join(trashFolderPath, filename)
-                let attempts = 0
-                const maxAttempts = 3 // 最大尝试次数
-                async function attemptRename(): Promise<void> {
-                    try {
-                        await fs.promises.rename(filepath, distFilename)
-                        fInfo.status = DataTypes.FileStatus.Deleted
-                        const respUp = await appDb.file_update(fInfo)
-                        if (respUp.code != 0) {
-                            workQueue.set_status(
-                                logger.error(
-                                    `update file status error: ${respUp.status} ${filepath}`
+        workQueue.set_status(logger.info(`delete file start`))
+
+        if (req.data.type == 'destroy') {
+            for (const item of req.data.files) {
+                const fRepo = DataTypes.DataRepo.getRepoByPath(item.repo, appCfg.prj.dataRepo)
+                if (fRepo == null || fRepo.path == '') {
+                    return resp.err(`repo not exist ${item.repo},${item.path}`)
+                }
+                const trashFolderPath = path.join(fRepo.path, '.trash')
+
+                const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(item.path, item.repo)
+                searchReq.status = []
+                const searchResp = await appDb.file_view_search(searchReq)
+                if (searchResp.code !== 0) {
+                    workQueue.set_status(
+                        logger.error(
+                            `search file ${item.repo} ${item.path} err: ${searchResp.status}`
+                        )
+                    )
+                    continue
+                }
+                if (searchResp.data?.files.length === 0) {
+                    workQueue.set_status(
+                        logger.error(`delete file ${item.repo} ${item.path} not found`)
+                    )
+                    continue
+                }
+
+                for (const fInfo of searchResp.data?.files || []) {
+                    const filepath = fInfo.path
+                    const filename = fInfo.name
+                    const distFilename = path.join(trashFolderPath, filename)
+                    let attempts = 0
+                    const maxAttempts = 3 // 最大尝试次数
+                    async function attemptRename(): Promise<void> {
+                        try {
+                            if (fs.existsSync(distFilename)) {
+                                fs.unlinkSync(distFilename)
+                            } else if (fs.existsSync(filepath)) {
+                                fInfo.path = distFilename
+                                fs.unlinkSync(filepath)
+                            }
+                            fInfo.status = DataTypes.FileStatus.Destroy
+                            const respUp = await appDb.file_update(fInfo)
+                            if (respUp.code != 0) {
+                                workQueue.set_status(
+                                    logger.error(
+                                        `update file status error: ${respUp.status} ${filepath}`
+                                    )
                                 )
-                            )
-                        } else {
-                            workQueue.set_status(
-                                logger.log(
-                                    `delete original video: ${filepath}, move to ${distFilename}`
+                            } else {
+                                workQueue.set_status(
+                                    logger.log(`rm original video: ${distFilename}`)
                                 )
-                            )
-                        }
-                    } catch (err) {
-                        attempts++
-                        if (attempts < maxAttempts) {
-                            workQueue.set_status(
-                                logger.error(
-                                    `move original video attempt ${attempts} failed, retrying in 1 second...`,
-                                    err
+                            }
+                        } catch (err) {
+                            attempts++
+                            if (attempts < maxAttempts) {
+                                workQueue.set_status(
+                                    logger.error(
+                                        `rm original video attempt ${attempts} failed, retrying in 1 second...`,
+                                        err
+                                    )
                                 )
-                            )
-                            await new Promise((resolve) => setTimeout(resolve, 1000))
-                            await attemptRename()
-                        } else {
-                            workQueue.set_status(
-                                logger.error(
-                                    'move original video err after multiple attempts:',
-                                    err
+                                await new Promise((resolve) => setTimeout(resolve, 1000))
+                                await attemptRename()
+                            } else {
+                                workQueue.set_status(
+                                    logger.error(
+                                        'rm original video err after multiple attempts:',
+                                        err
+                                    )
                                 )
-                            )
-                            throw err
+                                throw err
+                            }
                         }
                     }
+                    try {
+                        await attemptRename()
+                    } catch (err) {
+                        return resp.err(`rm original video err ${err}`)
+                    }
                 }
-                try {
-                    await attemptRename()
-                } catch (err) {
-                    return resp.err(`move original video err ${err}`)
+            }
+        } else {
+            for (const item of req.data.files) {
+                const fRepo = DataTypes.DataRepo.getRepoByPath(item.repo, appCfg.prj.dataRepo)
+                if (fRepo == null || fRepo.path == '') {
+                    return resp.err(`repo not exist ${item.repo},${item.path}`)
+                }
+                const trashFolderPath = path.join(fRepo.path, '.trash')
+                {
+                    const resp_str = await make_trash_folder(trashFolderPath)
+                    if (resp_str.length > 0) {
+                        logger.error('make trash folder error:', resp_str, item.path)
+                        return logStatusRespReturn(resp.err(resp_str))
+                    }
+                }
+                const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(item.path, item.repo)
+                const searchResp = await appDb.file_view_search(searchReq)
+                if (searchResp.code !== 0) {
+                    workQueue.set_status(
+                        logger.error(
+                            `search file ${item.repo} ${item.path} err: ${searchResp.status}`
+                        )
+                    )
+                    continue
+                }
+                if (searchResp.data?.files.length === 0) {
+                    workQueue.set_status(
+                        logger.error(`delete file ${item.repo} ${item.path} not found`)
+                    )
+                    continue
+                }
+
+                for (const fInfo of searchResp.data?.files || []) {
+                    const filepath = fInfo.path
+                    const filename = fInfo.name
+                    const distFilename = path.join(trashFolderPath, filename)
+                    let attempts = 0
+                    const maxAttempts = 3 // 最大尝试次数
+                    async function attemptRename(): Promise<void> {
+                        try {
+                            await fs.promises.rename(filepath, distFilename)
+                            fInfo.status = DataTypes.FileStatus.Deleted
+                            const respUp = await appDb.file_update(fInfo)
+                            if (respUp.code != 0) {
+                                workQueue.set_status(
+                                    logger.error(
+                                        `update file status error: ${respUp.status} ${filepath}`
+                                    )
+                                )
+                            } else {
+                                workQueue.set_status(
+                                    logger.log(
+                                        `delete original video: ${filepath}, move to ${distFilename}`
+                                    )
+                                )
+                            }
+                        } catch (err) {
+                            attempts++
+                            if (attempts < maxAttempts) {
+                                workQueue.set_status(
+                                    logger.error(
+                                        `move original video attempt ${attempts} failed, retrying in 1 second...`,
+                                        err
+                                    )
+                                )
+                                await new Promise((resolve) => setTimeout(resolve, 1000))
+                                await attemptRename()
+                            } else {
+                                workQueue.set_status(
+                                    logger.error(
+                                        'move original video err after multiple attempts:',
+                                        err
+                                    )
+                                )
+                                throw err
+                            }
+                        }
+                    }
+                    try {
+                        await attemptRename()
+                    } catch (err) {
+                        return resp.err(`move original video err ${err}`)
+                    }
                 }
             }
         }
+
         workQueue.set_status(logger.info(`delete file over`))
         resp.data = {}
         return resp

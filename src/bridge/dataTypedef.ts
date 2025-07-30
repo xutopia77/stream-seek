@@ -378,6 +378,7 @@ export interface Resp_CutVideo {
 }
 
 export class DeleteFileReq {
+    type: 'del' | 'destroy' = 'del'
     // 有效字段 path， repo， 其他字段不用理会
     files: File[] = []
 }

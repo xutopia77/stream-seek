@@ -262,10 +262,13 @@ function btnclk_del_cur_video(): void {
         MessageShow.info('没有选择的文件')
         return
     }
+    if (appStore.prj.repoType == DataTypes.RepoType.Normal) {
+        req.type = 'del'
+    } else {
+        req.type = 'destroy'
+    }
     console.log('delete file req', req)
-    util.delete_video(req).then(() => {
-        appStore.curCheckedVideo.clear()
-    })
+    util.delete_video(req)
 
     // const req: DataTypes.CutVideoReq = {
     //   bDelFullVideo: true

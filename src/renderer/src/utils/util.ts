@@ -597,6 +597,8 @@ class Util {
                 MessageShow.info(`正在处理...`)
             } else {
                 // MessageShow.success(`删除成功`)
+                appStore.curCheckedVideo.clear()
+                await util.search_file()
             }
         }
     }
