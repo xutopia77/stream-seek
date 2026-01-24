@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>VideoPlayer</title>
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+     <!-- content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file:" -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file:"
+    />
+  </head>
+
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

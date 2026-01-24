@@ -1,0 +1,147 @@
+/* 定义通用的字体颜色变量 */
+:root {
+  --xc-text-color: #ccc;
+  --xc-background-color: #1e1e1e;
+  --xc-text-color: #d4d4d4;
+  --xc-home-nac-height: 30px;
+  --xc-border: 1px solid #2a2c3a;
+  --xc-border-hover: 1px solid #44465a;
+}
+
+/* --------------------------------------------------------- */
+.xc-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.xc-scrollbar::-webkit-scrollbar-track {
+  background: #333;
+}
+
+.xc-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.xc-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* 兼容 Firefox */
+.xc-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #333;
+}
+
+/* --------------------------------------------------------- tag */
+.xc-tag {
+  display: inline-block;
+  margin: 2px;
+  padding: 0px;
+  padding-right: 6px;
+  border: var(--xc-border);
+  border-radius: 4px;
+  background-color: var(--xc-background-color);
+  transition: all 0.3s;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.xc-tag:hover {
+  background-color: var(--xc-background-color-hover);
+  border: var(--xc-border-hover);
+}
+
+/* 选中状态样式 */
+.xc-tag.selected {
+  background-color: #2196F3;
+  color: white;
+}
+
+/* --------------------------------------------------------- checkbox */
+.xc-check-input {
+  opacity: 0.7;
+}
+
+/* --------------------------------------------------------- button */
+/* 通用按钮样式 */
+.xc-button {
+  margin: 1px;
+  padding: 2px 10px;
+  background-color: #333;
+  color: var(--xc-text-color);
+  /* 使用定义的字体颜色变量 */
+  border: 1px solid #444;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.xc-button:hover {
+  background-color: #37373d;
+  border-color: #007acc;
+}
+
+.xc-button:active {
+  background-color: #094771;
+}
+
+/* 禁用状态下的按钮样式 */
+.xc-button:disabled {
+  background-color: #252526;
+  /* 参考 VSCode 侧边栏背景色 */
+  color: #555;
+  /* 较淡的文字颜色 */
+  border-color: #333;
+  cursor: not-allowed;
+}
+
+/* 通用下拉选择框样式 */
+.xc-select {
+  margin: 0 5px;
+  padding: 2px 5px;
+  background-color: #333;
+  color: var(--xc-text-color);
+  /* 使用定义的字体颜色变量 */
+  border: 1px solid #444;
+  border-radius: 3px;
+  outline: none;
+}
+
+.xc-select:hover {
+  border-color: #007acc;
+}
+
+
+.xc-text {
+  color: var(--xc-text-color);
+  font-size: small;
+}
+
+
+/* 去除 router-link 生成的 a 标签下划线 */
+a.router-link-exact-active,
+a.router-link-active {
+  text-decoration: none;
+}
+
+.no-underline-link {
+  text-decoration: none;
+}
+
+/* ------------------------------------ input */
+.xc-text-input {
+  width: 160px;
+  background-color: var(--xc-background-color);
+  color: var(--xc-text-color);
+  border: var(--xc-border);
+  border-radius: 4px;
+  outline: none;
+  padding: var(--xc-normal-padding);
+  margin: var(--xc-normal-margin);
+}
+
+.xc-text-input:hover {
+  background-color: var(--xc-background-color);
+  /* 设置鼠标悬停时的背景颜色 */
+  border: var(--xc-border-hover);
+}
