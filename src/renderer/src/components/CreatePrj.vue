@@ -43,7 +43,7 @@ import MessageShow from './util/MessageShow'
 import * as DataTypes from '../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
 
-// 创建一个ref数组 3个元素， 用于上面的v-model的绑定
+// 创建一个ref数组 3个元素
 const dataRepo = ref<DataTypes.DataRepo[]>([
     {
         name: 'test_data',
