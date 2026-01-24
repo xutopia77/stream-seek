@@ -3,7 +3,7 @@ import HomeEntry from './components/HomeEntry.vue'
 </script>
 
 <template>
-  <HomeEntry />
+    <HomeEntry />
 </template>
 
 <style scoped></style>
