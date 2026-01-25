@@ -5,18 +5,26 @@
         </router-link>
         <br />
         <div v-for="(repo, index) in dataRepo" :key="index" class="input-container">
-            <input
-                v-model="repo.name"
-                type="text"
-                placeholder="请输入仓库名称"
-                style="width: 20%"
-            />
-            <input
-                v-model="repo.path"
-                type="text"
-                placeholder="请输入仓库路径"
-                style="width: 80%"
-            />
+            <div>
+                <label>仓库路径：</label>
+                <input
+                    v-model="repo.name"
+                    class="xc-text-input"
+                    type="text"
+                    placeholder="请输入仓库名称"
+                    style="width: 80%"
+                />
+            </div>
+            <div>
+                <label>项目路径：</label>
+                <input
+                    v-model="repo.path"
+                    class="xc-text-input"
+                    type="text"
+                    placeholder="请输入仓库路径"
+                    style="width: 80%"
+                />
+            </div>
         </div>
 
         <button class="xc-button" @click="btnclk_create_prj">创建项目</button>
@@ -35,15 +43,13 @@ import MessageShow from './util/MessageShow'
 import * as DataTypes from '../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
 
-// 创建一个ref数组 3个元素， 用于上面的v-model的绑定
+// 创建一个ref数组 3个元素
 const dataRepo = ref<DataTypes.DataRepo[]>([
     {
         name: 'test_data',
         path: 'D:/02_workspace/05_timeCapsule/02_stream_manager/test_data',
         thumbnailPath: ''
-    },
-    { name: '', path: '', thumbnailPath: '' },
-    { name: '', path: '', thumbnailPath: '' }
+    }
 ])
 
 async function btnclk_create_prj(): Promise<void> {
@@ -80,5 +86,7 @@ async function btnclk_create_prj(): Promise<void> {
     padding: 0;
     width: 100%;
     display: flex;
+    flex-direction: column;
+    background-color: var(--xc-background-color);
 }
 </style>

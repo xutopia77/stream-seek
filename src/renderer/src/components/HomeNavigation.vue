@@ -36,7 +36,7 @@
         </div>
 
         <div class="info-container">
-            <span class="xc-text">{{ statusInfo }}</span>
+            <span class="xc-text" :title="statusInfoTitle">{{ statusInfo }}</span>
         </div>
     </div>
     <!-- 关于模态框 -->
@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAppStore } from '../stores/AppStore'
 import '../assets/common.css'
 import util from '../utils/util'
@@ -76,6 +76,31 @@ const dropdownMenuRefView = ref<HTMLElement | null>(null)
 
 // 控制关于模态框是否显示
 const isAboutModalVisible = ref<boolean>(false)
+
+// 状态信息相关
+let statusInfoTitle = ref<string>('')
+let statusInfo = ref<string>('')
+
+// 监听 appStore 的变化来更新状态信息
+watch(
+    () => [appStore.curVideoInfo, appStore.prj.repoType],
+    () => {
+        let curSltVideoName =
+            appStore.curVideoInfo == null
+                ? ''
+                : DataTypes.File.makeDisplayName(appStore.curVideoInfo)
+
+        if (appStore.prj.repoType != null) {
+            const repoStr = appStore.prj.repoType == DataTypes.RepoType.Normal ? '🗄️' : '🗑️'
+            statusInfoTitle.value =
+                appStore.prj.repoType == DataTypes.RepoType.Normal ? '仓库文件' : '回收站文件'
+            curSltVideoName = `${repoStr} ${curSltVideoName}`
+        }
+
+        statusInfo.value = curSltVideoName
+    },
+    { immediate: true }
+)
 
 // 切换下拉菜单的显示状态
 const toggleDropdown = (event: MouseEvent, menu: string): void => {
@@ -157,16 +182,6 @@ const handleClickOutside = (event: MouseEvent): void => {
 function btn_function(): void {
     router.push('/admin')
 }
-
-const statusInfo = computed(() => {
-    let curSltVideoName =
-        appStore.curVideoInfo == null ? '' : DataTypes.File.makeDisplayName(appStore.curVideoInfo)
-    if (appStore.prj.repoType != null) {
-        const repoStr = appStore.prj.repoType == DataTypes.RepoType.Normal ? '🗄️' : '🗑️'
-        curSltVideoName = `${repoStr} ${curSltVideoName}`
-    }
-    return curSltVideoName
-})
 
 onMounted(() => {
     document.addEventListener('click', handleClickOutside)

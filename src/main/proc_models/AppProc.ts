@@ -426,11 +426,11 @@ class AppProc {
         if (respDb.code !== 0) {
             return resp.err('init db error')
         }
-        for (let i = 0; i < 11; i++) {
+        for (let i = 1; i < 11; i++) {
             const tag: DataTypes.Tag = {
                 id: 0,
-                name: `level${i}`,
-                color: '#FF5733'
+                name: `sys_score${i}`,
+                color: '#4A6FA5'
             }
             const insertResp = await appDb.tag_insert(tag)
             if (insertResp.code != 0) {
