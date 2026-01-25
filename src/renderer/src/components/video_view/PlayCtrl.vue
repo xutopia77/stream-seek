@@ -193,7 +193,7 @@ async function btnclk_set_file_level(): Promise<void> {
         util.addToastErr(`请选择文件`)
         return
     }
-    await util.file_tags_set(req, { bNeedSltCurVideo: true })
+    await util.file_tags_set(req, { bNeedSltCurVideo: true, bNeedUpdate: true })
 }
 
 // ====================================

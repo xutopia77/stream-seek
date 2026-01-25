@@ -814,7 +814,6 @@ class Util {
                     await this.get_slt_video(appStore.curSltVideo)
                 }
             }
-
             util.addToastInfo(`设置标签成功`)
         }
     }
