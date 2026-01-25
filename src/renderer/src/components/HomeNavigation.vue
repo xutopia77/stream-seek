@@ -68,7 +68,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const appStore = useAppStore()
-import { IpcApi } from '../utils/IpcApi'
+import { IpcApi } from '../utils/ipcApi'
 import MessageShow from './util/MessageShow'
 import * as DataTypes from '../../../bridge/dataTypedef'
 

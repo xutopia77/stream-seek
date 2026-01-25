@@ -19,7 +19,7 @@ import MessageToast from '@renderer/components/MessageNotify/MessageToast.vue'
 const appStore = useAppStore()
 import { onBeforeMount, onMounted, watch } from 'vue'
 import util from '../utils/util.js'
-import { IpcApi } from '../utils/IpcApi'
+import { IpcApi } from '../utils/ipcApi'
 import * as DataTypes from '../../../bridge/dataTypedef'
 import router from '../router/router'
 // 启动一个定时器，周期性trigger_event

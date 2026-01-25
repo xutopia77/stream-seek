@@ -38,7 +38,7 @@
 import { onMounted, ref, watch } from 'vue'
 import '@renderer/assets/common.css'
 import MessageShow from '../util/MessageShow'
-// import { IpcApi } from '../../utils/IpcApi'
+// import { IpcApi } from '../../utils/ipcApi'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 import { useAppStore } from '../../stores/AppStore'
 import util from '@renderer/utils/util'

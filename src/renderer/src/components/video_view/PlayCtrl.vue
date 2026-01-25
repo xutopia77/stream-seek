@@ -45,9 +45,7 @@
                 ⭐
             </button>
             <select v-model="fileLevel" class="xc-select">
-                <option v-for="index in 11" :key="index" :value="index - 1">
-                    level{{ index - 1 }}
-                </option>
+                <option v-for="index in 10" :key="index" :value="index - 1">{{ index }}☆</option>
             </select>
 
             <button

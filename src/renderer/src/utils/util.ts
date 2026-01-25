@@ -3,7 +3,7 @@ let appStore: AppStore
 
 import * as DataTypes from '../../../bridge/dataTypedef'
 import MessageShow from '../components/util/MessageShow'
-import { IpcApi } from './IpcApi'
+import { IpcApi } from './ipcApi'
 
 function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.SplitInfo[] {
     const frameInfo = frameInfoReq.frames

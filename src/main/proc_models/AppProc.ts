@@ -328,7 +328,7 @@ class AppProc {
         const projectFilePath = path.join(prjInfo.path, 'project.json')
         const jsonContent = JSON.stringify(prjInfo, null, 2)
         await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
-        logger.info(`Project info: ${jsonContent}`)
+        logger.info(`Project info: ${JSON.stringify(prjInfo, null)}`)
         resp.success('Project file created successfully')
         appCfg.appInfo.prjFile = projectFilePath
         appCfg.prj = prjInfo

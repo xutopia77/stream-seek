@@ -13,7 +13,7 @@ import { ref, watch, onMounted } from 'vue'
 import '@renderer/assets/common.css'
 import util from '../../utils/util'
 import * as DataTypes from '../../../../bridge/dataTypedef'
-// import { IpcApi } from '../../utils/IpcApi'
+// import { IpcApi } from '../../utils/ipcApi'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
 

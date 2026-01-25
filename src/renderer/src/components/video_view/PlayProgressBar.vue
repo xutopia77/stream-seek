@@ -49,7 +49,7 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
-// import { IpcApi } from '../../utils/IpcApi'
+// import { IpcApi } from '../../utils/ipcApi'
 import util from '../../utils/util.js'
 import MessageShow from '../util/MessageShow'
 import * as DataTypes from '../../../../bridge/dataTypedef'

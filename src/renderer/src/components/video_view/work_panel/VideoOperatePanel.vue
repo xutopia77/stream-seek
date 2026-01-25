@@ -47,7 +47,7 @@ import { useAppStore } from '../../../stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import util from '../../../utils/util.js'
-// import { IpcApi } from '../../utils/IpcApi'
+// import { IpcApi } from '../../utils/ipcApi'
 import * as DataTypes from '../../../../../bridge/dataTypedef'
 
 // ------ 切换视图

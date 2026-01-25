@@ -313,7 +313,7 @@ class RecordsProc {
         try {
             await fs.promises.access(file_thubmbnail_dir, fs.constants.F_OK)
         } catch (error) {
-            if (!error) console.log(error)
+            if (!error) logger.error(error)
             bExist = false
         }
         if (!bExist) {
@@ -327,17 +327,18 @@ class RecordsProc {
                     )
                     bExist = true
                 } catch (error) {
-                    if (!error) console.log(error)
+                    if (!error) logger.error(error)
                     bExist = false
                 }
             } catch (error) {
-                if (!error) console.log(error)
+                if (!error) logger.error(error)
                 bExist = false
             }
         }
 
         if (bExist) {
             resp.success('thumbnail exist')
+            logger.info(`thumbnail exist: ${fileInfo.path}`)
             resp.code = DataTypes.RespCode.FileExist
             return resp
         }
