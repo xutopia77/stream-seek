@@ -630,16 +630,17 @@ class Util {
         if (response.code === 1001) {
             return
         }
+        const delStr = reqInfo.type == 'destroy' ? '彻底删除' : '移到回收站'
         if (response.code !== 0) {
-            util.addToastErr(`删除失败: ${response.status}`)
+            util.addToastErr(`${delStr} 失败: ${response.status}`)
         } else {
             if (response.bOver === false) {
-                util.addToastInfo(`正在处理...`)
+                util.addToastInfo(`${delStr} 正在处理...`)
             } else {
                 // util.addToastInfo(`删除成功`)
                 appStore.curCheckedVideo.clear()
                 await util.search_file()
-                util.addToastInfo(`删除成功`)
+                util.addToastInfo(`${delStr} 成功`)
             }
         }
     }
