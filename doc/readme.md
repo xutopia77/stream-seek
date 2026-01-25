@@ -89,9 +89,6 @@ ffmpeg -hwaccel cuda -i input.mp4 \
   output.mp4
 
 
-
-
-
 ffmpeg -hwaccel cuda -i input.mp4 \
   # 1. 视频滤镜：降低帧率+删除冗余帧（核心！）
   -vf "mpdecimate=hi=64:lo=32:frac=0.3,fps=5,hwupload" \
