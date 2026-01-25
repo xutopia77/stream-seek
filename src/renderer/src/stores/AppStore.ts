@@ -2,10 +2,25 @@ import { defineStore } from 'pinia'
 
 import * as DataTypes from '../../../bridge/dataTypedef'
 
+export interface ToastMessage {
+    id: number
+    message: string
+    type: DataTypes.MessageShowType
+    timestamp: number // 添加时间戳
+}
+
 export type AppStore = {
     appInfo: DataTypes.AppInfo
     prj: DataTypes.Prj
     serverUrlPrefix: string
+
+    // ------
+    bPageResentMsg: boolean // 打开界面 最近消息
+
+    // message toast
+    toasts: ToastMessage[]
+    historyToasts: ToastMessage[]
+    // ------
     videoPlayCtrl: {
         curSrc: string // 当前播放视频地址
         curTime: number // 浮点数，秒 只读参数
@@ -45,6 +60,11 @@ export const useAppStore = defineStore('app', {
         // utils
         // serverUrlPrefix: "http://localhost:38080",
         serverUrlPrefix: '',
+        // ------
+        bPageResentMsg: false,
+        // message toast
+        toasts: [],
+        historyToasts: [],
         // video play
         videoPlayCtrl: {
             curSrc: '', // 当前播放视频地址

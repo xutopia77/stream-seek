@@ -8,16 +8,6 @@
             <div>
                 <label>仓库路径：</label>
                 <input
-                    v-model="repo.name"
-                    class="xc-text-input"
-                    type="text"
-                    placeholder="请输入仓库名称"
-                    style="width: 80%"
-                />
-            </div>
-            <div>
-                <label>项目路径：</label>
-                <input
                     v-model="repo.path"
                     class="xc-text-input"
                     type="text"
@@ -36,10 +26,8 @@ import { ref } from 'vue'
 // import { useAppStore } from '../stores/AppStore'
 // const appStore = useAppStore()
 import '../assets/common.css'
-// import util from '../utils/util'
 import { useRouter } from 'vue-router'
 const router = useRouter()
-import MessageShow from './util/MessageShow'
 import * as DataTypes from '../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
 
@@ -56,18 +44,18 @@ async function btnclk_create_prj(): Promise<void> {
     let relRepo = dataRepo.value.filter((repo) => repo.name != null && repo.name !== '')
 
     if (relRepo == null || relRepo.length === 0) {
-        return MessageShow.error('请输入数据路径')
+        return util.addToast(`请输入数据路径`, 'error')
     }
     const response = await util.create_prj(relRepo)
     if (response.code === 0) {
         if (response.bOver === false) {
-            MessageShow.info(`正在处理ing`)
+            util.addToast('创建项目中，请稍候...', 'warning')
         } else {
-            MessageShow.success('创建项目成功')
+            util.addToast('创建项目成功', 'info')
         }
         router.push('/')
     } else {
-        MessageShow.error(`创建项目失败: ${response.status}`)
+        util.addToast(`创建项目失败: ${response.status}`, 'error')
     }
 }
 </script>
