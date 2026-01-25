@@ -7,6 +7,8 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { execFile } from 'child_process'
 import * as DataTypes from '../../bridge/dataTypedef'
+import sqlite3 from 'sqlite3'
+import { open, Database } from 'sqlite'
 
 // async function checkFileExists(filePath: string): Promise<boolean> {
 //     try {
@@ -431,6 +433,39 @@ class RecordsProc {
         }
         if (!bOver) {
             return resp.err(`gen thumbnail error, ${filename}`)
+        }
+
+        {
+            const thumbDbPath = path.join(file_thubmbnail_dir, '..',  `${filename}_thumbnail.db`)
+            logger.log(`gen thumbnail db: ${thumbDbPath}`)
+            const thumbDb: Database = await open({
+                filename: thumbDbPath,
+                driver: sqlite3.Database
+            })
+            await thumbDb.exec(`
+                CREATE TABLE thumbnails (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp INTEGER NOT NULL,
+                    image_data BLOB NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `)
+
+            // 遍历 file_thubmbnail_dir 目录下的所有文件，并把缩略图文件插入到thumbDb数据库
+            const files = await fs.promises.readdir(tmp_thubmbnail_dir)
+            for (const file of files) {
+                const filePath = path.join(tmp_thubmbnail_dir, file)
+                const fileStat = await fs.promises.stat(filePath)
+                if (fileStat.isFile()) {
+                    const imageData = await fs.promises.readFile(filePath)
+                    const timestamp = DataTypes.FileTools.parse_timestr_2_seconds(file)
+                    await thumbDb.run(
+                        'INSERT INTO thumbnails (timestamp, image_data) VALUES (?, ?)',
+                        [timestamp, imageData]
+                    )
+                }
+            }
+            await thumbDb.close()
         }
 
         // 移动文件到目标文件夹
