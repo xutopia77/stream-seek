@@ -2,7 +2,6 @@ import type { AppStore } from '../stores/AppStore'
 let appStore: AppStore
 
 import * as DataTypes from '../../../bridge/dataTypedef'
-import MessageShow from '../components/util/MessageShow'
 import { IpcApi } from './ipcApi'
 
 function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.SplitInfo[] {
@@ -100,15 +99,15 @@ function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
 
 function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void {
     if (resp.code !== 0) {
-        MessageShow.error(`打开文件夹失败: ${resp.status}`)
+        util.addToastErr(`打开文件夹失败: ${resp.status}`)
         return
     }
     if (resp.bOver == false) {
-        MessageShow.info(`正在处理...`)
+        util.addToastInfo(`正在处理...`)
         return
     }
     if (resp.data == null) {
-        MessageShow.error(`打开文件夹失败: ${resp.status}`)
+        util.addToastErr(`打开文件夹失败: ${resp.status}`)
         return
     }
     const respData: DataTypes.TraversalFolder = resp.data
@@ -195,7 +194,7 @@ const formatSecond2Time = (timeSec: number): string => {
 
 async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
     if (appStore?.curVideoInfo === null) {
-        MessageShow.success(`当前没有选择视频文件`)
+        util.addToastInfo(`当前没有选择视频文件`)
         return null
     }
     const prjInfo: DataTypes.Req_CutVideo = {
@@ -322,7 +321,7 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
     // 监听 canplay 事件
     const onCanPlay = (): void => {
         if (videoRef == null) {
-            MessageShow.error('video ref null')
+            util.addToastErr('video ref null')
             return
         }
         appStore.videoPlayCtrl.curTime = 0
@@ -448,11 +447,11 @@ function update_bar_clips(): DataTypes.BarClip[] {
 const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<void> => {
     const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
     if (prjInfo === null) {
-        MessageShow.error(`no project info`)
+        util.addToastErr(`no project info`)
         return
     }
     if (appStore.curSltVideo == null) {
-        MessageShow.info('请先选择一个视频')
+        util.addToastInfo('请先选择一个视频')
         return
     }
     util.stop_play()
@@ -472,12 +471,12 @@ const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<v
         return
     }
     if (response.code !== 0) {
-        MessageShow.success(`剪辑失败: ${response.status}`)
+        util.addToastInfo(`剪辑失败: ${response.status}`)
     } else {
         if (response.bOver === false) {
-            MessageShow.info(`正在处理...`)
+            util.addToastInfo(`正在处理...`)
         } else {
-            MessageShow.success(`剪辑成功`)
+            util.addToastInfo(`剪辑成功`)
         }
     }
 }
@@ -551,7 +550,7 @@ class Util {
         //     appStore.curOpenedFolder = prj.lastOpenedFolder
         //     util.folder_file_proc(response)
         //   } else {
-        //     MessageShow.error(`遍历文件夹失败`)
+        //     util.addToastErr(`遍历文件夹失败`)
         //   }
         // } else {
         //   console.log('lastOpenedFolder is null')
@@ -637,7 +636,7 @@ class Util {
             if (response.bOver === false) {
                 util.addToastInfo(`正在处理...`)
             } else {
-                // MessageShow.success(`删除成功`)
+                // util.addToastInfo(`删除成功`)
                 appStore.curCheckedVideo.clear()
                 await util.search_file()
                 util.addToastInfo(`删除成功`)
@@ -688,12 +687,12 @@ class Util {
             console.log('slect video failed', response)
         } else {
             if (response.bOver == false) {
-                MessageShow.info(`正在处理...`)
+                util.addToastInfo(`正在处理...`)
                 return
             }
             const respData: DataTypes.File | undefined = response.data
             if (respData == undefined) {
-                MessageShow.error(`获取视频信息失败: ${response.status}`)
+                util.addToastErr(`获取视频信息失败: ${response.status}`)
                 console.log('slect video failed', response)
                 return
             }
@@ -757,11 +756,11 @@ class Util {
         }
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
-            MessageShow.error(`获取文件列表失败: ${response.status}`)
+            util.addToastErr(`获取文件列表失败: ${response.status}`)
             return response
         } else {
             if (response.bOver == false) {
-                MessageShow.info(`正在处理...`)
+                util.addToastInfo(`正在处理...`)
                 return response
             }
         }
@@ -778,11 +777,11 @@ class Util {
         }
         const response: DataTypes.Resp<DataTypes.TagsResp> = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
-            MessageShow.error(`获取标签列表失败: ${response.status}`)
+            util.addToastErr(`获取标签列表失败: ${response.status}`)
             return response
         } else {
             if (response.bOver == false) {
-                MessageShow.info(`正在处理...`)
+                util.addToastInfo(`正在处理...`)
                 return response
             }
         }
@@ -800,10 +799,10 @@ class Util {
         }
         const response: DataTypes.Resp = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
-            MessageShow.error(`设置标签失败: ${response.status}`)
+            util.addToastErr(`设置标签失败: ${response.status}`)
         } else {
             if (response.bOver == false) {
-                MessageShow.info(`正在处理...`)
+                util.addToastInfo(`正在处理...`)
                 return
             }
             if (param != null) {
@@ -816,7 +815,7 @@ class Util {
                 }
             }
 
-            MessageShow.info(`设置标签成功`)
+            util.addToastInfo(`设置标签成功`)
         }
     }
 
@@ -842,9 +841,9 @@ class Util {
         const response = JSON.parse(workRespose.data)
         // const showCtx = `命令:${cmd} 执行结果: ${response.status}`
         // if (response.code !== 0) {
-        //   MessageShow.error(showCtx)
+        //   util.addToastErr(showCtx)
         // } else {
-        //   MessageShow.success(showCtx)
+        //   util.addToastInfo(showCtx)
         // }
 
         // console.log('process_work_response', cmd, response)
@@ -853,9 +852,9 @@ class Util {
                 console.log('open folder', response)
                 util.folder_file_proc(response)
                 if (response.code !== 0) {
-                    MessageShow.error(`打开文件夹失败: ${response.status}`)
+                    util.addToastErr(`打开文件夹失败: ${response.status}`)
                 } else {
-                    MessageShow.success(`打开文件夹成功: ${response.status}`)
+                    util.addToastInfo(`打开文件夹成功: ${response.status}`)
                 }
                 break
             case 'traversal_folder':
@@ -863,7 +862,7 @@ class Util {
                     console.log('traversal folder', response)
                     util.folder_file_proc(response)
                     if (response.code !== 0) {
-                        MessageShow.error(`更新文件夹: ${response.status}`)
+                        util.addToastErr(`更新文件夹: ${response.status}`)
                     }
                 }
                 break
@@ -874,10 +873,10 @@ class Util {
                 break
             case 'cut_video':
                 if (response.code !== 0) {
-                    MessageShow.error(`视频裁剪失败: ${response.status}`)
+                    util.addToastErr(`视频裁剪失败: ${response.status}`)
                     console.log('cut video failed', response)
                 } else {
-                    MessageShow.success(`视频裁剪完成:${response.status}`)
+                    util.addToastInfo(`视频裁剪完成:${response.status}`)
                     const respData: DataTypes.Resp_CutVideo = response.data
                     if (respData.traversalResp != null) {
                         console.log('update file list', respData.traversalResp)
@@ -888,17 +887,17 @@ class Util {
             case 'delete_video':
                 {
                     if (response.code !== 0) {
-                        MessageShow.error(`删除失败: ${response.status}`)
+                        util.addToastErr(`删除失败: ${response.status}`)
                         console.log('cut video failed', response)
                     } else {
-                        MessageShow.success(`删除完成:${response.status}`)
+                        util.addToastInfo(`删除完成:${response.status}`)
                         util.search_file()
                     }
                 }
                 break
             case 'get_key_frame_info':
                 if (response.code !== 0) {
-                    MessageShow.error(`获取关键帧信息失败: ${response.status}`)
+                    util.addToastErr(`获取关键帧信息失败: ${response.status}`)
                 } else {
                     if (appStore) {
                         if (appStore.curVideoInfo == null) {
@@ -906,7 +905,7 @@ class Util {
                         }
                         appStore.curVideoInfo.frameInfo = response.data
                     }
-                    MessageShow.info(`获取关键帧信息完成:${response.status}`)
+                    util.addToastInfo(`获取关键帧信息完成:${response.status}`)
                 }
                 break
         }
@@ -944,7 +943,7 @@ class Util {
         }
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
-            MessageShow.error(`search file failed: ${response.status}`)
+            util.addToastErr(`search file failed: ${response.status}`)
             console.log(`search file failed: ${response.status}`)
             return response
         }
@@ -959,7 +958,7 @@ class Util {
         req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
-            MessageShow.error(`search file failed: ${response.status}`)
+            util.addToastErr(`search file failed: ${response.status}`)
             console.log(`search file failed: ${response.status}`)
             return response
         }
