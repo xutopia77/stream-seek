@@ -322,11 +322,13 @@ class AppProc {
             repo.thumbnailPath = path.posix.normalize(repo.thumbnailPath)
             if (!fs.existsSync(repo.thumbnailPath)) {
                 fs.mkdirSync(repo.thumbnailPath, { recursive: true })
+                logger.info(`create thumbnail path: ${repo.thumbnailPath}`)
             }
         }
         const projectFilePath = path.join(prjInfo.path, 'project.json')
         const jsonContent = JSON.stringify(prjInfo, null, 2)
         await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
+        logger.info(`Project info: ${jsonContent}`)
         resp.success('Project file created successfully')
         appCfg.appInfo.prjFile = projectFilePath
         appCfg.prj = prjInfo
@@ -361,7 +363,7 @@ class AppProc {
         prjInfo.dataRepo = req.data.dataRepo
         {
             // 2, create db folder and init db
-            logger.log('create project file:', prjPath)
+            logger.log('create project prj path:', prjPath)
             const dbFolderPath = path.join(prjPath, 'db')
             if (!fs.existsSync(dbFolderPath)) {
                 fs.mkdirSync(dbFolderPath)
@@ -382,6 +384,7 @@ class AppProc {
         }
         resp.data.prj = prjInfo
         resp.success('Project file created successfully')
+        logger.info('create project success')
         return resp
     }
 
@@ -508,12 +511,12 @@ class AppProc {
                 traversalFolder.type = null
                 traversalFolder.repo = repo
                 await traversalFolder.start()
-                logger.info(`traversal ${repo.name} success`)
+                logger.info(`traversal ${repo.path} success`)
             }
 
             // 2, start search file from db
             {
-                workQueue.set_status(logger.info('start async folder:', repo.path))
+                workQueue.set_status(logger.info('start classify folder:', repo.path))
                 const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
                 searchReq.order = 'asc'
                 searchReq.orderBy = 'startTimeSec'
@@ -688,6 +691,24 @@ class AppProc {
         return resp
     }
 
+    /*
+    同步项目
+
+    保存项目信息：
+        创建缩略图文件夹。
+        创建项目json文件。
+        把项目json文件路径信息保存到appdata文件夹中。
+
+    文件分类：
+        1，首先遍历仓库文件夹，解析文件信息，保存到数据库中。
+        2，修复文件信息，不存在的文件（仓库中和回收站中都不存在
+    的），在数据库中标记为销毁。数据库中标记为删除的文件。
+        3，文件分类，从数据库中搜索文件，按照文件的创建时间，把文件
+    分散到各个子文件夹中。 数据库中会跟新文件路径信息。
+        4，删除文件的缩略图的移动到缩略图的回收站中。
+
+    生成缩略图
+    */
     async handle_sync_work(
         req: DataTypes.Req<DataTypes.SyncPrjReq>
     ): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {

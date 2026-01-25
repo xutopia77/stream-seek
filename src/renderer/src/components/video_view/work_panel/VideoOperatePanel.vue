@@ -48,7 +48,6 @@ const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import util from '../../../utils/util.js'
 // import { IpcApi } from '../../utils/IpcApi'
-import MessageShow from '../../util/MessageShow'
 import * as DataTypes from '../../../../../bridge/dataTypedef'
 
 // ------ 切换视图
@@ -63,17 +62,17 @@ const btnclk_change_view_model = (): void => {
         appStore.curViewModel = 'video'
     }
     const showCtx = appStore.curViewModel === 'video' ? `视频播放模式` : `缩略图模式`
-    MessageShow.success(showCtx)
+    util.addToast(showCtx, 'info')
 }
 
 // ------
 const btnclk_splitVideo = (): void => {
     if (appStore.curVideoInfo?.mediaInfo == null) {
-        MessageShow.error(`请先选择视频`)
+        util.addToastErr(`请先选择视频`)
         return
     }
     if (appStore.curVideoInfo?.splitInfo == null) {
-        MessageShow.error(`没有分段信息`)
+        util.addToastErr(`没有分段信息`)
         return
     }
     const currentTime = appStore.videoPlayCtrl.curTime
@@ -135,11 +134,11 @@ const selectSplitInfo = (splitInfo: DataTypes.SplitInfo): void => {
 
 const removeVideosplit = (): void => {
     if (selectedSplitInfo.value?.percent === 100) {
-        MessageShow.success(`不能删除系统片段`)
+        util.addToastInfo(`不能删除系统片段`)
         return
     }
     if (appStore.curVideoInfo?.splitInfo == null) {
-        MessageShow.success(`没有分段信息`)
+        util.addToastInfo(`没有分段信息`)
         return
     }
     if (selectedSplitInfo.value) {
@@ -158,11 +157,11 @@ const removeVideosplit = (): void => {
 
 const removeVideoRecord = (): void => {
     if (selectedSplitInfo.value == null) {
-        MessageShow.error(`请先选择要删除的片段`)
+        util.addToastErr(`请先选择要删除的片段`)
         return
     }
     if (appStore.curVideoInfo?.splitInfo == null) {
-        MessageShow.error(`没有分段信息`)
+        util.addToastErr(`没有分段信息`)
         return
     }
     const confirmDelete = confirm('确定要删除当前选中的片段信息记录吗？')
@@ -180,11 +179,11 @@ const removeVideoRecord = (): void => {
 
 const restoreVideoRecord = (): void => {
     if (!selectedSplitInfo.value) {
-        MessageShow.error(`请先选择要恢复的片段`)
+        util.addToastErr(`请先选择要恢复的片段`)
         return
     }
     if (appStore.curVideoInfo?.splitInfo == null) {
-        MessageShow.error(`没有分段信息`)
+        util.addToastErr(`没有分段信息`)
         return
     }
     const index = appStore.curVideoInfo.splitInfo.splits.findIndex(
@@ -201,7 +200,7 @@ const exportVideoRecord = async (): Promise<void> => {
 
     // const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
     // if (prjInfo === null) {
-    //   MessageShow.error(`no project info`)
+    //   util.addToastErr(`no project info`)
     //   return
     // }
     // if (appStore.curSltVideo == null) {
@@ -219,12 +218,12 @@ const exportVideoRecord = async (): Promise<void> => {
     //   return
     // }
     // if (response.code !== 0) {
-    //   MessageShow.success(`剪辑失败: ${response.status}`)
+    //   util.addToastInfo(`剪辑失败: ${response.status}`)
     // } else {
     //   if (response.bOver === false) {
     //     MessageShow.info(`正在处理...`)
     //   } else {
-    //     MessageShow.success(`剪辑成功`)
+    //     util.addToastInfo(`剪辑成功`)
     //   }
     // }
 }

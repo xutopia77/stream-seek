@@ -520,6 +520,12 @@ class Util {
         }, 3000)
     }
     addToast = Util.addToast
+    addToastInfo = (message: string): void => {
+        Util.addToast(message, 'info')
+    }
+    addToastErr = (message: string): void => {
+        Util.addToast(message, 'error')
+    }
     // 清空所有历史消息
     clearHistoryToasts(): void {
         appStore.historyToasts = []
