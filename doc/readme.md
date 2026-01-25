@@ -76,8 +76,6 @@ ffmpeg -hwaccel cuda -hwaccel_output_format cuda -i 00_20250301122432_2025030112
 ffmpeg -hwaccel cuda -hwaccel_output_format cuda -i 00_20250302134545_20250302135107.mp4 -vf "fps=5,hwupload" -c:v hevc_nvenc -preset medium output.mp4
 
 
-
-
 ffmpeg -hwaccel cuda -i input.mp4 \
   -vf "mpdecimate,fps=5,hwupload" \
   -c:v hevc_nvenc \
