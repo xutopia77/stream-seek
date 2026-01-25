@@ -21,9 +21,12 @@
                     />
                     <span class="checkmark"></span>
                 </label>
-                <span class="xc-text" @click="btn_playVideo(video)">{{
-                    `${index + 1}:${DataTypes.File.makeDisplayName(video)}`
-                }}</span>
+                <span
+                    class="xc-text"
+                    :style="getVideoLevelColorStyle(video)"
+                    @click="btn_playVideo(video)"
+                    >{{ `${index + 1}:${DataTypes.File.makeDisplayName(video)}` }}</span
+                >
             </li>
         </ul>
     </div>
@@ -95,6 +98,35 @@ onBeforeMount(() => {})
 
 const btn_playVideo = (video: DataTypes.File): void => {
     appStore.curSltVideo = video
+}
+
+/**
+ * 根据视频等级获取黑色主题下的字体颜色样式
+ * @param {Object} video - 视频对象，包含tags数组
+ * @returns {string} 带颜色的行内样式字符串
+ */
+const getVideoLevelColorStyle = (video): string => {
+    // 防御性判断：避免tags不存在/为空导致的报错
+    if (!video?.tags || video.tags.length === 0) {
+        return 'color: #cccccc;' // 默认浅灰色（黑色背景通用）
+    }
+
+    // 提取等级名称并统一转为小写，增强鲁棒性
+    const levelName = video.tags[0].name.toLowerCase()
+
+    // 黑色主题下的等级颜色映射表（高对比度、层级区分）
+    const levelColorMap = {
+        sys_score1: '#00c6ff', // 亮蓝色（最高级，最醒目）
+        sys_score2: '#76ff03', // 亮绿色（次高级）
+        sys_score3: '#ffea00', // 金黄色（中级）
+        sys_score4: '#ff9100', // 橙色（次低级）
+        sys_score5: '#ff3d00' // 橙红色（最低级）
+    }
+
+    // 匹配颜色，无匹配则用默认浅灰色
+    const targetColor = levelColorMap[levelName] || '#cccccc'
+    console.log(`levelName: ${levelName}, targetColor: ${targetColor}`)
+    return `color: ${targetColor};`
 }
 </script>
 

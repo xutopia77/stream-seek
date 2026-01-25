@@ -117,7 +117,7 @@ export class File {
             displayName = `${year}${month}${day}-${hour}:${minute}:${second}_${durationStr}`
         }
         for (const tInfo of f.tags) {
-            displayName += ` ${tInfo.name}`
+            displayName += ` ${Utils.makeTagShowName(tInfo.name)}`
         }
         return displayName
     }
@@ -671,5 +671,34 @@ export class Utils {
         const seconds = Math.floor(time % 60)
         const milliseconds = Math.floor((time - Math.floor(time)) * 1000)
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
+    }
+
+    static makeTagShowName(tagName: string): string {
+        switch (tagName) {
+            case 'sys_score0':
+                return ''
+            case 'sys_score1':
+                return '1☆'
+            case 'sys_score2':
+                return '2☆'
+            case 'sys_score3':
+                return '3☆'
+            case 'sys_score4':
+                return '4☆'
+            case 'sys_score5':
+                return '5☆'
+            case 'sys_score6':
+                return '6☆'
+            case 'sys_score7':
+                return '7☆'
+            case 'sys_score8':
+                return '8☆'
+            case 'sys_score9':
+                return '9☆'
+            case 'sys_score10':
+                return '10☆'
+            default:
+                return tagName
+        }
     }
 }

@@ -689,6 +689,7 @@ class AppDb {
         }
         return resp
     }
+
     async tag_search(req: DataTypes.TagsReq | null): Promise<DataTypes.Resp<DataTypes.TagsResp>> {
         const resp = new DataTypes.Resp<DataTypes.TagsResp>()
         try {
@@ -781,21 +782,41 @@ class AppDb {
         }
         return resp
     }
-    async file_tag_delete(
-        req: Pick<DataTypes.FileTag, 'fileId' | 'tagId'>
-    ): Promise<DataTypes.Resp> {
+    async file_tag_delete(fileId: number, tagId: number): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             const result = await this.db.run(
                 `DELETE FROM ${this.tbl_fileTag} WHERE fileId =? AND tagId =?`,
-                [req.fileId, req.tagId]
+                [fileId, tagId]
             )
             if (result.changes === 0) {
                 resp.err('File tag not found')
             } else {
                 resp.success('File tag deleted successfully')
             }
+        } catch (error) {
+            logger.error('Error deleting file tag:', error)
+            resp.err(
+                `Error deleting file tag: ${error instanceof Error ? error.message : String(error)}`
+            )
+        }
+        return resp
+    }
+    async file_tag_delete_all(fileId: number): Promise<DataTypes.Resp> {
+        const resp = new DataTypes.Resp()
+        try {
+            if (!this.db) throw new Error('Database not initialized')
+            const result = await this.db.run(`DELETE FROM ${this.tbl_fileTag} WHERE fileId =? `, [
+                fileId
+            ])
+            // if (result.changes === 0) {
+            //     resp.err('File tag not found')
+            // } else {
+            //     resp.success('File tag deleted successfully')
+            // }
+            resp.success(`${result.changes} file tag deleted successfully`)
+            resp.success('File tag deleted successfully')
         } catch (error) {
             logger.error('Error deleting file tag:', error)
             resp.err(

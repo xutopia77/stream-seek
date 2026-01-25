@@ -632,14 +632,15 @@ class Util {
             return
         }
         if (response.code !== 0) {
-            MessageShow.success(`删除失败: ${response.status}`)
+            util.addToastErr(`删除失败: ${response.status}`)
         } else {
             if (response.bOver === false) {
-                MessageShow.info(`正在处理...`)
+                util.addToastInfo(`正在处理...`)
             } else {
                 // MessageShow.success(`删除成功`)
                 appStore.curCheckedVideo.clear()
                 await util.search_file()
+                util.addToastInfo(`删除成功`)
             }
         }
     }

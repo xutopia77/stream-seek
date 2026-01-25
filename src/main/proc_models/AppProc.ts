@@ -255,7 +255,7 @@ class AppProc {
                 const tag: DataTypes.Tag = {
                     id: 0,
                     name: item.tagName,
-                    color: '#FF5733'
+                    color: '#4A6FA5'
                 }
                 const respInsert = await appDb.tag_insert(tag)
                 if (respInsert.code !== 0) {
@@ -281,6 +281,11 @@ class AppProc {
                 fileId: item.fileId,
                 tagId: tagInfo?.id ?? 0
             }
+            const respDel = await appDb.file_tag_delete_all(fileTag.fileId)
+            if (respDel.code !== 0) {
+                workQueue.set_status(logger.error(`delete file tag err: ${respDel.status}`))
+                resp.err('delete file tags error')
+            }
             const respUpdate = await appDb.file_tag_insert(fileTag)
             if (respUpdate.code !== 0) {
                 workQueue.set_status(logger.error(`insert file tag err: ${respUpdate.status}`))
@@ -294,7 +299,9 @@ class AppProc {
             }
         }
         workQueue.set_status(
-            logger.info(`set file tags success: len= ${req.data?.fileTags.length}`)
+            logger.info(
+                `set file tags success:  ${req.data?.fileTags != null && req.data?.fileTags?.length > 0 ? 'tag name : ' + req.data?.fileTags[0].tagName : 'no tag'}`
+            )
         )
         return resp
     }

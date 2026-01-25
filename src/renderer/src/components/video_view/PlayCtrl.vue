@@ -45,7 +45,7 @@
                 ⭐
             </button>
             <select v-model="fileLevel" class="xc-select">
-                <option v-for="index in 10" :key="index" :value="index - 1">{{ index }}☆</option>
+                <option v-for="index in 5" :key="index" :value="index - 1">{{ index }}☆</option>
             </select>
 
             <button
@@ -84,7 +84,6 @@
 import { computed, ref, watch } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 import '@renderer/assets/common.css'
-import MessageShow from '../util/MessageShow'
 import util from '@renderer/utils/util'
 const appStore = useAppStore()
 import * as DataTypes from '../../../../bridge/dataTypedef'
@@ -126,7 +125,7 @@ let frameRate = computed(() => {
 
 function nextFrame(): void {
     if (appStore.curVideoInfo == null) {
-        MessageShow.info('请先选择一个视频')
+        util.addToastInfo('请先选择一个视频')
         return
     }
     if (appStore.func_nextFrame) {
@@ -136,7 +135,7 @@ function nextFrame(): void {
 
 function previousFrame(): void {
     if (appStore.curVideoInfo == null) {
-        MessageShow.info('请先选择一个视频')
+        util.addToastInfo('请先选择一个视频')
         return
     }
     if (appStore.func_prevFrame) {
@@ -146,7 +145,7 @@ function previousFrame(): void {
 
 function btnclk_stop_play(): void {
     if (appStore.curSltVideo == null) {
-        MessageShow.info('请先选择一个视频')
+        util.addToastInfo('请先选择一个视频')
         return
     }
     util.stop_play()
@@ -155,7 +154,7 @@ function btnclk_stop_play(): void {
 // 切换播放/暂停状态
 const btnclk_toggle_play = (): void => {
     if (appStore.curSltVideo == null) {
-        MessageShow.info('请先选择一个视频')
+        util.addToastInfo('请先选择一个视频')
         return
     }
     appStore.videoPlayCtrl.isPlay = !appStore.videoPlayCtrl.isPlay
@@ -177,7 +176,12 @@ watch(
 const fileLevel = ref(0)
 async function btnclk_set_file_level(): Promise<void> {
     const req = new DataTypes.FileTagsReq()
-    let tagName = `level${fileLevel.value}`
+    const levelVal = fileLevel.value + 1
+    if (levelVal < 1 || levelVal > 5) {
+        util.addToastErr(`等级只能是1-5`)
+        return
+    }
+    let tagName = `sys_score${levelVal}`
     for (const item of appStore.curCheckedVideo) {
         const fileTag: DataTypes.FileTagsReqItem = {
             fileId: item.id,
@@ -186,7 +190,7 @@ async function btnclk_set_file_level(): Promise<void> {
         req.fileTags.push(fileTag)
     }
     if (req.fileTags.length === 0) {
-        MessageShow.error(`请选择文件`)
+        util.addToastErr(`请选择文件`)
         return
     }
     await util.file_tags_set(req, { bNeedSltCurVideo: true })
@@ -202,7 +206,7 @@ function showKeyFrame(): void {
 function changeFile(flag: string): void {
     // 根据curSltVideo 从appStore的videoList中找到当前视频的索引
     if (appStore.videoList.length == 0) {
-        MessageShow.info('没有视频文件')
+        util.addToastInfo('没有视频文件')
         return
     }
     if (appStore.curSltVideo == null) {
@@ -223,14 +227,14 @@ function changeFile(flag: string): void {
 
     if (flag == 'previous') {
         if (curVideoIdx == 0) {
-            MessageShow.info('已经是第一个文件')
+            util.addToastInfo('已经是第一个文件')
             appStore.curSltVideo = appStore.videoList[curVideoIdx]
             return
         }
         appStore.curSltVideo = appStore.videoList[curVideoIdx - 1]
     } else {
         if (curVideoIdx == appStore.videoList.length - 1) {
-            MessageShow.info('已经是最后一个文件')
+            util.addToastInfo('已经是最后一个文件')
             appStore.curSltVideo = appStore.videoList[curVideoIdx]
             return
         }
@@ -245,7 +249,7 @@ function btnclk_chg_panel(model: DataTypes.WorkPanel): void {
 function btnclk_del_cur_video(): void {
     const curCheckedVideo = appStore.curCheckedVideo
     if (curCheckedVideo == null) {
-        MessageShow.info('没有选择的文件')
+        util.addToastInfo('没有选择的文件')
         return
     }
 
@@ -257,7 +261,7 @@ function btnclk_del_cur_video(): void {
         req.files.push(fInfo)
     }
     if (req.files.length == 0) {
-        MessageShow.info('没有选择的文件')
+        util.addToastInfo('没有选择的文件')
         return
     }
     if (appStore.prj.repoType == DataTypes.RepoType.Normal) {
