@@ -20,7 +20,6 @@ const appStore = useAppStore()
 import { onBeforeMount, onMounted, watch } from 'vue'
 import util from '../utils/util.js'
 import { IpcApi } from '../utils/IpcApi'
-import MessageShow from './util/MessageShow'
 import * as DataTypes from '../../../bridge/dataTypedef'
 import router from '../router/router'
 // 启动一个定时器，周期性trigger_event
@@ -60,7 +59,6 @@ onBeforeMount(async () => {
     util.setAppStore(appStore)
     const resp = await util.start_app()
     if (resp.code !== 0) {
-        MessageShow.error(`启动失败 ${resp.status}`)
         return
     }
     startTimer()

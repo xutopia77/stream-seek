@@ -519,6 +519,7 @@ class Util {
             }
         }, 3000)
     }
+    addToast = Util.addToast
     // 清空所有历史消息
     clearHistoryToasts(): void {
         appStore.historyToasts = []
