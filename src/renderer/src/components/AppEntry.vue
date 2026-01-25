@@ -1,8 +1,12 @@
 <template>
-    <div class="home-entry">
-        <HomeNavigation />
-        <!-- <VideoPreview /> -->
-        <router-view class="page-view" />
+    <div class="app-entry">
+        <div class="home-entry">
+            <HomeNavigation />
+            <!-- <VideoPreview /> -->
+            <router-view class="page-view" />
+        </div>
+        <MessageToast />
+        <RecentMessagesPanel />
     </div>
 </template>
 
@@ -10,6 +14,8 @@
 // import VideoPreview from './VideoPreview.vue'
 import HomeNavigation from './HomeNavigation.vue'
 import { useAppStore } from '../stores/AppStore'
+import RecentMessagesPanel from '@renderer/components/MessageNotify/RecentMessagesPanel.vue'
+import MessageToast from '@renderer/components/MessageNotify/MessageToast.vue'
 const appStore = useAppStore()
 import { onBeforeMount, onMounted, watch } from 'vue'
 import util from '../utils/util.js'
@@ -66,6 +72,13 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.app-entry {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 .home-entry {
     height: 100%;
     width: 100%;

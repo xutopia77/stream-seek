@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import HomeEntry from './components/HomeEntry.vue'
+import AppEntry from './components/AppEntry.vue'
 </script>
 
 <template>
-    <HomeEntry />
+    <AppEntry />
 </template>
 
 <style scoped></style>

@@ -492,6 +492,38 @@ class Util {
     updateKeyframeSplitInfo = updateKeyframeSplitInfo
     formatSecond2Time = formatSecond2Time
 
+    message_notify(_req: DataTypes.MessageReq): void {
+        Util.addToast(_req.content, _req.type)
+    }
+
+    static addToast(message: string, type: DataTypes.MessageShowType = 'info'): void {
+        const id = Date.now()
+        const timestamp = Date.now()
+        const toast = { id, message, type, timestamp }
+
+        // 添加到当前消息和历史消息
+        appStore.toasts.push(toast)
+        appStore.historyToasts.push(toast)
+
+        // 限制历史消息数量，最多保留100条
+        if (appStore.historyToasts.length > 100) {
+            appStore.historyToasts.shift()
+        }
+
+        // 3秒后自动移除当前显示的消息
+        setTimeout(() => {
+            // this.removeToast(id)
+            const index = appStore.toasts.findIndex((toast) => toast.id === id)
+            if (index !== -1) {
+                appStore.toasts.splice(index, 1)
+            }
+        }, 3000)
+    }
+    // 清空所有历史消息
+    clearHistoryToasts(): void {
+        appStore.historyToasts = []
+    }
+
     private async updateAppInfo(appStartResp: DataTypes.AppStartResp): Promise<void> {
         appStore.appInfo = appStartResp.appInfo
         if (appStartResp.prj != null) {
@@ -521,12 +553,14 @@ class Util {
 
     async start_app(): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
-        const req: DataTypes.Req = { cmd: 'app_start' }
+        const req: DataTypes.Req = { cmd: DataTypes.CmdType.app_start }
         const response: DataTypes.Resp<DataTypes.AppStartResp> = await IpcApi.trigger_event(req)
-        if (response.code !== 0) {
+        if (response.code != DataTypes.RespCode.Success) {
+            Util.addToast('no prj found', 'warning')
             return resp.err(response.status)
         }
         if (response.data == null) {
+            Util.addToast('no prj found', 'warning')
             return resp.err('app start resp data is null')
         }
         this.updateAppInfo(response.data)
@@ -675,7 +709,7 @@ class Util {
         dataRepo: DataTypes.DataRepo[]
     ): Promise<DataTypes.Resp<DataTypes.CreatePrjResp>> {
         const req: DataTypes.Req<DataTypes.CreatePrjReq> = {
-            cmd: 'create_prj',
+            cmd: DataTypes.CmdType.createPrj,
             data: {
                 dataRepo: dataRepo
             }

@@ -1,4 +1,5 @@
 export enum CmdType {
+    createPrj = 'create_prj',
     app_start = 'app_start',
     get_key_frame_info = 'get_key_frame_info',
     tags_get = 'tags_get',
@@ -13,6 +14,13 @@ export class AppInfo {
 export class AppStartResp {
     appInfo: AppInfo = new AppInfo()
     prj: Prj | null = null
+}
+
+export type MessageShowType = 'success' | 'error' | 'warning' | 'info'
+export class MessageReq {
+    content: string = ''
+    duration?: number = 0
+    type: MessageShowType = 'success' //success, error, info, warning
 }
 
 export class ThumbnailInfo {
@@ -560,14 +568,17 @@ export class Resp<T = string> {
         this.data = undefined
     }
     err(desc: string): Resp<T> {
-        this.code = 1
+        this.code = RespCode.Error
         this.status = desc
         return this
     }
     success(desc: string): Resp<T> {
-        this.code = 0
+        this.code = RespCode.Success
         this.status = desc
         return this
+    }
+    isSuccess(): boolean {
+        return this.code === RespCode.Success
     }
 }
 

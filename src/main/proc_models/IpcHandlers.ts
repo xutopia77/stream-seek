@@ -6,7 +6,7 @@ import mediaProc from './MediaProcess.js'
 import logger from './Logger'
 import appProc from './AppProc'
 // import recordsProc from './RecordsProcess.js'
-// import { Util } from './Utils.js'
+import { Util } from './Utils.js'
 import { workQueue } from './TaskEvent'
 // import type { WorkResp } from './Utils.js'
 import * as DataTypes from '../../bridge/dataTypedef'
@@ -34,7 +34,7 @@ async function handle_create_prj(
             logger.info('The selected folder is not empty')
             return resp.err('The selected folder is not empty')
         }
-        return await appProc.create_prj(req, folderPath)
+        return await appProc.create_prj(req, Util.pathToLinuxStyle(folderPath))
     } catch (error) {
         logger.error('Error creating project file:', error)
         return resp.err(

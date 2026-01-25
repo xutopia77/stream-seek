@@ -336,7 +336,7 @@ class AppProc {
 
     async create_prj(
         req: DataTypes.Req<DataTypes.CreatePrjReq>,
-        folderPath: string
+        prjPath: string
     ): Promise<DataTypes.Resp<DataTypes.CreatePrjResp>> {
         const resp = new DataTypes.Resp<DataTypes.CreatePrjResp>()
         resp.data = new DataTypes.CreatePrjResp()
@@ -354,26 +354,25 @@ class AppProc {
         }
 
         // 1, make prj info
-        const folderName = path.basename(folderPath)
         const prjInfo: DataTypes.Prj = new DataTypes.Prj()
-        prjInfo.name = folderName
+        prjInfo.name = path.basename(prjPath)
         prjInfo.version = '1.0.0'
-        prjInfo.path = folderPath
+        prjInfo.path = prjPath
         prjInfo.dataRepo = req.data.dataRepo
         {
             // 2, create db folder and init db
-            logger.log('create project file:', folderPath)
-            const dbFolderPath = path.join(folderPath, 'db')
+            logger.log('create project file:', prjPath)
+            const dbFolderPath = path.join(prjPath, 'db')
             if (!fs.existsSync(dbFolderPath)) {
                 fs.mkdirSync(dbFolderPath)
             }
             const respDb = await appDb.initDb(dbFolderPath)
-            if (respDb.code !== 0) {
+            if (!respDb.isSuccess()) {
                 return resp.err('init db error')
             }
 
             for (const repo of prjInfo.dataRepo) {
-                repo.thumbnailPath = path.join(folderPath, 'thumbnail', repo.name)
+                repo.thumbnailPath = path.join(prjPath, 'thumbnail', repo.name)
             }
         }
         // 5, write prj info to file
@@ -391,7 +390,7 @@ class AppProc {
         resp.data = new DataTypes.AppStartResp()
         const cfgPath = path.join(appCfg.appData, 'prj.json')
         if (!fs.existsSync(cfgPath)) {
-            return resp.success('success no prj')
+            return resp.err('success no prj')
         }
         let data = ''
         //1，read app info json
@@ -412,18 +411,18 @@ class AppProc {
         // 2, if appInfo.prjFile isempty, return without prj info
         if (appCfg.appInfo.prjFile == '') {
             resp.data.prj = null
-            return resp
+            return resp.err('app start prj file loss')
         }
         if (!fs.existsSync(appCfg.appInfo.prjFile)) {
             appCfg.appInfo.prjFile = ''
             this.saveAppCfg()
-            return resp.success('app start prj file loss')
+            return resp.err('app start prj file loss')
         }
 
         // 3, init db
         const prjFilePath = path.dirname(appCfg.appInfo.prjFile)
         const respDb = await appDb.initDb(path.join(prjFilePath, 'db'))
-        if (respDb.code !== 0) {
+        if (!respDb.isSuccess()) {
             return resp.err('init db error')
         }
         for (let i = 1; i < 11; i++) {

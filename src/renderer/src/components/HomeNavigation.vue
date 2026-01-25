@@ -38,6 +38,16 @@
         <div class="info-container">
             <span class="xc-text" :title="statusInfoTitle">{{ statusInfo }}</span>
         </div>
+        <div>
+            <button
+                class="xc-button"
+                style="border: none"
+                title="查看最近消息提醒"
+                @click="appStore.bPageResentMsg = true"
+            >
+                🔔
+            </button>
+        </div>
     </div>
     <!-- 关于模态框 -->
     <div v-if="isAboutModalVisible" class="modal-overlay" @click.self="hideAboutModal">

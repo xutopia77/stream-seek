@@ -8,16 +8,6 @@
             <div>
                 <label>仓库路径：</label>
                 <input
-                    v-model="repo.name"
-                    class="xc-text-input"
-                    type="text"
-                    placeholder="请输入仓库名称"
-                    style="width: 80%"
-                />
-            </div>
-            <div>
-                <label>项目路径：</label>
-                <input
                     v-model="repo.path"
                     class="xc-text-input"
                     type="text"
@@ -59,7 +49,7 @@ async function btnclk_create_prj(): Promise<void> {
         return MessageShow.error('请输入数据路径')
     }
     const response = await util.create_prj(relRepo)
-    if (response.code === 0) {
+    if (response.isSuccess()) {
         if (response.bOver === false) {
             MessageShow.info(`正在处理ing`)
         } else {
