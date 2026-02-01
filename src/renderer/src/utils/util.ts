@@ -795,7 +795,6 @@ class Util {
 
         // 全部清除
         clear_videoPlayCtrl()
-        // appStore.curSltVideo = null
         appStore.bShowKeyFrameInfo = false
         appStore.barSeekTime = 0
         if (!(req?.bNotClear_curSltVideo == true)) {
