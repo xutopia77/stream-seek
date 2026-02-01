@@ -48,35 +48,28 @@ const viewModel = computed(() => {
 const videoRef = ref<HTMLVideoElement | null>(null)
 
 watch(
-    () => appStore.curSltVideo,
-    async (newVal: DataTypes.File | null) => {
-        if (newVal == null) {
+    () => appStore.curSltVideoName4Play,
+    () => {
+        if (
+            appStore.curSltVideoName4Play == null ||
+            appStore.curSltVideoName4Play == '' ||
+            appStore.curSltVideo == null
+        ) {
             if (videoRef.value) {
                 videoRef.value.src = ''
             }
             return
         }
-        let curSltVideoName =
-            appStore.curSltVideo == null ? '' : DataTypes.File.makeDisplayName(appStore.curSltVideo)
-
-        appStore.homeNavContent = curSltVideoName
-        console.log(`curSltVideoName: ${curSltVideoName}`)
-
         const clearReq = new DataTypes.ClearSltInfoReq()
         clearReq.bNotClear_curSltVideo = true
         util.clear_cur_slt_video_info(clearReq)
-        console.log(`video info ${newVal}`)
-        const playReq = new PlayReq(DataTypes.File.makePlayUrl(newVal))
+        console.log(`video info ${appStore.curSltVideo}`)
+
+        const playReq = new PlayReq(DataTypes.File.makePlayUrl(appStore.curSltVideo))
         if (videoRef.value == null) {
             return
         }
         util.play_video(videoRef.value, playReq)
-    }
-)
-watch(
-    () => appStore.curSltVideo,
-    () => {
-        console.log('cur slt video info', appStore.curSltVideo)
     }
 )
 

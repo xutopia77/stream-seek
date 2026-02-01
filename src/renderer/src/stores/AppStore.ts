@@ -37,6 +37,7 @@ export type AppStore = {
     videoList: DataTypes.File[]
     curCheckedVideo: Set<DataTypes.File>
     curSltVideo: DataTypes.File | null // 在列表中，鼠标选中后，更新
+    curSltVideoName4Play: string // 当前选中视频的名称，在videoPreview中watch然后，更新播放状态使用，其他地方不要用这个变量 
     // curVideoInfo: DataTypes.File | null // 根据 鼠标选中的视频，从后台获取信息，更新此信息
     //   videoSplitInfo: any[]
     bShowKeyFrameInfo: boolean
@@ -85,6 +86,7 @@ export const useAppStore = defineStore('app', {
         videoList: [],
         curCheckedVideo: new Set<DataTypes.File>(), // 当前选中的视频列表
         curSltVideo: null, // 当前选中的视频
+        curSltVideoName4Play: '', // 当前选中视频的名称，在videoPreview中watch然后，更新播放状态使用，其他地方不要用这个变量
         // curVideoInfo: null, // 当前选中的视频信息
         // ------ 视频切分信息
         // videoSplitInfo: [],

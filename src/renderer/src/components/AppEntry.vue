@@ -55,6 +55,20 @@ watch(
     }
 )
 
+watch(
+    () => appStore.curSltVideo,
+    async (newVal: DataTypes.File | null) => {
+        if (newVal == null) {
+            return
+        }
+        let curSltVideoName =
+            appStore.curSltVideo == null ? '' : DataTypes.File.makeDisplayName(appStore.curSltVideo)
+        appStore.homeNavContent = curSltVideoName
+        appStore.curSltVideoName4Play =
+            appStore.curSltVideo == null ? '' : appStore.curSltVideo.name
+    }
+)
+
 onBeforeMount(async () => {
     util.setAppStore(appStore)
     const resp = await util.start_app()

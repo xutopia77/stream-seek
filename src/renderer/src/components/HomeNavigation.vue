@@ -91,32 +91,19 @@ const isAboutModalVisible = ref<boolean>(false)
 let statusInfoTitle = ref<string>('')
 let statusInfo = ref<string>('')
 
+function navContentMake(): void {
+    statusInfoTitle.value =
+        appStore.prj.repoType == DataTypes.RepoType.Normal ? '仓库文件' : '回收站文件'
+    const repoStr = appStore.prj.repoType == DataTypes.RepoType.Normal ? '🗄️' : '🗑️'
+    statusInfo.value = `${repoStr} ${appStore.homeNavContent}`
+}
+
 watch(
     () => appStore.homeNavContent,
-    (newVal) => {
-        console.log("=============asdfsfsdf", newVal)
-        statusInfo.value = newVal
+    () => {
+        navContentMake()
     }
 )
-
-// // 监听 appStore 的变化来更新状态信息
-// watch(
-//     () => [appStore.curSltVideo, appStore.prj.repoType],
-//     () => {
-//         let curSltVideoName =
-//             appStore.curSltVideo == null ? '' : DataTypes.File.makeDisplayName(appStore.curSltVideo)
-//         console.log(appStore.curSltVideo, curSltVideoName, '12333333333333333')
-//         if (appStore.prj.repoType != null) {
-//             const repoStr = appStore.prj.repoType == DataTypes.RepoType.Normal ? '🗄️' : '🗑️'
-//             statusInfoTitle.value =
-//                 appStore.prj.repoType == DataTypes.RepoType.Normal ? '仓库文件' : '回收站文件'
-//             curSltVideoName = `${repoStr} ${curSltVideoName}`
-//         }
-
-//         statusInfo.value = curSltVideoName
-//     },
-//     { immediate: true }
-// )
 
 // 切换下拉菜单的显示状态
 const toggleDropdown = (event: MouseEvent, menu: string): void => {
@@ -201,6 +188,7 @@ function btn_function(): void {
 
 onMounted(() => {
     document.addEventListener('click', handleClickOutside)
+    navContentMake()
 })
 
 onUnmounted(() => {

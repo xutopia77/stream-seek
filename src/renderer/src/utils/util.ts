@@ -53,50 +53,6 @@ async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
     return resp
 }
 
-/*
-{
-  clearModel: "changeToThumbnail",
-}
-*/
-function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
-    const clear_videoPlayCtrl = (): void => {
-        if (appStore) {
-            appStore.videoPlayCtrl.curSrc = ''
-            appStore.videoPlayCtrl.curTime = 0
-            appStore.videoPlayCtrl.videoStartTime = 0
-            appStore.videoPlayCtrl.isPlay = false
-            if (appStore.curSltVideo?.mediaInfo?.duration !== undefined) {
-                appStore.curSltVideo.mediaInfo.duration = 0
-            }
-            appStore.videoPlayCtrl.playbackRate = 1.0
-        }
-    }
-
-    // 有条件的清除
-    if (req != null) {
-        if (req.clearModel === 'changeToThumbnail') {
-            const tmpDuration = appStore?.curSltVideo?.mediaInfo?.duration
-            clear_videoPlayCtrl()
-            if (appStore?.curSltVideo?.mediaInfo?.duration !== undefined) {
-                appStore.curSltVideo.mediaInfo.duration = tmpDuration || 0
-            }
-            if (appStore) {
-                appStore.barSeekTime = 0
-            }
-            return
-        }
-    }
-
-    // 全部清除
-    clear_videoPlayCtrl()
-    appStore.curSltVideo = null
-    appStore.bShowKeyFrameInfo = false
-    appStore.barSeekTime = 0
-    if (!(req?.bNotClear_curSltVideo == true)) {
-        appStore.curSltVideo = null
-    }
-}
-
 function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void {
     if (resp.code !== 0) {
         util.addToastErr(`打开文件夹失败: ${resp.status}`)
@@ -241,7 +197,7 @@ function stop_play(): void {
         return
     }
     console.log('stop_play')
-    clear_cur_slt_video_info(null)
+    util.clear_cur_slt_video_info(null)
 }
 
 export class PlayReq {
@@ -803,7 +759,49 @@ class Util {
     processVideoEvent = processVideoEvent
     folder_file_proc = folder_file_proc
     getKeyFrameInfo = getKeyFrameInfo
-    clear_cur_slt_video_info = clear_cur_slt_video_info
+    /*
+    {
+    clearModel: "changeToThumbnail",
+    }
+    */
+    clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
+        const clear_videoPlayCtrl = (): void => {
+            if (appStore) {
+                appStore.videoPlayCtrl.curSrc = ''
+                appStore.videoPlayCtrl.curTime = 0
+                appStore.videoPlayCtrl.videoStartTime = 0
+                appStore.videoPlayCtrl.isPlay = false
+                if (appStore.curSltVideo?.mediaInfo?.duration !== undefined) {
+                    appStore.curSltVideo.mediaInfo.duration = 0
+                }
+                appStore.videoPlayCtrl.playbackRate = 1.0
+            }
+        }
+
+        // 有条件的清除
+        if (req != null) {
+            if (req.clearModel === 'changeToThumbnail') {
+                const tmpDuration = appStore?.curSltVideo?.mediaInfo?.duration
+                clear_videoPlayCtrl()
+                if (appStore?.curSltVideo?.mediaInfo?.duration !== undefined) {
+                    appStore.curSltVideo.mediaInfo.duration = tmpDuration || 0
+                }
+                if (appStore) {
+                    appStore.barSeekTime = 0
+                }
+                return
+            }
+        }
+
+        // 全部清除
+        clear_videoPlayCtrl()
+        // appStore.curSltVideo = null
+        appStore.bShowKeyFrameInfo = false
+        appStore.barSeekTime = 0
+        if (!(req?.bNotClear_curSltVideo == true)) {
+            appStore.curSltVideo = null
+        }
+    }
     make_prj_info = make_prj_info
     calculateCurFrameIdx = calculateCurFrameIdx
     formatTime = formatTime
