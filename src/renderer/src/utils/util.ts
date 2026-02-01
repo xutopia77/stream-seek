@@ -771,9 +771,9 @@ class Util {
                 appStore.videoPlayCtrl.curTime = 0
                 appStore.videoPlayCtrl.videoStartTime = 0
                 appStore.videoPlayCtrl.isPlay = false
-                if (appStore.curSltVideo?.mediaInfo?.duration !== undefined) {
-                    appStore.curSltVideo.mediaInfo.duration = 0
-                }
+                // if (appStore.curSltVideo?.mediaInfo?.duration !== undefined) {
+                //     appStore.curSltVideo.mediaInfo.duration = 0
+                // }
                 appStore.videoPlayCtrl.playbackRate = 1.0
             }
         }

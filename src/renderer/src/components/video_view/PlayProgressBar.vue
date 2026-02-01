@@ -9,10 +9,10 @@
             @keydown="onProgressBarKeyDown"
         >
             <!-- @mousemove="onProgressBarMouseMove"
-      @mouseup="onProgressBarMouseUp"
-      @mouseleave="onProgressBarMouseLeave"
-      @mouseenter="onProgressBarMouseEnter"
-       -->
+        @mouseup="onProgressBarMouseUp"
+        @mouseleave="onProgressBarMouseLeave"
+        @mouseenter="onProgressBarMouseEnter"
+        -->
             <div
                 v-for="(clip, index) in barClips"
                 :key="index"
@@ -70,6 +70,7 @@ const playBarPercent = computed(() => {
 
 // 拖动进度条改变播放位置
 const seekVideo = (time: number): void => {
+    console.log('seekVideo', time)
     appStore.barSeekTime = time
 }
 
