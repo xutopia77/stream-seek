@@ -1,7 +1,8 @@
 <template>
     <div class="thumbnail-container xc-scrollbar">
         <div v-for="thumb in thumbnailImages" :key="thumb.path" class="thumbnail-card">
-            <img :src="thumb.path" :alt="thumb.name" />
+            <!-- <img :src="thumb.path" :alt="thumb.name" /> -->
+            <img :src="thumbVal" :alt="thumb.name" />
             <span class="xc-text" @click="btnclk_card_check(thumb)">{{ thumb.btnName }}</span>
             <span class="xc-text">{{ DataTypes.Thumbnail.makeDisplayName(thumb.name) }}</span>
         </div>
@@ -16,7 +17,9 @@ import * as DataTypes from '../../../../bridge/dataTypedef'
 // import { IpcApi } from '../../utils/ipcApi'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
-
+// const thumbVal="db_thumb://aCvideo_thumbnail.db#1740797520"
+// const thumbVal="/thumb_get?video=00_20250301105200_20250301105914.mp4&thumb=1740797520"
+const thumbVal="http://localhost:58080/thumb_get?video=00_20250301105200_20250301105914.mp4&thumb=1740797520"
 let thumbnailImages = ref<DataTypes.Thumbnail[]>([])
 
 let curCheckImage = ref<DataTypes.Thumbnail | null>(null)

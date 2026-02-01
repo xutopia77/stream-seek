@@ -5,10 +5,22 @@
     <title>VideoPlayer</title>
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
      <!-- content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file:" -->
-    <meta
+    <!-- <meta
       http-equiv="Content-Security-Policy"
       content="script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file:"
     />
+     -->
+
+<!-- 修改 CSP 规则，添加 http://localhost:58080 到 img-src -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' 'unsafe-inline' data:;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' file: http://localhost:58080;
+    connect-src 'self' http://localhost:58080; 
+     media-src 'self' file: http://localhost:58080;
+  ">
+
   </head>
 
   <body>

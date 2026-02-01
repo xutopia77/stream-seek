@@ -10,6 +10,10 @@ import * as DataTypes from '../../bridge/dataTypedef'
 import appCfg from './AppCfg.js'
 import { workQueue } from './TaskEvent'
 import { Util } from './Utils.js'
+import express from 'express'
+import sqlite3 from 'sqlite3'
+import { open, Database } from 'sqlite'
+
 // function logRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
 //     if (resp.code === 0) {
 //         logger.info(resp.status)
@@ -18,7 +22,6 @@ import { Util } from './Utils.js'
 //     }
 //     return resp
 // }
-
 
 function logStatusRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
     if (resp.code === 0) {
@@ -197,6 +200,92 @@ async function make_trash_folder(folderPath: string): Promise<string> {
     return ''
 }
 
+async function startHttpSrv(port: number): Promise<void> {
+    const app = express()
+    app.use(express.static('public'))
+
+    app.use((req, res, next) => {
+        // 允许所有来源（开发环境）
+        res.header('Access-Control-Allow-Origin', '*')
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        res.header(
+            'Access-Control-Allow-Headers',
+            'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+        )
+        // 关键：设置与前端匹配的 Referrer 策略
+        res.header('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+        // 关闭严格的跨域隔离策略（Electron 不需要）
+        res.header('Cross-Origin-Embedder-Policy', 'unsafe-none')
+        res.header('Cross-Origin-Opener-Policy', 'unsafe-none')
+        res.header('Cross-Origin-Resource-Policy', 'cross-origin')
+
+        if (req.method === 'OPTIONS') {
+            res.sendStatus(200)
+            return
+        }
+        next()
+    })
+
+    // app.listen(port, 'localhost', () => {
+    app.listen(port, () => {
+        logger.error(`Server is running on port ${port}`)
+    })
+
+    // 增加一个get处理，前端传入文件的路径，然后从数据库中读取出对应的缩略图图片
+    // 请求示例 "http://localhost:58080/thumb_get?video=12345&thumb=1740797520"
+    app.get('/thumb_get', async (req, res) => {
+        try {
+            const videoId = req.query.video
+            const timestamp = req.query.thumb
+
+            if (videoId == null || timestamp == null) {
+                res.status(400).send('Invalid request: missing video or thumb parameter')
+                return
+            }
+
+            if (appCfg.prj.dataRepo.length == 0 || appCfg.prj.dataRepo[0].thumbnailPath == '') {
+                res.status(400).send('Invalid request: missing thumbnailPath')
+            }
+
+            // 动态构建数据库路径（根据实际情况调整）
+            const thumbDbPath = path.join(
+                appCfg.prj.dataRepo[0].thumbnailPath,
+                `${videoId}_thumbnail.db`
+            )
+            // 检查数据库文件是否存在
+            if (!fs.existsSync(thumbDbPath)) {
+                res.status(404).send(`Database not found: ${thumbDbPath}`)
+                return
+            }
+
+            const thumbDb: Database = await open({
+                filename: thumbDbPath,
+                driver: sqlite3.Database
+            })
+
+            // 从数据库中查询出对应的缩略图图片
+            const row = await thumbDb.get('SELECT image_data FROM thumbnails WHERE timestamp =?', [
+                timestamp
+            ])
+
+            await thumbDb.close()
+
+            if (row == null) {
+                res.status(404).send('Thumbnail not found')
+                return
+            }
+
+            const imageData = row.image_data
+            res.setHeader('Content-Type', 'image/jpeg')
+            res.send(imageData)
+        } catch (error) {
+            console.error('Error handling thumb_get request:', error)
+            res.status(500).send('Internal server error')
+        }
+    })
+}
+
 class AppProc {
     // constructor() {}
     saveAppCfg(): void {
@@ -211,6 +300,7 @@ class AppProc {
 
     async initApp(): Promise<void> {
         await appCfg.initCfg()
+        await startHttpSrv(58080)
     }
 
     async quiteApp(): Promise<void> {
