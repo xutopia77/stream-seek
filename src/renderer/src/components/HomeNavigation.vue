@@ -25,11 +25,26 @@
                     class="dropdown-menu"
                     :class="{ show: isDropdownOpen['view'] }"
                 >
-                    <button class="xc-button menu-button" @click.stop="showFileList">
+                    <button class="xc-button menu-button" @click.stop="btn_viewChange('list_show')">
                         文件列表
                     </button>
-                    <button class="xc-button menu-button" @click.stop="showOperationPanel">
+                    <button
+                        class="xc-button menu-button"
+                        @click.stop="btn_viewChange('operate_show')"
+                    >
                         操作面板
+                    </button>
+                    <button
+                        class="xc-button menu-button"
+                        @click.stop="btn_viewChange('thumb_show')"
+                    >
+                        缩略图查看
+                    </button>
+                    <button
+                        class="xc-button menu-button"
+                        @click.stop="btn_viewChange('video_show')"
+                    >
+                        视频查看
                     </button>
                 </div>
             </div>
@@ -154,16 +169,24 @@ const exitApp = (): void => {
     window.close()
 }
 
-// 显示文件列表的处理函数
-const showFileList = (): void => {
+const btn_viewChange = (mode: string): void => {
+    switch (mode) {
+        case 'thumb_show':
+            util.viewModelChange('thumbnail')
+            break
+        case 'video_show':
+            util.viewModelChange('video')
+            break
+        case 'operate_show':
+            appStore.rightPanel = DataTypes.WorkPanel.Operate
+            break
+        case 'list_show':
+            appStore.rightPanel = DataTypes.WorkPanel.List
+            break
+        default:
+            break
+    }
     isDropdownOpen.value.view = false
-    appStore.rightPanel = DataTypes.WorkPanel.List
-}
-
-// 显示操作面板的处理函数
-const showOperationPanel = (): void => {
-    isDropdownOpen.value.view = false
-    appStore.rightPanel = DataTypes.WorkPanel.Operate
 }
 
 // 显示关于模态框

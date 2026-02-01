@@ -56,13 +56,7 @@ const curViewBtn = computed(() => {
 })
 
 const btnclk_change_view_model = (): void => {
-    if (appStore.curViewModel === 'video') {
-        appStore.curViewModel = 'thumbnail'
-    } else {
-        appStore.curViewModel = 'video'
-    }
-    const showCtx = appStore.curViewModel === 'video' ? `视频播放模式` : `缩略图模式`
-    util.addToast(showCtx, 'info')
+    util.viewModelChange(appStore.curViewModel === 'video' ? 'thumbnail' : 'video')
 }
 
 // ------

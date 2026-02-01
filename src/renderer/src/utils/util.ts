@@ -944,6 +944,16 @@ class Util {
         appStore.videoList = response.data?.files || []
         return response
     }
+
+    viewModelChange(viewModel: 'video' | 'thumbnail'): void {
+        if (viewModel === 'video') {
+            appStore.curViewModel = 'video'
+        } else if (viewModel === 'thumbnail') {
+            appStore.curViewModel = 'thumbnail'
+        }
+        const showCtx = appStore.curViewModel === 'video' ? `视频播放模式` : `缩略图模式`
+        util.addToast(showCtx, 'info')
+    }
 }
 
 const util = new Util()

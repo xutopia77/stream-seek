@@ -268,7 +268,7 @@ class RecordsProc {
         return path.join(repo.thumbnailPath, path.basename(fPath, '.mp4'))
     }
 
-    thumbnail_trash_path_get_mp4(repoName: string, fPath: string): string {
+    thumbnail_trash_path_get_mp4(repoName: string, fileName: string): string {
         const repo = DataTypes.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
         if (repo == null) {
             return ''
@@ -276,7 +276,7 @@ class RecordsProc {
         if (repo.thumbnailPath == '') {
             return ''
         }
-        return path.join(repo.thumbnailPath, '.trash', path.basename(fPath, '.mp4'))
+        return path.join(repo.thumbnailPath, '.trash', `${fileName}_thumbnail.db`)
     }
 
     async thumbnail_get_mp4_path(fPath: string): Promise<DataTypes.Resp<string>> {
@@ -304,28 +304,30 @@ class RecordsProc {
             return resp.err('repo is null')
         }
 
+        const thumbDbFilePath = path.join(repo.thumbnailPath, `${filename}_thumbnail.db`)
         const thumbnail_dir = repo.thumbnailPath
         if (thumbnail_dir === '') {
             return resp.err('thumbnail dir is empty')
         }
-        const file_thubmbnail_dir = this.thumbnail_path_get_mp4(fileInfo.repo, filepath)
-        // logger.info(`gen thumbnail: ${filepath}, ${file_thubmbnail_dir}`)
         let bExist = true
         //1, 检查对应的文件的缩略图是否已经存在
         try {
-            await fs.promises.access(file_thubmbnail_dir, fs.constants.F_OK)
+            await fs.promises.access(thumbDbFilePath, fs.constants.F_OK)
         } catch (error) {
             if (!error) logger.error(error)
             bExist = false
         }
         if (!bExist) {
             try {
-                const trashThumbnailDir = this.thumbnail_trash_path_get_mp4(fileInfo.repo, filepath)
-                await fs.promises.access(trashThumbnailDir, fs.constants.F_OK)
+                const trashThumbnailDbPath = this.thumbnail_trash_path_get_mp4(
+                    fileInfo.repo,
+                    fileInfo.name
+                )
+                await fs.promises.access(trashThumbnailDbPath, fs.constants.F_OK)
                 try {
-                    await fs.promises.rename(trashThumbnailDir, file_thubmbnail_dir)
+                    await fs.promises.rename(trashThumbnailDbPath, thumbDbFilePath)
                     logger.info(
-                        `find thumbnail in trash, move ${trashThumbnailDir} to ${file_thubmbnail_dir}`
+                        `find thumbnail in trash, move ${trashThumbnailDbPath} to ${thumbDbFilePath}`
                     )
                     bExist = true
                 } catch (error) {
@@ -430,14 +432,13 @@ class RecordsProc {
         }
 
         {
-            const thumbDbPath = path.join(file_thubmbnail_dir, '..', `${filename}_thumbnail.db`)
-            logger.log(`gen thumbnail db: ${thumbDbPath}`)
+            logger.log(`gen thumbnail db: ${thumbDbFilePath}`)
             const thumbDb: Database = await open({
-                filename: thumbDbPath,
+                filename: thumbDbFilePath,
                 driver: sqlite3.Database
             })
             await thumbDb.exec(`
-                CREATE TABLE thumbnails (
+                CREATE TABLE IF NOT EXISTS thumbnails (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     filename TEXT NOT NULL,
                     image_data BLOB NOT NULL,
