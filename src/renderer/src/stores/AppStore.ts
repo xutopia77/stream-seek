@@ -14,10 +14,8 @@ export type AppStore = {
     prj: DataTypes.Prj
     serverUrlPrefix: string
 
-    // ------
+    // ------ message toast
     bPageResentMsg: boolean // 打开界面 最近消息
-
-    // message toast
     toasts: ToastMessage[]
     historyToasts: ToastMessage[]
     // ------
@@ -60,9 +58,9 @@ export const useAppStore = defineStore('app', {
         // utils
         // serverUrlPrefix: "http://localhost:38080",
         serverUrlPrefix: '',
-        // ------
+
+        // ------ message toast
         bPageResentMsg: false,
-        // message toast
         toasts: [],
         historyToasts: [],
         // video play

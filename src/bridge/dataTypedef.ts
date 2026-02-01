@@ -340,6 +340,7 @@ export enum ThumbStrategy {
     BySize = 'size'
 }
 
+// 项目配置，存储在项目json文件中
 export class Prj {
     name: string = ''
     version: string = '1.0.1'
