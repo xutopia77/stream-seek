@@ -525,25 +525,6 @@ export class ClearSltInfoReq {
     bNotClear_curSltVideo?: boolean
 }
 
-// 定义缩略图对象的类型
-export class Thumbnail {
-    path: string = ''
-    name: string = ''
-    indexTime: number = 0
-    checked: boolean = false // 由前端赋值
-    btnName: string = ''
-    static makeDisplayName(thumbName: string): string {
-        const timeStr = thumbName
-        const year = timeStr.slice(0, 4)
-        const month = timeStr.slice(4, 6)
-        const day = timeStr.slice(6, 8)
-        const hour = timeStr.slice(8, 10)
-        const minute = timeStr.slice(10, 12)
-        const second = timeStr.slice(12, 14)
-        return `${year}-${month}-${day} ${hour}:${minute}:${second}`
-    }
-}
-
 export interface CutVideoReq {
     bDelFullVideo?: boolean
 }

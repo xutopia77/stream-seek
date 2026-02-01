@@ -573,25 +573,6 @@ class Util {
         return resp
     }
 
-    update_thumbnail_images(thumbnailImages: DataTypes.Thumbnail[]): void {
-        if (appStore.curVideoInfo === null) {
-            return
-        }
-        if (appStore.curVideoInfo.thumbnail?.path == null) {
-            console.log('cur video thumbnail null')
-            return
-        }
-        for (let i = 0; i < appStore.curVideoInfo.thumbnail.path.length; i++) {
-            const thumb = appStore.curVideoInfo.thumbnail.path[i]
-            const thumbInfo = new DataTypes.Thumbnail()
-            thumbInfo.path = thumb
-            thumbInfo.indexTime = DataTypes.FileTools.parse_timestr_2_seconds(thumb)
-            thumbInfo.name = util.getFilenameFromPath(thumb)
-            thumbInfo.btnName = '⬜'
-            thumbnailImages.push(thumbInfo)
-        }
-    }
-
     process_heartbeat(resp: DataTypes.Resp<DataTypes.HeartBeat>): void {
         if (resp.code !== 0) {
             console.log('process heartbeat failed', resp)
