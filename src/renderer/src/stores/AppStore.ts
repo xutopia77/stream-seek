@@ -19,6 +19,8 @@ export type AppStore = {
     toasts: ToastMessage[]
     historyToasts: ToastMessage[]
     // ------
+    homeNavContent: string
+    // ------
     videoPlayCtrl: {
         curSrc: string // 当前播放视频地址
         curTime: number // 浮点数，秒 只读参数
@@ -35,7 +37,7 @@ export type AppStore = {
     videoList: DataTypes.File[]
     curCheckedVideo: Set<DataTypes.File>
     curSltVideo: DataTypes.File | null // 在列表中，鼠标选中后，更新
-    curVideoInfo: DataTypes.File | null // 根据 鼠标选中的视频，从后台获取信息，更新此信息
+    // curVideoInfo: DataTypes.File | null // 根据 鼠标选中的视频，从后台获取信息，更新此信息
     //   videoSplitInfo: any[]
     bShowKeyFrameInfo: boolean
     barSeekTime: number
@@ -63,6 +65,8 @@ export const useAppStore = defineStore('app', {
         bPageResentMsg: false,
         toasts: [],
         historyToasts: [],
+        // ------
+        homeNavContent: '',
         // video play
         videoPlayCtrl: {
             curSrc: '', // 当前播放视频地址
@@ -81,7 +85,7 @@ export const useAppStore = defineStore('app', {
         videoList: [],
         curCheckedVideo: new Set<DataTypes.File>(), // 当前选中的视频列表
         curSltVideo: null, // 当前选中的视频
-        curVideoInfo: null, // 当前选中的视频信息
+        // curVideoInfo: null, // 当前选中的视频信息
         // ------ 视频切分信息
         // videoSplitInfo: [],
         bShowKeyFrameInfo: false, // 是否显示关键帧信息

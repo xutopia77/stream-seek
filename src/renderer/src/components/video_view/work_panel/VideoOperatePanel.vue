@@ -67,19 +67,19 @@ const btnclk_change_view_model = (): void => {
 
 // ------
 const btnclk_splitVideo = (): void => {
-    if (appStore.curVideoInfo?.mediaInfo == null) {
+    if (appStore.curSltVideo?.mediaInfo == null) {
         util.addToastErr(`请先选择视频`)
         return
     }
-    if (appStore.curVideoInfo?.splitInfo == null) {
+    if (appStore.curSltVideo?.splitInfo == null) {
         util.addToastErr(`没有分段信息`)
         return
     }
     const currentTime = appStore.videoPlayCtrl.curTime
-    const videoDuration = appStore.curVideoInfo?.mediaInfo.duration
+    const videoDuration = appStore.curSltVideo?.mediaInfo.duration
     const curpercent = (currentTime / videoDuration) * 100
     if (
-        appStore.curVideoInfo?.splitInfo.splits.some(
+        appStore.curSltVideo?.splitInfo.splits.some(
             (item: DataTypes.SplitInfo) => item.percent === curpercent
         )
     ) {
@@ -88,30 +88,30 @@ const btnclk_splitVideo = (): void => {
     if (currentTime >= videoDuration) {
         return
     }
-    appStore.curVideoInfo.splitInfo.splits.sort(
+    appStore.curSltVideo.splitInfo.splits.sort(
         (a: DataTypes.SplitInfo, b: DataTypes.SplitInfo) => a.percent - b.percent
     )
 
-    for (let i = 0; i < appStore.curVideoInfo.splitInfo.splits.length; i++) {
-        const splitInfo = appStore.curVideoInfo.splitInfo[i]
+    for (let i = 0; i < appStore.curSltVideo.splitInfo.splits.length; i++) {
+        const splitInfo = appStore.curSltVideo.splitInfo[i]
         if (splitInfo.startTime < currentTime && splitInfo.endTime > currentTime) {
             const oldEndTime = splitInfo.endTime
             splitInfo.endTime = currentTime
             let itemInfo = util.makeSplitInfo()
             itemInfo.startTime = currentTime
             itemInfo.endTime = oldEndTime
-            appStore.curVideoInfo.splitInfo.splits.push(itemInfo)
+            appStore.curSltVideo.splitInfo.splits.push(itemInfo)
             break
         }
     }
-    util.splitInfoCorrect(appStore.curVideoInfo.splitInfo.splits, videoDuration)
+    util.splitInfoCorrect(appStore.curSltVideo.splitInfo.splits, videoDuration)
 }
 
 const videoSplitInfo = computed(() => {
-    if (appStore.curVideoInfo?.splitInfo == null) {
+    if (appStore.curSltVideo?.splitInfo == null) {
         return []
     }
-    let splitInfo = appStore.curVideoInfo.splitInfo.splits
+    let splitInfo = appStore.curSltVideo.splitInfo.splits
     return splitInfo
 })
 
@@ -137,18 +137,18 @@ const removeVideosplit = (): void => {
         util.addToastInfo(`不能删除系统片段`)
         return
     }
-    if (appStore.curVideoInfo?.splitInfo == null) {
+    if (appStore.curSltVideo?.splitInfo == null) {
         util.addToastInfo(`没有分段信息`)
         return
     }
     if (selectedSplitInfo.value) {
         const confirmDelete = confirm('确定要删除当前选中的片段信息记录吗？')
         if (confirmDelete) {
-            const index = appStore.curVideoInfo?.splitInfo.splits.findIndex(
+            const index = appStore.curSltVideo?.splitInfo.splits.findIndex(
                 (item: DataTypes.SplitInfo) => item.percent === selectedSplitInfo.value?.percent
             )
             if (index !== -1) {
-                appStore.curVideoInfo.splitInfo.splits.splice(index, 1)
+                appStore.curSltVideo.splitInfo.splits.splice(index, 1)
                 selectedSplitInfo.value = null
             }
         }
@@ -160,7 +160,7 @@ const removeVideoRecord = (): void => {
         util.addToastErr(`请先选择要删除的片段`)
         return
     }
-    if (appStore.curVideoInfo?.splitInfo == null) {
+    if (appStore.curSltVideo?.splitInfo == null) {
         util.addToastErr(`没有分段信息`)
         return
     }
@@ -168,13 +168,13 @@ const removeVideoRecord = (): void => {
     if (!confirmDelete) {
         return
     }
-    const index = appStore.curVideoInfo.splitInfo.splits.findIndex(
+    const index = appStore.curSltVideo.splitInfo.splits.findIndex(
         (item: DataTypes.SplitInfo) => item.percent == selectedSplitInfo?.value?.percent
     )
     if (index === -1) {
         return
     }
-    appStore.curVideoInfo.splitInfo[index]['isDelete'] = true
+    appStore.curSltVideo.splitInfo[index]['isDelete'] = true
 }
 
 const restoreVideoRecord = (): void => {
@@ -182,17 +182,17 @@ const restoreVideoRecord = (): void => {
         util.addToastErr(`请先选择要恢复的片段`)
         return
     }
-    if (appStore.curVideoInfo?.splitInfo == null) {
+    if (appStore.curSltVideo?.splitInfo == null) {
         util.addToastErr(`没有分段信息`)
         return
     }
-    const index = appStore.curVideoInfo.splitInfo.splits.findIndex(
+    const index = appStore.curSltVideo.splitInfo.splits.findIndex(
         (item: DataTypes.SplitInfo) => item.percent == selectedSplitInfo?.value?.percent
     )
     if (index === -1) {
         return
     }
-    appStore.curVideoInfo.splitInfo[index]['isDelete'] = false
+    appStore.curSltVideo.splitInfo[index]['isDelete'] = false
 }
 
 const exportVideoRecord = async (): Promise<void> => {

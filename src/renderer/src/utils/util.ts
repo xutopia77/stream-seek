@@ -28,17 +28,17 @@ function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.S
     if (lastTime !== 0.0) {
         const itemInfo = util.makeSplitInfo()
         itemInfo.startTime = lastTime
-        itemInfo.endTime = appStore?.curVideoInfo?.mediaInfo?.duration || 0
+        itemInfo.endTime = appStore?.curSltVideo?.mediaInfo?.duration || 0
         itemInfo.color = 'yellow'
         frameSplitInfo.push(itemInfo)
     }
-    util.splitInfoCorrect(frameSplitInfo, appStore?.curVideoInfo?.mediaInfo?.duration || 0)
+    util.splitInfoCorrect(frameSplitInfo, appStore?.curSltVideo?.mediaInfo?.duration || 0)
     return frameSplitInfo
 }
 
 async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
     const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
-    if (appStore?.curSltVideo === null || appStore?.curVideoInfo?.mediaInfo === null) {
+    if (appStore?.curSltVideo === null || appStore?.curSltVideo?.mediaInfo === null) {
         return resp.err('no video selected')
     }
     const req: DataTypes.Req<DataTypes.Req_FrameInfo> = {
@@ -47,7 +47,7 @@ async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
             filepath: appStore?.curSltVideo?.path
         }
     }
-    if (appStore?.curVideoInfo?.frameInfo == null) {
+    if (appStore?.curSltVideo?.frameInfo == null) {
         return await IpcApi.trigger_event(req)
     }
     return resp
@@ -65,8 +65,8 @@ function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
             appStore.videoPlayCtrl.curTime = 0
             appStore.videoPlayCtrl.videoStartTime = 0
             appStore.videoPlayCtrl.isPlay = false
-            if (appStore.curVideoInfo?.mediaInfo?.duration !== undefined) {
-                appStore.curVideoInfo.mediaInfo.duration = 0
+            if (appStore.curSltVideo?.mediaInfo?.duration !== undefined) {
+                appStore.curSltVideo.mediaInfo.duration = 0
             }
             appStore.videoPlayCtrl.playbackRate = 1.0
         }
@@ -75,10 +75,10 @@ function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
     // 有条件的清除
     if (req != null) {
         if (req.clearModel === 'changeToThumbnail') {
-            const tmpDuration = appStore?.curVideoInfo?.mediaInfo?.duration
+            const tmpDuration = appStore?.curSltVideo?.mediaInfo?.duration
             clear_videoPlayCtrl()
-            if (appStore?.curVideoInfo?.mediaInfo?.duration !== undefined) {
-                appStore.curVideoInfo.mediaInfo.duration = tmpDuration || 0
+            if (appStore?.curSltVideo?.mediaInfo?.duration !== undefined) {
+                appStore.curSltVideo.mediaInfo.duration = tmpDuration || 0
             }
             if (appStore) {
                 appStore.barSeekTime = 0
@@ -89,7 +89,7 @@ function clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
 
     // 全部清除
     clear_videoPlayCtrl()
-    appStore.curVideoInfo = null
+    appStore.curSltVideo = null
     appStore.bShowKeyFrameInfo = false
     appStore.barSeekTime = 0
     if (!(req?.bNotClear_curSltVideo == true)) {
@@ -193,12 +193,12 @@ const formatSecond2Time = (timeSec: number): string => {
 }
 
 async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
-    if (appStore?.curVideoInfo === null) {
+    if (appStore?.curSltVideo === null) {
         util.addToastInfo(`当前没有选择视频文件`)
         return null
     }
     const prjInfo: DataTypes.Req_CutVideo = {
-        fileInfo: appStore.curVideoInfo,
+        fileInfo: appStore.curSltVideo,
         filepath: appStore.curSltVideo?.path || '',
         filename: util.getFilenameFromPath(appStore.curSltVideo?.path || '')
     }
@@ -206,9 +206,9 @@ async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
 }
 
 function calculateCurFrameIdx(curTime: number): number {
-    if (appStore?.curVideoInfo === null) return 0
-    if (appStore?.curVideoInfo?.mediaInfo === null) return 0
-    const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+    if (appStore?.curSltVideo === null) return 0
+    if (appStore?.curSltVideo?.mediaInfo === null) return 0
+    const frameRate = appStore.curSltVideo?.mediaInfo?.video.frame_rate
     if (frameRate === undefined) return 0
     const frame = Math.floor(curTime * frameRate)
     return frame
@@ -325,9 +325,9 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
             return
         }
         appStore.videoPlayCtrl.curTime = 0
-        if (videoRef.duration != appStore.curVideoInfo?.mediaInfo?.duration) {
+        if (videoRef.duration != appStore.curSltVideo?.mediaInfo?.duration) {
             console.log(
-                `video duration not equal appStore.duration: ${videoRef.duration} != ${appStore.curVideoInfo?.mediaInfo?.duration}`
+                `video duration not equal appStore.duration: ${videoRef.duration} != ${appStore.curSltVideo?.mediaInfo?.duration}`
             )
         }
         if (req.beforePlayCbk != null) {
@@ -389,13 +389,13 @@ function toggle_play(videoRef: HTMLVideoElement): void {
 function update_bar_clips(): DataTypes.BarClip[] {
     const barClips: DataTypes.BarClip[] = []
 
-    if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+    if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return barClips
     }
-    if (appStore.curVideoInfo?.splitInfo?.splits == null) {
+    if (appStore.curSltVideo?.splitInfo?.splits == null) {
         return barClips
     }
-    if (appStore.curVideoInfo?.splitInfo.splits.length == 0) {
+    if (appStore.curSltVideo?.splitInfo.splits.length == 0) {
         return barClips
     }
 
@@ -403,7 +403,7 @@ function update_bar_clips(): DataTypes.BarClip[] {
         startTime: number
         endTime: number
     }
-    const timeSplitInfo: timeSplitInfo[] = appStore.curVideoInfo.splitInfo.splits.map((item) => {
+    const timeSplitInfo: timeSplitInfo[] = appStore.curSltVideo.splitInfo.splits.map((item) => {
         return {
             startTime: item.startTime,
             endTime: item.endTime
@@ -413,7 +413,7 @@ function update_bar_clips(): DataTypes.BarClip[] {
         return barClips
     }
 
-    const duration = appStore.curVideoInfo.mediaInfo.duration
+    const duration = appStore.curSltVideo.mediaInfo.duration
     for (let i = 0; i < timeSplitInfo.length; i++) {
         const config = timeSplitInfo[i]
         const startTime = config.startTime
@@ -628,31 +628,31 @@ class Util {
 
     async get_slt_video(video: DataTypes.File | null): Promise<void> {
         const processSplitInfo = (): void => {
-            if (appStore?.curVideoInfo == null) {
+            if (appStore?.curSltVideo == null) {
                 return
             }
-            if (appStore?.curVideoInfo?.splitInfo?.splits != null) {
+            if (appStore?.curSltVideo?.splitInfo?.splits != null) {
                 // 从后台已经获取到了信息，就不用再处理了
-                if (appStore.curVideoInfo.splitInfo.splits.length > 0) {
+                if (appStore.curSltVideo.splitInfo.splits.length > 0) {
                     return
                 }
             }
             // 如果后台没有标记信息，就需要把完整的视频分段添加到splitInfo中
-            const duration = appStore?.curVideoInfo?.mediaInfo?.duration || 0
+            const duration = appStore?.curSltVideo?.mediaInfo?.duration || 0
             const itemInfo = util.makeSplitInfo()
             itemInfo.endTime = duration
             itemInfo.duration = duration
             itemInfo.percent = 100
             itemInfo.frameNum = util.calculateCurFrameIdx(duration)
-            if (appStore?.curVideoInfo?.splitInfo == null) {
-                appStore.curVideoInfo.splitInfo = new DataTypes.SqlitInfos()
-                if (appStore?.curVideoInfo?.splitInfo != null) {
-                    appStore.curVideoInfo.splitInfo.splits = []
+            if (appStore?.curSltVideo?.splitInfo == null) {
+                appStore.curSltVideo.splitInfo = new DataTypes.SqlitInfos()
+                if (appStore?.curSltVideo?.splitInfo != null) {
+                    appStore.curSltVideo.splitInfo.splits = []
                 }
             }
-            if (appStore?.curVideoInfo?.splitInfo.splits != null) {
-                appStore.curVideoInfo.splitInfo.splits.push(itemInfo)
-                appStore.curVideoInfo.splitInfo.splits.sort((a, b) => a.percent - b.percent)
+            if (appStore?.curSltVideo?.splitInfo.splits != null) {
+                appStore.curSltVideo.splitInfo.splits.push(itemInfo)
+                appStore.curSltVideo.splitInfo.splits.sort((a, b) => a.percent - b.percent)
             }
         }
         if (video == null) {
@@ -678,7 +678,7 @@ class Util {
                 console.log('slect video failed', response)
                 return
             }
-            appStore.curVideoInfo = respData
+            appStore.curSltVideo = respData
             // if (respData.eventInfo != null) {
             //     util.processVideoEvent(respData.eventInfo?.events)
             // }
@@ -881,10 +881,10 @@ class Util {
                     util.addToastErr(`获取关键帧信息失败: ${response.status}`)
                 } else {
                     if (appStore) {
-                        if (appStore.curVideoInfo == null) {
-                            appStore.curVideoInfo = new DataTypes.File()
+                        if (appStore.curSltVideo == null) {
+                            appStore.curSltVideo = new DataTypes.File()
                         }
-                        appStore.curVideoInfo.frameInfo = response.data
+                        appStore.curSltVideo.frameInfo = response.data
                     }
                     util.addToastInfo(`获取关键帧信息完成:${response.status}`)
                 }

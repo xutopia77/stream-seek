@@ -98,33 +98,33 @@ let curTime = computed(() => {
 })
 let videoDuration = computed(() => {
     let str = '00:00:00.000'
-    if (appStore.curVideoInfo?.mediaInfo != null) {
-        str = DataTypes.Utils.time_2_msec_str(appStore.curVideoInfo.mediaInfo.duration)
+    if (appStore.curSltVideo?.mediaInfo != null) {
+        str = DataTypes.Utils.time_2_msec_str(appStore.curSltVideo.mediaInfo.duration)
     }
     return str
 })
-// let videoDuration = computed(() => formatTime(appStore.curVideoInfo?.mediaInfo.duration))
+// let videoDuration = computed(() => formatTime(appStore.curSltVideo?.mediaInfo.duration))
 
 function genFrame(): string {
-    if (appStore.curVideoInfo == null) return ''
-    if (appStore.curVideoInfo.mediaInfo == null) return ''
+    if (appStore.curSltVideo == null) return ''
+    if (appStore.curSltVideo.mediaInfo == null) return ''
     const curTime = appStore.videoPlayCtrl.curTime
-    const frameRate = appStore.curVideoInfo.mediaInfo.video.frame_rate
-    const frameCount = Math.floor(appStore.curVideoInfo.mediaInfo.video.nb_frames)
+    const frameRate = appStore.curSltVideo.mediaInfo.video.frame_rate
+    const frameCount = Math.floor(appStore.curSltVideo.mediaInfo.video.nb_frames)
     const frame = Math.floor(curTime * frameRate)
     return `${frame}/${frameCount}f`
 }
 let frameInfo = computed(() => genFrame())
 
 let frameRate = computed(() => {
-    if (appStore.curVideoInfo == null) return ''
-    if (appStore.curVideoInfo.mediaInfo == null) return ''
-    const frameRateStr = appStore.curVideoInfo.mediaInfo.video.frame_rate.toFixed(3)
+    if (appStore.curSltVideo == null) return ''
+    if (appStore.curSltVideo.mediaInfo == null) return ''
+    const frameRateStr = appStore.curSltVideo.mediaInfo.video.frame_rate.toFixed(3)
     return `${frameRateStr}fps`
 })
 
 function nextFrame(): void {
-    if (appStore.curVideoInfo == null) {
+    if (appStore.curSltVideo == null) {
         util.addToastInfo('请先选择一个视频')
         return
     }
@@ -134,7 +134,7 @@ function nextFrame(): void {
 }
 
 function previousFrame(): void {
-    if (appStore.curVideoInfo == null) {
+    if (appStore.curSltVideo == null) {
         util.addToastInfo('请先选择一个视频')
         return
     }

@@ -56,10 +56,15 @@ watch(
             }
             return
         }
+        let curSltVideoName =
+            appStore.curSltVideo == null ? '' : DataTypes.File.makeDisplayName(appStore.curSltVideo)
+
+        appStore.homeNavContent = curSltVideoName
+        console.log(`curSltVideoName: ${curSltVideoName}`)
+
         const clearReq = new DataTypes.ClearSltInfoReq()
         clearReq.bNotClear_curSltVideo = true
         util.clear_cur_slt_video_info(clearReq)
-        await util.get_slt_video(newVal)
         console.log(`video info ${newVal}`)
         const playReq = new PlayReq(DataTypes.File.makePlayUrl(newVal))
         if (videoRef.value == null) {
@@ -69,9 +74,9 @@ watch(
     }
 )
 watch(
-    () => appStore.curVideoInfo,
+    () => appStore.curSltVideo,
     () => {
-        console.log('cur slt video info', appStore.curVideoInfo)
+        console.log('cur slt video info', appStore.curSltVideo)
     }
 )
 
@@ -88,7 +93,7 @@ watch(
 
 function nextFrame(): void {
     if (videoRef.value != null) {
-        const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+        const frameRate = appStore.curSltVideo?.mediaInfo?.video.frame_rate
         if (frameRate == null) {
             console.log('frame rate is null')
             return
@@ -102,7 +107,7 @@ function nextFrame(): void {
 
 function previousFrame(): void {
     if (videoRef.value != null) {
-        const frameRate = appStore.curVideoInfo?.mediaInfo?.video.frame_rate
+        const frameRate = appStore.curSltVideo?.mediaInfo?.video.frame_rate
         if (frameRate == null) {
             console.log('frame rate is null')
             return

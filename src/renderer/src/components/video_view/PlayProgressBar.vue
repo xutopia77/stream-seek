@@ -59,13 +59,13 @@ const isDragging = ref<boolean>(false)
 const isMouseOver = ref<boolean>(false) // 新增：记录鼠标是否在进度条上
 
 const playBarPercent = computed(() => {
-    if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+    if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return `${0 * 100}%`
     }
-    if (appStore.curVideoInfo?.mediaInfo?.duration == 0) {
+    if (appStore.curSltVideo?.mediaInfo?.duration == 0) {
         return `${0 * 100}%`
     }
-    return `${(appStore.videoPlayCtrl.curTime / appStore.curVideoInfo.mediaInfo.duration) * 100}%`
+    return `${(appStore.videoPlayCtrl.curTime / appStore.curSltVideo.mediaInfo.duration) * 100}%`
 })
 
 // 拖动进度条改变播放位置
@@ -75,11 +75,11 @@ const seekVideo = (time: number): void => {
 
 let videoSplitInfo = computed(() => {
     let resp: DataTypes.SplitInfo[] = []
-    if (appStore.curVideoInfo?.splitInfo != null) {
-        resp = appStore.curVideoInfo.splitInfo.splits
+    if (appStore.curSltVideo?.splitInfo != null) {
+        resp = appStore.curSltVideo.splitInfo.splits
     }
     if (appStore.bShowKeyFrameInfo) {
-        const kFrameInfo = appStore.curVideoInfo?.frameInfo
+        const kFrameInfo = appStore.curSltVideo?.frameInfo
         if (kFrameInfo != null) {
             const respKframe = util.updateKeyframeSplitInfo(kFrameInfo)
             resp = resp.concat(respKframe)
@@ -98,11 +98,11 @@ const barClips = ref<DataTypes.BarClip[]>([])
 watch(
     [
         (): DataTypes.File | null => appStore.curSltVideo,
-        (): number | undefined => appStore.curVideoInfo?.mediaInfo?.duration,
-        (): DataTypes.SplitInfo[] | undefined => appStore.curVideoInfo?.splitInfo?.splits
+        (): number | undefined => appStore.curSltVideo?.mediaInfo?.duration,
+        (): DataTypes.SplitInfo[] | undefined => appStore.curSltVideo?.splitInfo?.splits
     ],
     () => {
-        if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+        if (appStore.curSltVideo?.mediaInfo?.duration == null) {
             return
         }
         barClips.value = util.update_bar_clips()
@@ -110,7 +110,7 @@ watch(
 )
 
 async function processShowKeyInfo(): Promise<void> {
-    if (appStore.curVideoInfo == null) {
+    if (appStore.curSltVideo == null) {
         MessageShow.error(`请先打开视频文件`)
         return
     }
@@ -118,8 +118,8 @@ async function processShowKeyInfo(): Promise<void> {
         return
     }
     if (
-        appStore.curVideoInfo?.frameInfo?.frames != null &&
-        appStore.curVideoInfo.frameInfo.frames.length > 0
+        appStore.curSltVideo?.frameInfo?.frames != null &&
+        appStore.curSltVideo.frameInfo.frames.length > 0
     ) {
         return
     }
@@ -161,28 +161,28 @@ const handleMouseOut = (event: MouseEvent, clip: DataTypes.BarClip): void => {
 
 // 处理进度条鼠标按下事件
 const onProgressBarMouseDown = (event: MouseEvent): void => {
-    if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+    if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return
     }
     isDragging.value = true
     const rect = mergedProgressBar.value?.getBoundingClientRect()
     if (rect) {
         const clickX = event.clientX - rect.left
-        const progress = (clickX / rect.width) * appStore.curVideoInfo?.mediaInfo.duration
+        const progress = (clickX / rect.width) * appStore.curSltVideo?.mediaInfo.duration
         seekVideo(progress)
     }
 }
 
 // // 处理进度条鼠标移动事件
 // const onProgressBarMouseMove = (event: MouseEvent): void => {
-//   if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+//   if (appStore.curSltVideo?.mediaInfo?.duration == null) {
 //     return
 //   }
 //   if (isDragging.value) {
 //     const rect = mergedProgressBar.value?.getBoundingClientRect()
 //     if (rect) {
 //       const clickX = event.clientX - rect.left
-//       const progress = (clickX / rect.width) * appStore.curVideoInfo?.mediaInfo.duration
+//       const progress = (clickX / rect.width) * appStore.curSltVideo?.mediaInfo.duration
 //       seekVideo(progress)
 //     }
 //   }
@@ -207,7 +207,7 @@ const onProgressBarMouseDown = (event: MouseEvent): void => {
 
 // 处理进度条键盘按下事件
 const onProgressBarKeyDown = (event: KeyboardEvent): void => {
-    if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+    if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return
     }
     if (isMouseOver.value) {
@@ -216,7 +216,7 @@ const onProgressBarKeyDown = (event: KeyboardEvent): void => {
         if (event.key === 'ArrowLeft') {
             newTime = Math.max(0, newTime - step)
         } else if (event.key === 'ArrowRight') {
-            newTime = Math.min(appStore.curVideoInfo?.mediaInfo?.duration, newTime + step)
+            newTime = Math.min(appStore.curSltVideo?.mediaInfo?.duration, newTime + step)
         }
         if (newTime !== appStore.videoPlayCtrl.curTime) {
             seekVideo(newTime)
@@ -226,7 +226,7 @@ const onProgressBarKeyDown = (event: KeyboardEvent): void => {
 
 // 组件挂载时生成进度条片段数据
 onMounted(() => {
-    if (appStore.curVideoInfo?.mediaInfo?.duration == null) {
+    if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return
     }
     barClips.value = util.update_bar_clips()

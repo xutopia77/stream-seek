@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, ref, onMounted, onUnmounted } from 'vue'
+import { computed, onBeforeMount, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAppStore } from '../../../stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'

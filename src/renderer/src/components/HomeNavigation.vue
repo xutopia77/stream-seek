@@ -91,26 +91,32 @@ const isAboutModalVisible = ref<boolean>(false)
 let statusInfoTitle = ref<string>('')
 let statusInfo = ref<string>('')
 
-// 监听 appStore 的变化来更新状态信息
 watch(
-    () => [appStore.curVideoInfo, appStore.prj.repoType],
-    () => {
-        let curSltVideoName =
-            appStore.curVideoInfo == null
-                ? ''
-                : DataTypes.File.makeDisplayName(appStore.curVideoInfo)
-
-        if (appStore.prj.repoType != null) {
-            const repoStr = appStore.prj.repoType == DataTypes.RepoType.Normal ? '🗄️' : '🗑️'
-            statusInfoTitle.value =
-                appStore.prj.repoType == DataTypes.RepoType.Normal ? '仓库文件' : '回收站文件'
-            curSltVideoName = `${repoStr} ${curSltVideoName}`
-        }
-
-        statusInfo.value = curSltVideoName
-    },
-    { immediate: true }
+    () => appStore.homeNavContent,
+    (newVal) => {
+        console.log("=============asdfsfsdf", newVal)
+        statusInfo.value = newVal
+    }
 )
+
+// // 监听 appStore 的变化来更新状态信息
+// watch(
+//     () => [appStore.curSltVideo, appStore.prj.repoType],
+//     () => {
+//         let curSltVideoName =
+//             appStore.curSltVideo == null ? '' : DataTypes.File.makeDisplayName(appStore.curSltVideo)
+//         console.log(appStore.curSltVideo, curSltVideoName, '12333333333333333')
+//         if (appStore.prj.repoType != null) {
+//             const repoStr = appStore.prj.repoType == DataTypes.RepoType.Normal ? '🗄️' : '🗑️'
+//             statusInfoTitle.value =
+//                 appStore.prj.repoType == DataTypes.RepoType.Normal ? '仓库文件' : '回收站文件'
+//             curSltVideoName = `${repoStr} ${curSltVideoName}`
+//         }
+
+//         statusInfo.value = curSltVideoName
+//     },
+//     { immediate: true }
+// )
 
 // 切换下拉菜单的显示状态
 const toggleDropdown = (event: MouseEvent, menu: string): void => {

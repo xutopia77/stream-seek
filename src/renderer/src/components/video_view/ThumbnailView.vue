@@ -39,7 +39,7 @@ class Thumbnail {
 
 // http://localhost:58080/thumb_get?video=00_20250301111454_20250301112302.mp4&thumb=20250301112134.jpg
 function thumbUrlMake(thumb: Thumbnail): string {
-    return `http://localhost:58080/thumb_get?video=${appStore.curVideoInfo?.name}&thumb=${thumb.path}`
+    return `http://localhost:58080/thumb_get?video=${appStore.curSltVideo?.name}&thumb=${thumb.path}`
 }
 
 let thumbnailImages = ref<Thumbnail[]>([])
@@ -81,15 +81,15 @@ function handle_image_checked_change(thumb: Thumbnail | null): void {
 }
 
 function update_thumbnail_images(thumbnailImages: Thumbnail[]): void {
-    if (appStore.curVideoInfo === null) {
+    if (appStore.curSltVideo === null) {
         return
     }
-    if (appStore.curVideoInfo.thumbnail?.path == null) {
+    if (appStore.curSltVideo.thumbnail?.path == null) {
         console.log('cur video thumbnail null')
         return
     }
-    for (let i = 0; i < appStore.curVideoInfo.thumbnail.path.length; i++) {
-        const thumb = appStore.curVideoInfo.thumbnail.path[i]
+    for (let i = 0; i < appStore.curSltVideo.thumbnail.path.length; i++) {
+        const thumb = appStore.curSltVideo.thumbnail.path[i]
         const thumbInfo = new Thumbnail()
         thumbInfo.path = thumb
         thumbInfo.indexTime = DataTypes.FileTools.parse_timestr_2_seconds(thumb)
@@ -112,7 +112,7 @@ watch(
 
 // 监听当前视频信息的缩略图变化
 watch(
-    () => appStore.curVideoInfo?.thumbnail,
+    () => appStore.curSltVideo?.thumbnail,
     async (): Promise<void> => {
         thumbnailImages.value = []
         update_thumbnail_images(thumbnailImages.value)
