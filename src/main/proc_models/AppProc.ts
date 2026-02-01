@@ -181,25 +181,6 @@ class TraversalFolder {
     }
 }
 
-async function make_trash_folder(folderPath: string): Promise<string> {
-    try {
-        await fs.promises.access(folderPath, fs.constants.F_OK)
-    } catch (err) {
-        if (err) {
-            await fs.promises.mkdir(folderPath, { recursive: true })
-        }
-    }
-    try {
-        await fs.promises.access(folderPath, fs.constants.F_OK)
-    } catch (err) {
-        if (err) {
-            logger.error('trash dir not exist:', folderPath)
-            return `trash dir not exist: ${folderPath}`
-        }
-    }
-    return ''
-}
-
 async function startHttpSrv(port: number): Promise<void> {
     const app = express()
     app.use(express.static('public'))

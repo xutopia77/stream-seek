@@ -31,8 +31,8 @@
             <h3 class="setting-title">仓库模式</h3>
             <div class="mode-selector">
                 <select v-model="repoType" class="xc-select">
-                    <option :value="DataTypes.RepoType.Normal">正常</option>
-                    <option :value="DataTypes.RepoType.Trash">回收站</option>
+                    <option :value="DataTypes.RepoType.Normal">正常🗄️</option>
+                    <option :value="DataTypes.RepoType.Trash">回收站🗑️</option>
                 </select>
                 <button class="xc-button primary" type="button" @click="btnclk_set_repo_type()">
                     设置仓库模式
