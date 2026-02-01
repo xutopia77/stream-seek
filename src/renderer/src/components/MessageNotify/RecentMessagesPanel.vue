@@ -1,9 +1,13 @@
 <template>
     <div v-if="visible" class="global-message-panel" @click.stop>
         <div class="panel-header">
-            <p>最近消息</p>
-            <button class="clear-button" @click="btn_clear_all_msg">清空所有</button>
-            <button class="clear-button" @click="appStore.bPageResentMsg = false">关闭</button>
+            <h3 class="panel-title">最近消息</h3>
+            <div class="header-actions">
+                <button class="xc-button small danger" @click="btn_clear_all_msg">清空所有</button>
+                <button class="xc-button small primary" @click="appStore.bPageResentMsg = false">
+                    关闭
+                </button>
+            </div>
         </div>
         <div class="message-list">
             <div
@@ -84,49 +88,59 @@ const formatTime = (timestamp: number): string => {
     top: 70px;
     right: 20px;
     width: 350px;
-    background-color: white;
-    border: 1px solid #ddd;
+    background-color: var(--bg-color, #2d2d2d);
+    border: 1px solid var(--border-color, #444);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 10000;
+    color: var(--text-color, #ffffff);
+    font-family: var(--font-family, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
 }
 
 .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px;
-    border-bottom: 1px solid #eee;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color, #444);
+    background-color: var(--header-bg-color, #3c3c3c);
+    border-radius: 8px 8px 0 0;
 }
 
-.panel-header p {
+.panel-title {
     margin: 0;
-    color: #333;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color, #ffffff);
 }
 
-.clear-button {
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 4px;
+.header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* 使用项目统一的按钮样式，覆盖之前的样式 */
+/* .xc-button.action-button {
     padding: 5px 10px;
-    cursor: pointer;
     font-size: 12px;
-}
-
-.clear-button:hover {
-    background-color: #5a6268;
-}
+    margin-left: 5px;
+} */
 
 .message-list {
     max-height: 300px;
     overflow-y: auto;
+    padding: 5px 0;
 }
 
 .message-item {
     display: flex;
-    padding: 3px 5px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color, #444);
+    transition: background-color 0.2s ease;
+}
+
+.message-item:hover {
+    background-color: var(--hover-bg, #3a3a3a);
 }
 
 .message-item:last-child {
@@ -134,46 +148,54 @@ const formatTime = (timestamp: number): string => {
 }
 
 .message-item.success {
-    border-left: 4px solid #28a745;
+    border-left: 4px solid var(--success-color, #28a745);
 }
 
 .message-item.error {
-    border-left: 4px solid #dc3545;
+    border-left: 4px solid var(--error-color, #dc3545);
 }
 
 .message-item.warning {
-    border-left: 4px solid #ffc107;
+    border-left: 4px solid var(--warning-color, #ffc107);
+    color: var(--warning-text, #e0a800);
 }
 
 .message-item.info {
-    border-left: 4px solid #17a2b8;
+    border-left: 4px solid var(--info-color, #17a2b8);
 }
 
 .message-icon {
-    font-size: small;
-    margin-right: 2px;
+    font-size: 16px;
+    margin-right: 10px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
 }
 
 .message-content {
     flex: 1;
-    font-size: small;
+    display: flex;
+    flex-direction: column;
 }
 
 .message-text {
     display: block;
     margin-bottom: 5px;
-    color: #333;
+    color: var(--text-color, #ffffff);
+    word-break: break-word;
+    font-size: 13px;
 }
 
 .message-time {
-    font-size: small;
-    color: #999;
+    font-size: 11px;
+    color: var(--muted-text-color, #aaa);
+    align-self: flex-end;
 }
 
 .no-messages {
-    padding: 30px;
+    padding: 30px 15px;
     text-align: center;
-    color: #999;
+    color: var(--muted-text-color, #aaa);
+    font-style: italic;
 }
 </style>
