@@ -6,9 +6,6 @@
                 <span class="info-label">项目路径:</span>
                 <span class="info-value">{{ appStore.prj.path }}</span>
             </div>
-            <div class="info-item">
-                <span class="info-label">仓库:</span>
-            </div>
             <div v-for="(repo, index) in dataRepo" :key="index" class="repo-item">
                 <span class="info-label">仓库路径:</span>
                 <span class="info-value">{{ repo.path }}</span>

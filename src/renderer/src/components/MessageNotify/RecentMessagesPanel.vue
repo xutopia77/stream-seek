@@ -85,7 +85,7 @@ const formatTime = (timestamp: number): string => {
 <style scoped>
 .global-message-panel {
     position: fixed;
-    top: 70px;
+    top: 40px;
     right: 20px;
     width: 350px;
     background-color: var(--bg-color, #2d2d2d);
@@ -101,7 +101,7 @@ const formatTime = (timestamp: number): string => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 15px;
+    padding: 8px 12px; /* 减少内边距 */
     border-bottom: 1px solid var(--border-color, #444);
     background-color: var(--header-bg-color, #3c3c3c);
     border-radius: 8px 8px 0 0;
@@ -109,34 +109,28 @@ const formatTime = (timestamp: number): string => {
 
 .panel-title {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px; /* 减小字体大小 */
     font-weight: 600;
     color: var(--text-color, #ffffff);
 }
 
 .header-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px; /* 减少按钮间距 */
 }
-
-/* 使用项目统一的按钮样式，覆盖之前的样式 */
-/* .xc-button.action-button {
-    padding: 5px 10px;
-    font-size: 12px;
-    margin-left: 5px;
-} */
 
 .message-list {
     max-height: 300px;
     overflow-y: auto;
-    padding: 5px 0;
+    padding: 3px 0; /* 减少内边距 */
 }
 
 .message-item {
     display: flex;
-    padding: 10px 15px;
+    padding: 6px 12px; /* 减少内边距 */
     border-bottom: 1px solid var(--border-color, #444);
     transition: background-color 0.2s ease;
+    min-height: auto; /* 确保高度由内容决定 */
 }
 
 .message-item:hover {
@@ -165,8 +159,8 @@ const formatTime = (timestamp: number): string => {
 }
 
 .message-icon {
-    font-size: 16px;
-    margin-right: 10px;
+    font-size: 14px; /* 减小图标大小 */
+    margin-right: 8px; /* 减少右边距 */
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -180,22 +174,23 @@ const formatTime = (timestamp: number): string => {
 
 .message-text {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 3px; /* 减少底部边距 */
     color: var(--text-color, #ffffff);
     word-break: break-word;
-    font-size: 13px;
+    font-size: 12px; /* 减小字体大小 */
 }
 
 .message-time {
-    font-size: 11px;
+    font-size: 10px; /* 减小时间标签字体大小 */
     color: var(--muted-text-color, #aaa);
     align-self: flex-end;
 }
 
 .no-messages {
-    padding: 30px 15px;
+    padding: 20px 12px; /* 减少内边距 */
     text-align: center;
     color: var(--muted-text-color, #aaa);
     font-style: italic;
+    font-size: 12px; /* 减小字体大小 */
 }
 </style>
