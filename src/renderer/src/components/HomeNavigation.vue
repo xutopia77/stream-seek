@@ -99,7 +99,7 @@ function navContentMake(): void {
 }
 
 watch(
-    () => appStore.homeNavContent,
+    () => [appStore.homeNavContent, appStore.prj.repoType],
     () => {
         navContentMake()
     }

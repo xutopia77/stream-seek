@@ -67,32 +67,98 @@
 /* 通用按钮样式 */
 .xc-button {
   margin: 1px;
-  padding: 2px 10px;
-  background-color: #333;
+  padding: 6px 12px; /* 统一内边距 */
+  background-color: var(--xc-button-bg, #333);
   color: var(--xc-text-color);
-  /* 使用定义的字体颜色变量 */
-  border: 1px solid #444;
-  border-radius: 3px;
+  border: 1px solid var(--xc-border-color, #444);
+  border-radius: 4px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  min-height: 28px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none; /* 如果用于链接 */
+  user-select: none; /* 防止文本选择 */
 }
 
-.xc-button:hover {
-  background-color: #37373d;
-  border-color: #007acc;
+.xc-button:hover:not(:disabled) {
+  background-color: var(--xc-button-hover-bg, #37373d);
+  border-color: var(--xc-primary-color, #007acc);
+  transform: translateY(-1px);
 }
 
-.xc-button:active {
-  background-color: #094771;
+.xc-button:active:not(:disabled) {
+  background-color: var(--xc-button-active-bg, #094771);
+  transform: translateY(0);
 }
 
-/* 禁用状态下的按钮样式 */
 .xc-button:disabled {
-  background-color: #252526;
-  /* 参考 VSCode 侧边栏背景色 */
-  color: #555;
-  /* 较淡的文字颜色 */
-  border-color: #333;
+  background-color: var(--xc-disabled-bg, #252526);
+  color: var(--xc-disabled-text, #555);
+  border-color: var(--xc-disabled-border, #333);
   cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.xc-button:focus-visible {
+  outline: 2px solid var(--xc-focus-ring-color, #007acc);
+  outline-offset: 1px;
+}
+
+.xc-button:focus {
+  outline: none;
+}
+
+/* 主要按钮 */
+.xc-button.primary {
+  background-color: var(--xc-primary-color, #007acc);
+  border-color: var(--xc-primary-color, #007acc);
+  color: white;
+  font-weight: 500;
+}
+
+.xc-button.primary:hover:not(:disabled) {
+  background-color: var(--xc-primary-hover, #006bb3);
+  border-color: var(--xc-primary-hover, #006bb3);
+}
+
+/* 次要按钮 */
+.xc-button.secondary {
+  background-color: transparent;
+  border: 1px solid var(--xc-border-color, #444);
+  color: var(--xc-text-color);
+}
+
+.xc-button.secondary:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 危险按钮 */
+.xc-button.danger {
+  background-color: var(--xc-danger-color, #e51400);
+  border-color: var(--xc-danger-color, #e51400);
+  color: white;
+}
+
+.xc-button.danger:hover:not(:disabled) {
+  background-color: var(--xc-danger-hover, #f03a17);
+  border-color: var(--xc-danger-hover, #f03a17);
+}
+
+/* 尺寸变体 */
+.xc-button.small {
+  padding: 2px 8px;
+  font-size: 12px;
+  min-height: 24px;
+}
+
+.xc-button.large {
+  padding: 10px 20px;
+  font-size: 15px;
+  min-height: 36px;
 }
 
 /* 通用下拉选择框样式 */

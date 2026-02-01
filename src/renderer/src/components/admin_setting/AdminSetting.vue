@@ -1,43 +1,53 @@
 <template>
     <div class="admin-setting-container">
-        <div class="search-title-info">
-            <span class="xc-text">工程路径: </span>
-            <span class="xc-text">{{ appStore.prj.path }}: </span><br />
-            <span class="xc-text">仓库: </span><br />
-            <div v-for="(repo, index) in dataRepo" :key="index" class="input-container">
-                <span class="xc-text">{{ repo.name }}: </span>
-                <span class="xc-text">{{ repo.path }} </span>
-                <br />
-                <span class="xc-text">缩略图路径: </span>
-                <input
-                    v-model="repo.thumbnailPath"
-                    type="text"
-                    style="width: 80%"
-                    class="xc-text-input"
-                />
+        <div class="setting-card">
+            <h3 class="setting-title">项目信息</h3>
+            <div class="info-item">
+                <span class="info-label">项目路径:</span>
+                <span class="info-value">{{ appStore.prj.path }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">仓库:</span>
+            </div>
+            <div v-for="(repo, index) in dataRepo" :key="index" class="repo-item">
+                <span class="info-label">仓库路径:</span>
+                <span class="info-value">{{ repo.path }}</span>
             </div>
         </div>
-        <hr style="height: 1px; background-color: var(--xc-text-color)" />
-        <input v-model="bNeedClassifyFile" type="checkbox" class="xc-check-input" />
-        <span class="xc-text">文件规整</span>
-        <input v-model="bNeedGenThumbnail" type="checkbox" class="xc-check-input" />
-        <span class="xc-text">生成缩略图</span>
-        <button class="xc-button" type="button" @click="btnclk_sync_work()">同步项目</button>
 
-        <select v-model="repoType" class="xc-select">
-            <option :value="DataTypes.RepoType.Normal">正常</option>
-            <option :value="DataTypes.RepoType.Trash">回收站</option>
-        </select>
-        <button class="xc-button" type="button" @click="btnclk_set_repo_type()">
-            设置仓库模式
-        </button>
+        <div class="setting-card">
+            <h3 class="setting-title">同步选项</h3>
+            <div class="option-item">
+                <input v-model="bNeedClassifyFile" type="checkbox" class="xc-check-input" />
+                <span class="option-label">文件规整</span>
+            </div>
+            <div class="option-item">
+                <input v-model="bNeedGenThumbnail" type="checkbox" class="xc-check-input" />
+                <span class="option-label">生成缩略图</span>
+            </div>
+            <button class="xc-button primary" type="button" @click="btnclk_sync_work()">
+                同步项目
+            </button>
+        </div>
+
+        <div class="setting-card">
+            <h3 class="setting-title">仓库模式</h3>
+            <div class="mode-selector">
+                <select v-model="repoType" class="xc-select">
+                    <option :value="DataTypes.RepoType.Normal">正常</option>
+                    <option :value="DataTypes.RepoType.Trash">回收站</option>
+                </select>
+                <button class="xc-button primary" type="button" @click="btnclk_set_repo_type()">
+                    设置仓库模式
+                </button>
+            </div>
+        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { onMounted, ref, watch } from 'vue'
 import '@renderer/assets/common.css'
-import MessageShow from '../util/MessageShow'
 // import { IpcApi } from '../../utils/ipcApi'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 import { useAppStore } from '../../stores/AppStore'
@@ -80,12 +90,12 @@ async function btnclk_sync_work(types: DataTypes.SyncType[] = []): Promise<void>
 
     const response = await util.sync_prj(syncTypes)
     if (response.code !== 0) {
-        MessageShow.error(`同步项目失败: ${response.status}`)
+        util.addToastErr(`同步项目失败: ${response.status}`)
     } else {
         if (response.bOver === false) {
-            MessageShow.info('后台执行中...')
+            util.addToastInfo('后台执行中...')
         } else {
-            MessageShow.success('同步项目成功')
+            util.addToastInfo('同步项目成功')
             await util.start_app()
         }
     }
@@ -110,10 +120,83 @@ onMounted(() => {
 .admin-setting-container {
     height: 100%;
     width: 100%;
-    padding: 0;
+    padding: 15px;
     margin: 0;
     background-color: var(--xc-background-color);
     color: var(--xc-text-color);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* 减少间距 */
+    overflow: hidden; /* 防止出现滚动条 */
+    box-sizing: border-box; /* 确保padding不增加额外尺寸 */
+}
+
+.setting-card {
+    background-color: #2d2d30;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px; /* 减少内边距 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0; /* 防止卡片被压缩 */
+}
+
+.setting-title {
+    margin: 0 0 10px 0; /* 减少底部边距 */
+    padding-bottom: 6px;
+    border-bottom: 1px solid #444;
+    color: #ddd;
+    font-size: 15px; /* 稍微减小字体 */
+    font-weight: 600;
+}
+
+.info-item {
+    display: flex;
+    margin-bottom: 6px; /* 减少底部边距 */
+    align-items: center;
+}
+
+.info-label {
+    display: inline-block;
+    width: 80px;
+    color: #aaa;
+    font-size: 13px; /* 稍微减小字体 */
+    margin-right: 8px; /* 减少右边距 */
+}
+
+.info-value {
+    color: #ccc;
+    font-size: 13px; /* 稍微减小字体 */
+    word-break: break-all;
+    flex: 1;
+}
+
+.repo-item {
+    display: flex;
+    margin-bottom: 4px; /* 减少底部边距 */
+    align-items: flex-start;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px; /* 减少底部边距 */
+}
+
+.option-label {
+    margin-left: 6px; /* 减少左边距 */
+    color: #ccc;
+    font-size: 13px; /* 稍微减小字体 */
+}
+
+.mode-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* 减少间距 */
+}
+
+/* 针对较长文本进行优化 */
+.info-value {
+    min-width: 0; /* 允许收缩 */
 }
 </style>
