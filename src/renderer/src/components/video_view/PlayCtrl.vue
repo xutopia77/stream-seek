@@ -35,7 +35,7 @@
         <span class="xc-text" style="padding-right: 3px; color: darkcyan">{{ frameInfo }}</span>
         <span class="xc-text" style="padding-right: 3px; color: chocolate">{{ frameRate }}</span>
         <!-- 显示i帧 -->
-        <button class="xc-button btn-noborder" title="显示关键帧" @click="showKeyFrame">🔑</button>
+        <button class="xc-button btn-noborder" title="显示关键帧" @click="btn_showKeyFrame">🔑</button>
         <div class="right-area-ctrl">
             <button
                 class="xc-button btn-noborder"
@@ -199,7 +199,7 @@ async function btnclk_set_file_level(): Promise<void> {
 
 // ====================================
 
-function showKeyFrame(): void {
+function btn_showKeyFrame(): void {
     appStore.bShowKeyFrameInfo = !appStore.bShowKeyFrameInfo
 }
 

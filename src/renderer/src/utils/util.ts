@@ -4,50 +4,22 @@ let appStore: AppStore
 import * as DataTypes from '../../../bridge/dataTypedef'
 import { IpcApi } from './ipcApi'
 
-function updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.SplitInfo[] {
-    const frameInfo = frameInfoReq.frames
-    // 根据i帧的时间信息，生成bar上的分割信息
-    const frameSplitInfo: DataTypes.SplitInfo[] = []
-    let lastTime = 0.0
-    for (let i = 0; i < frameInfo.length; i++) {
-        const frame = frameInfo[i]
-        if (frame.pict_type === 'I') {
-            const curTime = frame.pts_time - (appStore?.videoPlayCtrl.videoStartTime || 0)
-            if (curTime > lastTime) {
-                const itemInfo = util.makeSplitInfo()
-                itemInfo.startTime = lastTime
-                itemInfo.endTime = curTime
-                itemInfo.color = 'yellow'
-                frameSplitInfo.push(itemInfo)
-                lastTime = curTime
-            } else {
-                console.log('i frame skip', curTime, lastTime)
-            }
-        }
-    }
-    if (lastTime !== 0.0) {
-        const itemInfo = util.makeSplitInfo()
-        itemInfo.startTime = lastTime
-        itemInfo.endTime = appStore?.curSltVideo?.mediaInfo?.duration || 0
-        itemInfo.color = 'yellow'
-        frameSplitInfo.push(itemInfo)
-    }
-    util.splitInfoCorrect(frameSplitInfo, appStore?.curSltVideo?.mediaInfo?.duration || 0)
-    return frameSplitInfo
-}
-
 async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
     const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
     if (appStore?.curSltVideo === null || appStore?.curSltVideo?.mediaInfo === null) {
         return resp.err('no video selected')
     }
     const req: DataTypes.Req<DataTypes.Req_FrameInfo> = {
-        cmd: 'get_key_frame_info',
+        cmd: DataTypes.CmdType.get_key_frame_info,
         data: {
             filepath: appStore?.curSltVideo?.path
         }
     }
-    if (appStore?.curSltVideo?.frameInfo == null) {
+    if (
+        appStore?.curSltVideo?.frameInfo == null ||
+        (typeof appStore?.curSltVideo?.frameInfo === 'object' &&
+            Object.keys(appStore?.curSltVideo?.frameInfo).length === 0)
+    ) {
         return await IpcApi.trigger_event(req)
     }
     return resp
@@ -444,7 +416,38 @@ class Util {
     export_cut_video = export_cut_video
     set_video_cur_time = set_video_cur_time
     update_bar_clips = update_bar_clips
-    updateKeyframeSplitInfo = updateKeyframeSplitInfo
+    updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.SplitInfo[] {
+        const frameInfo = frameInfoReq.frames
+        // 根据i帧的时间信息，生成bar上的分割信息
+        const frameSplitInfo: DataTypes.SplitInfo[] = []
+        let lastTime = 0.0
+        for (let i = 0; i < frameInfo.length; i++) {
+            const frame = frameInfo[i]
+            if (frame.pict_type === 'I') {
+                const curTime = frame.pts_time - (appStore?.videoPlayCtrl.videoStartTime || 0)
+                if (curTime > lastTime) {
+                    const itemInfo = util.makeSplitInfo()
+                    itemInfo.startTime = lastTime
+                    itemInfo.endTime = curTime
+                    itemInfo.color = 'yellow'
+                    frameSplitInfo.push(itemInfo)
+                    lastTime = curTime
+                } else {
+                    console.log('i frame skip', curTime, lastTime)
+                }
+            }
+        }
+        if (lastTime !== 0.0) {
+            const itemInfo = util.makeSplitInfo()
+            itemInfo.startTime = lastTime
+            itemInfo.endTime = appStore?.curSltVideo?.mediaInfo?.duration || 0
+            itemInfo.color = 'yellow'
+            frameSplitInfo.push(itemInfo)
+        }
+        util.splitInfoCorrect(frameSplitInfo, appStore?.curSltVideo?.mediaInfo?.duration || 0)
+        return frameSplitInfo
+    }
+
     formatSecond2Time = formatSecond2Time
 
     message_notify(_req: DataTypes.MessageReq): void {
@@ -882,8 +885,9 @@ class Util {
                             appStore.curSltVideo = new DataTypes.File()
                         }
                         appStore.curSltVideo.frameInfo = response.data
+                        console.log('get key frame info', appStore.curSltVideo.frameInfo)
+                        util.addToastInfo(`获取关键帧信息完成:${response.status}`)
                     }
-                    util.addToastInfo(`获取关键帧信息完成:${response.status}`)
                 }
                 break
         }

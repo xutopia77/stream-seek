@@ -558,11 +558,17 @@ class AppDb {
                     fileInfo.endTimeSec = fileViewModel.endTimeSec
                     fileInfo.duration = fileViewModel.duration
                     fileInfo.size = fileViewModel.size
-                    fileInfo.mediaInfo = JSON.parse(fileViewModel.mediaInfo || '{}')
-                    fileInfo.splitInfo = JSON.parse(fileViewModel.splitInfo || '{}')
-                    fileInfo.frameInfo = JSON.parse(fileViewModel.frameInfo || '{}')
-                    fileInfo.thumbnail = JSON.parse(fileViewModel.thumbnail || '{}')
-                    fileInfo.eventInfo = JSON.parse(fileViewModel.eventInfo || '{}')
+                    fileInfo.mediaInfo =
+                        fileViewModel.mediaInfo == '' ? null : JSON.parse(fileViewModel.mediaInfo)
+                    fileInfo.splitInfo =
+                        fileViewModel.splitInfo == '' ? null : JSON.parse(fileViewModel.splitInfo)
+                    fileInfo.frameInfo =
+                        fileViewModel.frameInfo == '' ? null : JSON.parse(fileViewModel.frameInfo)
+                    fileInfo.thumbnail =
+                        fileViewModel.thumbnail == '' ? null : JSON.parse(fileViewModel.thumbnail)
+                    fileInfo.eventInfo =
+                        fileViewModel.eventInfo == '' ? null : JSON.parse(fileViewModel.eventInfo)
+
                     fileInfo.type = fileViewModel.type
                     fileInfo.status = fileViewModel.status
                     fileInfo.repo = fileViewModel.repo

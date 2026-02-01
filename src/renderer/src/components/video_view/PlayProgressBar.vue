@@ -76,8 +76,14 @@ const seekVideo = (time: number): void => {
 
 let videoSplitInfo = computed(() => {
     let resp: DataTypes.SplitInfo[] = []
-    if (appStore.curSltVideo?.splitInfo != null) {
+    if (
+        appStore.curSltVideo?.splitInfo != null &&
+        appStore.curSltVideo?.splitInfo.splits?.length > 0
+    ) {
         resp = appStore.curSltVideo.splitInfo.splits
+    }
+    if (resp == null) {
+        resp = []
     }
     if (appStore.bShowKeyFrameInfo) {
         const kFrameInfo = appStore.curSltVideo?.frameInfo
