@@ -194,6 +194,7 @@ async function btnclk_set_file_level(): Promise<void> {
         return
     }
     await util.file_tags_set(req, { bNeedSltCurVideo: true, bNeedUpdate: true })
+    appStore.curCheckedVideo.clear()
 }
 
 // ====================================
@@ -271,11 +272,7 @@ function btnclk_del_cur_video(): void {
     }
     console.log('delete file req', req)
     util.delete_video(req)
-
-    // const req: DataTypes.CutVideoReq = {
-    //   bDelFullVideo: true
-    // }
-    // util.export_cut_video(req)
+    appStore.curCheckedVideo.clear()
 }
 </script>
 

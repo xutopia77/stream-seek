@@ -541,7 +541,6 @@ class AppDb {
 
             // 执行主查询
             const fileViewModels = await this.db.all<DataTypes.FileViewModel[]>(query, params)
-
             // 按文件 ID 分组标签信息
             const fileMap = new Map<number, DataTypes.File>()
             for (const fileViewModel of fileViewModels) {

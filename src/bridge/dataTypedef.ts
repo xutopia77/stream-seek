@@ -39,7 +39,7 @@ export class FileInfo {
 // 定义一个枚举，是数字类型，表示文件的状态
 export enum FileStatus {
     Normal = 0, // 正常
-    Deleted = 1, // 删除
+    Deleted = 1, // 删除,在回收站中
     Error = 2, // 错误
     /**
      * 数据库中存在，但是文件夹中不存在
@@ -387,7 +387,7 @@ export interface Resp_CutVideo {
 }
 
 export class DeleteFileReq {
-    type: 'del' | 'destroy' = 'del'
+    type: 'del' | 'destroy' = 'del' // del 移动到回收站， destroy 删除文件
     // 有效字段 path， repo， 其他字段不用理会
     files: File[] = []
 }

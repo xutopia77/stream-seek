@@ -17,6 +17,15 @@ class Util {
         const normalizedPath = path.normalize(inputPath)
         return normalizedPath.replace(/\\/g, '/')
     }
+    static thumbFileDbPathMake(thumbPath: string, filename: string): string {
+        return path.join(thumbPath, `${filename}_thumbnail.db`)
+    }
+    static thumbTrashFileDbPathMake(thumbPath: string, filename: string): string {
+        return path.join(thumbPath, '.trash', `${filename}_thumbnail.db`)
+    }
+    static thumbTrashPathMake(thumbPath: string): string {
+        return path.join(thumbPath, '.trash')
+    }
 }
 
 export { Util }

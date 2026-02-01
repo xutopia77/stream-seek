@@ -472,6 +472,10 @@ class AppProc {
 
             for (const repo of prjInfo.dataRepo) {
                 repo.thumbnailPath = path.join(prjPath, 'thumbnail', repo.name)
+                if (!fs.existsSync(repo.thumbnailPath)) {
+                    fs.mkdirSync(repo.thumbnailPath)
+                    fs.mkdirSync(Util.thumbTrashPathMake(repo.thumbnailPath))
+                }
             }
         }
         // 5, write prj info to file
@@ -1044,7 +1048,8 @@ class AppProc {
                         try {
                             if (fs.existsSync(distFilename)) {
                                 fs.unlinkSync(distFilename)
-                            } else if (fs.existsSync(filepath)) {
+                            }
+                            if (fs.existsSync(filepath)) {
                                 fInfo.path = distFilename
                                 fs.unlinkSync(filepath)
                             }
@@ -1096,13 +1101,17 @@ class AppProc {
                 if (fRepo == null || fRepo.path == '') {
                     return resp.err(`repo not exist ${item.repo},${item.path}`)
                 }
+                const thumbPath = fRepo.thumbnailPath
                 const trashFolderPath = path.join(fRepo.path, '.trash')
                 {
-                    const resp_str = await make_trash_folder(trashFolderPath)
-                    if (resp_str.length > 0) {
-                        logger.error('make trash folder error:', resp_str, item.path)
-                        return logStatusRespReturn(resp.err(resp_str))
+                    if (!fs.existsSync(trashFolderPath)) {
+                        fs.mkdirSync(trashFolderPath)
                     }
+                    // const resp_str = await make_trash_folder(trashFolderPath)
+                    // if (resp_str.length > 0) {
+                    //     logger.error('make trash folder error:', resp_str, item.path)
+                    //     return logStatusRespReturn(resp.err(resp_str))
+                    // }
                 }
                 const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(item.path, item.repo)
                 const searchResp = await appDb.file_view_search(searchReq)
@@ -1139,6 +1148,18 @@ class AppProc {
                                     )
                                 )
                             } else {
+                                const thumbTrashFileDbPath = Util.thumbTrashFileDbPathMake(
+                                    thumbPath,
+                                    filename
+                                )
+                                const thumbFileDbPath = Util.thumbFileDbPathMake(
+                                    thumbPath,
+                                    filename
+                                )
+                                if (!fs.existsSync(Util.thumbTrashPathMake(thumbPath))) {
+                                    fs.mkdirSync(Util.thumbTrashPathMake(thumbPath))
+                                }
+                                await fs.promises.rename(thumbFileDbPath, thumbTrashFileDbPath)
                                 workQueue.set_status(
                                     logger.log(
                                         `delete original video: ${filepath}, move to ${distFilename}`

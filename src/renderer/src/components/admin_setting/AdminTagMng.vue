@@ -18,7 +18,7 @@
                         @click="selectTag(item)"
                     >
                         <td class="index-col">{{ index + 1 }}</td>
-                        <td>{{ item.name }}</td>
+                        <td>{{ tagNameShowMake(item.name) }}</td>
                         <td>
                             <div
                                 :style="{
@@ -71,6 +71,33 @@ function btn_showEditDialog(item: DataTypes.Tag): void {
 function btn_deletetag(item: DataTypes.Tag): void {
     console.log(item)
     // Utils.tag_delete(item)
+}
+
+function tagNameShowMake(tagName: string): string {
+    switch (tagName) {
+        case 'sys_score1':
+            return '1☆'
+        case 'sys_score2':
+            return '2☆'
+        case 'sys_score3':
+            return '3☆'
+        case 'sys_score4':
+            return '4☆'
+        case 'sys_score5':
+            return '5☆'
+        case 'sys_score6':
+            return '6☆'
+        case 'sys_score7':
+            return '7☆'
+        case 'sys_score8':
+            return '8☆'
+        case 'sys_score9':
+            return '9☆'
+        case 'sys_score10':
+            return '10☆'
+        default:
+            return tagName
+    }
 }
 </script>
 

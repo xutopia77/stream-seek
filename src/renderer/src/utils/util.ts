@@ -927,6 +927,11 @@ class Util {
         }
         console.info('search file success', response.data)
         appStore.videoList = response.data?.files || []
+        if (appStore.videoList.length == 0) {
+            util.addToastInfo(
+                `没有文件，当前模式:${appStore.prj.repoType == DataTypes.RepoType.Trash ? '回收站' : '正常'}`
+            )
+        }
         return response
     }
     async search_tag(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {

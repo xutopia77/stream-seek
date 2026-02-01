@@ -9,7 +9,7 @@ import { execFile } from 'child_process'
 import * as DataTypes from '../../bridge/dataTypedef'
 import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
-
+import { Util } from './Utils.js'
 // async function checkFileExists(filePath: string): Promise<boolean> {
 //     try {
 //         // 尝试访问文件
@@ -303,8 +303,7 @@ class RecordsProc {
         if (repo == null) {
             return resp.err('repo is null')
         }
-
-        const thumbDbFilePath = path.join(repo.thumbnailPath, `${filename}_thumbnail.db`)
+        const thumbDbFilePath = Util.thumbFileDbPathMake(repo.thumbnailPath, filename)
         const thumbnail_dir = repo.thumbnailPath
         if (thumbnail_dir === '') {
             return resp.err('thumbnail dir is empty')
