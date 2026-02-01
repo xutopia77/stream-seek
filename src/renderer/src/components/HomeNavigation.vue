@@ -9,9 +9,13 @@
                     class="dropdown-menu"
                     :class="{ show: isDropdownOpen['home'] }"
                 >
-                    <button class="xc-button menu-button" @click="btn_createPrj">创建项目</button>
-                    <button class="xc-button menu-button" @click="btn_openPrj">打开项目</button>
-                    <button class="xc-button menu-button" @click="exitApp">退出</button>
+                    <button class="xc-button menu-button" @click.stop="btn_createPrj">
+                        创建项目
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="btn_openPrj">
+                        打开项目
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="exitApp">退出</button>
                 </div>
             </div>
             <div class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
@@ -21,8 +25,10 @@
                     class="dropdown-menu"
                     :class="{ show: isDropdownOpen['view'] }"
                 >
-                    <button class="xc-button menu-button" @click="showFileList">文件列表</button>
-                    <button class="xc-button menu-button" @click="showOperationPanel">
+                    <button class="xc-button menu-button" @click.stop="showFileList">
+                        文件列表
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="showOperationPanel">
                         操作面板
                     </button>
                 </div>
@@ -118,6 +124,7 @@ const toggleDropdown = (event: MouseEvent, menu: string): void => {
 
 const btn_createPrj = async (): Promise<void> => {
     router.push('/create_prj')
+    isDropdownOpen.value.home = false
 }
 
 const btn_openPrj = async (): Promise<void> => {
