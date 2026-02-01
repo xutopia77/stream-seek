@@ -65,7 +65,7 @@ export class File {
     mediaInfo: MediaInfo | null = null // 以json字符串的形式存储在数据库
     splitInfo: SqlitInfos | null = null // 以json字符串的形式存储在数据库
     frameInfo: FrameInfo | null = null // 以json字符串的形式存储在数据库
-    thumbnail: ThumbnailInfo | null = null // 以json字符串的形式存储在数据库
+    thumbnail: ThumbnailInfo = new ThumbnailInfo() // 以json字符串的形式存储在数据库
     eventInfo: FileEventInfo | null = null // 以json字符串的形式存储在数据库
     type: FileType = FileType.Mp4 // 数据类型
     status: FileStatus = FileStatus.Normal // 数据状态

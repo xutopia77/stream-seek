@@ -265,7 +265,7 @@ async function startHttpSrv(port: number): Promise<void> {
             })
 
             // 从数据库中查询出对应的缩略图图片
-            const row = await thumbDb.get('SELECT image_data FROM thumbnails WHERE timestamp =?', [
+            const row = await thumbDb.get('SELECT image_data FROM thumbnails WHERE filename =?', [
                 timestamp
             ])
 

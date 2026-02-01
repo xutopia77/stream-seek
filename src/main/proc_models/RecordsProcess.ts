@@ -386,15 +386,9 @@ class RecordsProc {
         let bOver = true
         while (time <= duration) {
             const picTime = startTimeSeconds + time
-            const outputPath = path.join(
-                tmp_thubmbnail_dir,
-                `${DataTypes.FileTools.parsetimeToTimeStr(picTime)}.jpg`
-            )
-            const realThumbPath = path.join(
-                file_thubmbnail_dir,
-                `${DataTypes.FileTools.parsetimeToTimeStr(picTime)}.jpg`
-            )
-            resp.data.push(realThumbPath)
+            const thumbFileName = `${DataTypes.FileTools.parsetimeToTimeStr(picTime)}.jpg`
+            const outputPath = path.join(tmp_thubmbnail_dir, thumbFileName)
+            resp.data.push(thumbFileName)
             const width = 640 // 设置图片宽度
             const height = 480 // 设置图片高度
             const args = [
@@ -436,7 +430,7 @@ class RecordsProc {
         }
 
         {
-            const thumbDbPath = path.join(file_thubmbnail_dir, '..',  `${filename}_thumbnail.db`)
+            const thumbDbPath = path.join(file_thubmbnail_dir, '..', `${filename}_thumbnail.db`)
             logger.log(`gen thumbnail db: ${thumbDbPath}`)
             const thumbDb: Database = await open({
                 filename: thumbDbPath,
@@ -445,36 +439,38 @@ class RecordsProc {
             await thumbDb.exec(`
                 CREATE TABLE thumbnails (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp INTEGER NOT NULL,
+                    filename TEXT NOT NULL,
                     image_data BLOB NOT NULL,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `)
 
-            // 遍历 file_thubmbnail_dir 目录下的所有文件，并把缩略图文件插入到thumbDb数据库
+            // 遍历 tmp_thubmbnail_dir 目录下的所有文件，并把缩略图文件插入到thumbDb数据库
             const files = await fs.promises.readdir(tmp_thubmbnail_dir)
             for (const file of files) {
                 const filePath = path.join(tmp_thubmbnail_dir, file)
+                const filename = path.basename(filePath)
                 const fileStat = await fs.promises.stat(filePath)
                 if (fileStat.isFile()) {
                     const imageData = await fs.promises.readFile(filePath)
-                    const timestamp = DataTypes.FileTools.parse_timestr_2_seconds(file)
+                    // const timestamp = DataTypes.FileTools.parse_timestr_2_seconds(file)
                     await thumbDb.run(
-                        'INSERT INTO thumbnails (timestamp, image_data) VALUES (?, ?)',
-                        [timestamp, imageData]
+                        'INSERT INTO thumbnails (filename, image_data) VALUES (?, ?)',
+                        [filename, imageData]
                     )
                 }
             }
             await thumbDb.close()
         }
 
-        // 移动文件到目标文件夹
+        // 删除临时文件夹
         try {
-            await fs.promises.rename(tmp_thubmbnail_dir, file_thubmbnail_dir)
+            await fs.promises.rm(tmp_thubmbnail_dir, { recursive: true })
         } catch (error) {
-            logger.log(`move file error, ${error}`)
-            return resp.err(`move file error, ${error}`)
+            logger.log(`remove tmp folder error, ${error}`)
+            return resp.err(`remove tmp folder error, ${error}`)
         }
+
         return resp.success('success')
     }
 }
