@@ -221,11 +221,17 @@ async function startHttpSrv(port: number): Promise<void> {
             const timestamp = req.query.thumb
 
             if (videoId == null || timestamp == null) {
+                logger.error(
+                    `Invalid request: missing video or thumb parameter videoId=${videoId},timestamp=${timestamp}`
+                )
                 res.status(400).send('Invalid request: missing video or thumb parameter')
                 return
             }
 
             if (appCfg.prj.dataRepo.length == 0 || appCfg.prj.dataRepo[0].thumbnailPath == '') {
+                logger.error(
+                    `Invalid request: missing thumbnailPath ${appCfg.prj.dataRepo[0].thumbnailPath}`
+                )
                 res.status(400).send('Invalid request: missing thumbnailPath')
             }
 
@@ -236,6 +242,7 @@ async function startHttpSrv(port: number): Promise<void> {
             )
             // 检查数据库文件是否存在
             if (!fs.existsSync(thumbDbPath)) {
+                logger.error(`Database not found: ${thumbDbPath}`)
                 res.status(404).send(`Database not found: ${thumbDbPath}`)
                 return
             }
@@ -801,62 +808,222 @@ class AppProc {
         resp.data = new DataTypes.SyncPrjResp()
 
         const bTest = true
-        if (bTest) 
-        {
-            for (const repo of appCfg.prj.dataRepo) {
-                const thumbPath = repo.thumbnailPath
-                if (thumbPath == '') {
-                    continue
-                }
-                // 遍历 thumbPath 目录下的所有一级目录， 打印出来对应的文件夹名称
-                if (!fs.existsSync(thumbPath)) {
-                    continue
-                }
-                const dirs = fs.readdirSync(thumbPath, { withFileTypes: true })
-                for (const dir of dirs) {
-                    if (!dir.isDirectory()) {
-                        continue
-                    }
-                    // console.log(`dir name: ${dir.name}`)
-                    if(dir.name == '.trash') {
-                        continue
-                    }
-                    const thumbDbFilePath = path.join(thumbPath, dir.name+'.mp4_thumbnail.db')
-                    const tmp_thubmbnail_dir = path.join(thumbPath, dir.name)
-                    {
-                        logger.log(`gen thumbnail db: ${thumbDbFilePath}`)
-                        const thumbDb: Database = await open({
-                            filename: thumbDbFilePath,
-                            driver: sqlite3.Database
-                        })
-                        await thumbDb.exec(`
-                            CREATE TABLE IF NOT EXISTS thumbnails (
-                                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                filename TEXT NOT NULL,
-                                image_data BLOB NOT NULL,
-                                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                            )
-                        `)
+        const bNotCLoseTest = false
 
-                        // 遍历 tmp_thubmbnail_dir 目录下的所有文件，并把缩略图文件插入到thumbDb数据库
-                        const files = await fs.promises.readdir(tmp_thubmbnail_dir)
-                        for (const file of files) {
-                            const filePath = path.join(tmp_thubmbnail_dir, file)
-                            const filename = path.basename(filePath)
-                            const fileStat = await fs.promises.stat(filePath)
-                            if (fileStat.isFile()) {
-                                const imageData = await fs.promises.readFile(filePath)
-                                // const timestamp = DataTypes.FileTools.parse_timestr_2_seconds(file)
-                                await thumbDb.run(
-                                    'INSERT INTO thumbnails (filename, image_data) VALUES (?, ?)',
-                                    [filename, imageData]
+        if (bTest) {
+            if (!appDb.db) {
+                logger.error('db is null')
+            } else {
+                try {
+                    // 查询所有包含thumbnail路径的记录，同时也需要查询出来文件的名称name
+                    const rows = await appDb.db.all(
+                        "SELECT id, name, thumbnail FROM files WHERE thumbnail IS NOT NULL AND thumbnail != '' AND thumbnail != 'null'"
+                    )
+
+                    const thumbPath = appCfg.prj.dataRepo[0].thumbnailPath
+
+                    // 打印每条记录的thumbnail值
+                    for (const row of rows) {
+                        try {
+                            const thmbObj = JSON.parse(row.thumbnail)
+
+                            // 注意：JavaScript数组没有clean()方法，需要修复这个问题
+                            // 如果是要清空数组，应该使用length=0或者splice方法
+                            // 如果是想遍历数组，应该使用forEach或其他遍历方法
+
+                            if (thmbObj.path && Array.isArray(thmbObj.path)) {
+                                // 输出当前记录的信息
+                                // logger.log(`Processing file: ${row.name}, ID: ${row.id}`)
+
+                                const thumbDbFilePath = path.join(
+                                    thumbPath,
+                                    row.name + '_thumbnail.db'
                                 )
+
+                                // 检查缩略图数据库文件是否存在
+                                if (fs.existsSync(thumbDbFilePath)) {
+                                    // logger.log(`Opening thumbnail DB: ${thumbDbFilePath}`)
+
+                                    // 打开缩略图数据库文件，查询数据库中所有的filename
+                                    const thumbDb: Database = await open({
+                                        filename: thumbDbFilePath,
+                                        driver: sqlite3.Database
+                                    })
+
+                                    // 查询数据库中所有filename
+                                    const thumbnailFiles = await thumbDb.all(
+                                        'SELECT filename FROM thumbnails ORDER BY id ASC'
+                                    )
+
+                                    // 更新thmbObj.path数组，替换为从数据库中获取的文件名
+                                    thmbObj.path = thumbnailFiles.map((item) => item.filename)
+
+                                    // 将更新后的对象转换回JSON字符串
+                                    const updatedThumbnailJson = JSON.stringify(thmbObj)
+
+                                    // // 更新数据库中的记录
+                                    // await appDb.db.run(
+                                    //     'UPDATE files SET thumbnail = ? WHERE id = ?',
+                                    //     [updatedThumbnailJson, row.id]
+                                    // )
+
+                                    logger.log(
+                                        `Updated thumbnail for file: ${row.name}, new path count: ${updatedThumbnailJson}`
+                                    )
+
+                                    // 关闭数据库连接
+                                    await thumbDb.close()
+                                } else {
+                                    logger.log(`Thumbnail DB not found: ${thumbDbFilePath}`)
+                                }
+                            } else {
+                                logger.log(`No valid path array in thumbnail for file: ${row.name}`)
                             }
+                        } catch (parseError) {
+                            logger.error(
+                                `Error processing thumbnail for file ${row.name} (ID: ${row.id}):`,
+                                parseError
+                            )
                         }
-                        await thumbDb.close()
                     }
+
+                    logger.log(`Successfully processed thumbnail data for ${rows.length} records`)
+                } catch (error) {
+                    logger.error('Error fetching thumbnail paths:', error)
                 }
             }
+        }
+
+        if (bTest && bNotCLoseTest) {
+            if (!appDb.db) {
+                logger.error('db is null')
+            } else {
+                // appDb.db中表files，更新表内记录的内容，把表中thumbnail中的{"path":["K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191540.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191558.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191616.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191634.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191652.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191710.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191728.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191746.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191804.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191822.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191840.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191858.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191916.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191934.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301191952.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192010.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192028.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192046.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192104.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192122.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192140.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192158.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192216.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192234.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192252.jpg","K:\\07_record_manager\\record-manager-project2.1\\thumbnail\\test_data\\00_20250301191540_20250301192310\\20250301192310.jpg"]} 跟新下，去掉里面的路径信息，只保留后面的文件名
+
+                try {
+                    // 查询所有包含thumbnail路径的记录
+                    const rows = await appDb.db.all(
+                        "SELECT id, thumbnail FROM files WHERE thumbnail IS NOT NULL AND thumbnail != '' AND thumbnail != 'null'"
+                    )
+
+                    // logger.log(`Found ${rows.length} records with thumbnail data`)
+
+                    // 打印每条记录的thumbnail值
+                    for (const row of rows) {
+                        // logger.log(`${row.id} Thumbnail data: ${row.thumbnail}`)
+                        // 解析thumbnail字段为JSON对象
+                        const thmbObj = JSON.parse(row.thumbnail)
+                        // 检查path字段是否是数组
+                        if (Array.isArray(thmbObj.path)) {
+                            // 提取文件名部分
+                            const fileNames = thmbObj.path.map((path: string) =>
+                                path.split('\\').pop()
+                            )
+                            // 更新thumbnail字段为文件名数组
+                            thmbObj.path = fileNames
+                            // 将更新后的JSON对象转换为字符串
+                            const updatedThumbnail = JSON.stringify(thmbObj)
+                            // 更新数据库中的thumbnail字段
+                            await appDb.db.run('UPDATE files SET thumbnail = ? WHERE id = ?', [
+                                updatedThumbnail,
+                                row.id
+                            ])
+                            logger.log(
+                                `Updated thumbnail for record ${row.id}, ${updatedThumbnail}`
+                            )
+                        }
+                    }
+
+                    logger.log(`Successfully printed thumbnail data for ${rows.length} records`)
+                } catch (error) {
+                    logger.error('Error fetching thumbnail paths:', error)
+                }
+            }
+        }
+
+        if (bTest) {
+            // for (const repo of appCfg.prj.dataRepo) {
+            //     const thumbPath = repo.thumbnailPath
+            //     if (thumbPath == '') {
+            //         continue
+            //     }
+            //     // 遍历 thumbPath 目录下的所有一级目录， 打印出来对应的文件夹名称
+            //     if (!fs.existsSync(thumbPath)) {
+            //         continue
+            //     }
+            //     const dirs = fs.readdirSync(thumbPath, { withFileTypes: true })
+            //     // 优化后的代码
+            //     for (const dir of dirs) {
+            //         if (!dir.isDirectory()) {
+            //             continue
+            //         }
+            //         if (dir.name == '.trash') {
+            //             continue
+            //         }
+            //         const thumbDbFilePath = path.join(thumbPath, dir.name + '.mp4_thumbnail.db')
+            //         const tmp_thumbnail_dir = path.join(thumbPath, dir.name)
+            //         if (fs.existsSync(thumbDbFilePath)) {
+            //             logger.log(`thumb db exist: ${thumbDbFilePath}`)
+            //             continue
+            //         }
+            //         {
+            //             logger.log(`gen thumbnail db: ${thumbDbFilePath}`)
+            //             const thumbDb: Database = await open({
+            //                 filename: thumbDbFilePath,
+            //                 driver: sqlite3.Database
+            //             })
+            //             // 创建表
+            //             await thumbDb.exec(`
+            //                 CREATE TABLE IF NOT EXISTS thumbnails (
+            //                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+            //                     filename TEXT NOT NULL,
+            //                     image_data BLOB NOT NULL,
+            //                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            //                 )
+            //             `)
+            //             // 开始事务以提高批量插入性能
+            //             await thumbDb.run('BEGIN TRANSACTION')
+            //             try {
+            //                 // 遍历 tmp_thumbnail_dir 目录下的所有文件，并把缩略图文件批量插入到thumbDb数据库
+            //                 const files = await fs.promises.readdir(tmp_thumbnail_dir)
+            //                 // 批量处理文件，使用预编译语句
+            //                 const stmt = await thumbDb.prepare(
+            //                     'INSERT INTO thumbnails (filename, image_data) VALUES (?, ?)'
+            //                 )
+            //                 // 并发读取文件内容，但限制并发数量以避免内存占用过高
+            //                 const batchSize = 10 // 控制并发数
+            //                 for (let i = 0; i < files.length; i += batchSize) {
+            //                     const batch = files.slice(i, i + batchSize)
+            //                     // 并行读取一批文件的内容
+            //                     const filePromises = batch.map(async (file) => {
+            //                         const filePath = path.join(tmp_thumbnail_dir, file)
+            //                         const fileStat = await fs.promises.stat(filePath)
+            //                         if (fileStat.isFile()) {
+            //                             const imageData = await fs.promises.readFile(filePath)
+            //                             return [file, imageData]
+            //                         }
+            //                         return null
+            //                     })
+            //                     const results = await Promise.all(filePromises)
+            //                     // 批量插入数据库
+            //                     for (const result of results) {
+            //                         if (result !== null) {
+            //                             const [filename, imageData] = result
+            //                             await stmt.run(filename, imageData)
+            //                         }
+            //                     }
+            //                 }
+            //                 await stmt.finalize()
+            //                 await thumbDb.run('COMMIT')
+            //             } catch (error) {
+            //                 await thumbDb.run('ROLLBACK')
+            //                 throw error
+            //             } finally {
+            //                 await thumbDb.close()
+            //             }
+            //         }
+            //     }
+            // }
         } else {
             let bNeedSavePrjInfo = false
             let bNeedGenThumb = false

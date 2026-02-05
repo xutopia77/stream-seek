@@ -445,22 +445,53 @@ class RecordsProc {
                 )
             `)
 
-            // 遍历 tmp_thubmbnail_dir 目录下的所有文件，并把缩略图文件插入到thumbDb数据库
-            const files = await fs.promises.readdir(tmp_thubmbnail_dir)
-            for (const file of files) {
-                const filePath = path.join(tmp_thubmbnail_dir, file)
-                const filename = path.basename(filePath)
-                const fileStat = await fs.promises.stat(filePath)
-                if (fileStat.isFile()) {
-                    const imageData = await fs.promises.readFile(filePath)
-                    // const timestamp = DataTypes.FileTools.parse_timestr_2_seconds(file)
-                    await thumbDb.run(
-                        'INSERT INTO thumbnails (filename, image_data) VALUES (?, ?)',
-                        [filename, imageData]
-                    )
+            // 开始事务以提高批量插入性能
+            await thumbDb.run('BEGIN TRANSACTION')
+
+            try {
+                // 遍历 tmp_thubmbnail_dir 目录下的所有文件，并把缩略图文件批量插入到thumbDb数据库
+                const files = await fs.promises.readdir(tmp_thubmbnail_dir)
+
+                // 使用预编译语句提高插入效率
+                const stmt = await thumbDb.prepare(
+                    'INSERT INTO thumbnails (filename, image_data) VALUES (?, ?)'
+                )
+
+                // 控制并发数以避免内存占用过高，同时提高机械硬盘的顺序读取效率
+                const batchSize = 10
+                for (let i = 0; i < files.length; i += batchSize) {
+                    const batch = files.slice(i, i + batchSize)
+
+                    // 并行读取一批文件的内容
+                    const filePromises = batch.map(async (file) => {
+                        const filePath = path.join(tmp_thubmbnail_dir, file)
+                        const fileStat = await fs.promises.stat(filePath)
+                        if (fileStat.isFile()) {
+                            const imageData = await fs.promises.readFile(filePath)
+                            return [file, imageData]
+                        }
+                        return null
+                    })
+
+                    const results = await Promise.all(filePromises)
+
+                    // 批量插入数据库
+                    for (const result of results) {
+                        if (result !== null) {
+                            const [filename, imageData] = result
+                            await stmt.run(filename, imageData)
+                        }
+                    }
                 }
+
+                await stmt.finalize()
+                await thumbDb.run('COMMIT')
+            } catch (error) {
+                await thumbDb.run('ROLLBACK')
+                throw error
+            } finally {
+                await thumbDb.close()
             }
-            await thumbDb.close()
         }
 
         // 删除临时文件夹
