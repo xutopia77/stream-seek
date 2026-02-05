@@ -800,62 +800,126 @@ class AppProc {
         }
         resp.data = new DataTypes.SyncPrjResp()
 
-        let bNeedSavePrjInfo = false
-        let bNeedGenThumb = false
-        let bNeedClassifyFile = false
-        for (const type of req.data.type) {
-            if (type == DataTypes.SyncType.all) {
-                bNeedSavePrjInfo = true
-                bNeedGenThumb = true
-                bNeedClassifyFile = true
-                break
-            }
-            if (type == DataTypes.SyncType.prjInfo) {
-                bNeedSavePrjInfo = true
-            }
-            if (type == DataTypes.SyncType.thumbnail) {
-                bNeedGenThumb = true
-            }
-            if (type == DataTypes.SyncType.classify) {
-                bNeedClassifyFile = true
-            }
-        }
-
-        if (bNeedSavePrjInfo) {
-            workQueue.set_status(logger.info(`save prj info start`))
-            const prjInfo = req.data.prj
-            if (prjInfo == null) {
-                return logStatusRespReturn(resp.err('prjInfo is null,err'))
-            }
-            const saveResp = await this.save_prj_info(prjInfo)
-            if (saveResp.code !== 0) {
-                return logStatusRespReturn(resp.err(`save prj info error ${saveResp.status}`))
-            }
-            resp.data.prj = prjInfo
-            workQueue.set_status(logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`))
-        }
-
-        if (bNeedClassifyFile) {
-            workQueue.set_status(logger.log('classify file start'))
-            const classifyResp = await this.start_classify_file(req.data.prj.dataRepo)
-            if (classifyResp.code !== 0) {
-                return logStatusRespReturn(resp.err(`classify file error ${classifyResp.status}`))
-            }
-            workQueue.set_status(logger.log('classify file ', classifyResp.status))
-        }
-
-        if (bNeedGenThumb) {
-            for (const repo of req.data.prj.dataRepo) {
-                if (repo.name == '' || repo.path == '') {
-                    return logStatusRespReturn(resp.err('repo name or path is empty'))
+        const bTest = true
+        if (bTest) 
+        {
+            for (const repo of appCfg.prj.dataRepo) {
+                const thumbPath = repo.thumbnailPath
+                if (thumbPath == '') {
+                    continue
                 }
-                const traversalFolder = new TraversalFolder()
-                traversalFolder.type = null
-                traversalFolder.repo = repo
-                await traversalFolder.start()
-                await this.start_gen_thumbnail()
+                // 遍历 thumbPath 目录下的所有一级目录， 打印出来对应的文件夹名称
+                if (!fs.existsSync(thumbPath)) {
+                    continue
+                }
+                const dirs = fs.readdirSync(thumbPath, { withFileTypes: true })
+                for (const dir of dirs) {
+                    if (!dir.isDirectory()) {
+                        continue
+                    }
+                    // console.log(`dir name: ${dir.name}`)
+                    if(dir.name == '.trash') {
+                        continue
+                    }
+                    const thumbDbFilePath = path.join(thumbPath, dir.name+'.mp4_thumbnail.db')
+                    const tmp_thubmbnail_dir = path.join(thumbPath, dir.name)
+                    {
+                        logger.log(`gen thumbnail db: ${thumbDbFilePath}`)
+                        const thumbDb: Database = await open({
+                            filename: thumbDbFilePath,
+                            driver: sqlite3.Database
+                        })
+                        await thumbDb.exec(`
+                            CREATE TABLE IF NOT EXISTS thumbnails (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                filename TEXT NOT NULL,
+                                image_data BLOB NOT NULL,
+                                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                            )
+                        `)
+
+                        // 遍历 tmp_thubmbnail_dir 目录下的所有文件，并把缩略图文件插入到thumbDb数据库
+                        const files = await fs.promises.readdir(tmp_thubmbnail_dir)
+                        for (const file of files) {
+                            const filePath = path.join(tmp_thubmbnail_dir, file)
+                            const filename = path.basename(filePath)
+                            const fileStat = await fs.promises.stat(filePath)
+                            if (fileStat.isFile()) {
+                                const imageData = await fs.promises.readFile(filePath)
+                                // const timestamp = DataTypes.FileTools.parse_timestr_2_seconds(file)
+                                await thumbDb.run(
+                                    'INSERT INTO thumbnails (filename, image_data) VALUES (?, ?)',
+                                    [filename, imageData]
+                                )
+                            }
+                        }
+                        await thumbDb.close()
+                    }
+                }
+            }
+        } else {
+            let bNeedSavePrjInfo = false
+            let bNeedGenThumb = false
+            let bNeedClassifyFile = false
+            for (const type of req.data.type) {
+                if (type == DataTypes.SyncType.all) {
+                    bNeedSavePrjInfo = true
+                    bNeedGenThumb = true
+                    bNeedClassifyFile = true
+                    break
+                }
+                if (type == DataTypes.SyncType.prjInfo) {
+                    bNeedSavePrjInfo = true
+                }
+                if (type == DataTypes.SyncType.thumbnail) {
+                    bNeedGenThumb = true
+                }
+                if (type == DataTypes.SyncType.classify) {
+                    bNeedClassifyFile = true
+                }
+            }
+
+            if (bNeedSavePrjInfo) {
+                workQueue.set_status(logger.info(`save prj info start`))
+                const prjInfo = req.data.prj
+                if (prjInfo == null) {
+                    return logStatusRespReturn(resp.err('prjInfo is null,err'))
+                }
+                const saveResp = await this.save_prj_info(prjInfo)
+                if (saveResp.code !== 0) {
+                    return logStatusRespReturn(resp.err(`save prj info error ${saveResp.status}`))
+                }
+                resp.data.prj = prjInfo
+                workQueue.set_status(
+                    logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`)
+                )
+            }
+
+            if (bNeedClassifyFile) {
+                workQueue.set_status(logger.log('classify file start'))
+                const classifyResp = await this.start_classify_file(req.data.prj.dataRepo)
+                if (classifyResp.code !== 0) {
+                    return logStatusRespReturn(
+                        resp.err(`classify file error ${classifyResp.status}`)
+                    )
+                }
+                workQueue.set_status(logger.log('classify file ', classifyResp.status))
+            }
+
+            if (bNeedGenThumb) {
+                for (const repo of req.data.prj.dataRepo) {
+                    if (repo.name == '' || repo.path == '') {
+                        return logStatusRespReturn(resp.err('repo name or path is empty'))
+                    }
+                    const traversalFolder = new TraversalFolder()
+                    traversalFolder.type = null
+                    traversalFolder.repo = repo
+                    await traversalFolder.start()
+                    await this.start_gen_thumbnail()
+                }
             }
         }
+
         workQueue.set_status('sync work success')
         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
         return resp
