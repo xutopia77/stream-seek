@@ -209,7 +209,7 @@ async function startHttpSrv(port: number): Promise<void> {
     })
 
     // app.listen(port, 'localhost', () => {
-    app.listen(port, () => {
+    app.listen(port, 'localhost', () => {
         logger.error(`Server is running on port ${port}`)
     })
 
