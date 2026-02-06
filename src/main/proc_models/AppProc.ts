@@ -807,7 +807,117 @@ class AppProc {
         }
         resp.data = new DataTypes.SyncPrjResp()
 
-        {
+        const bTest = true
+        if (bTest) {
+            if (!appDb.db) {
+                logger.error('db is null')
+            } else {
+                try {
+                    // 查询所有包含thumbnail路径的记录
+                    const rows = await appDb.db.all('SELECT id, name, thumbnail FROM files')
+
+                    const thumbPath = appCfg.prj.dataRepo[0].thumbnailPath
+                    const totalNum = rows.length
+                    let count = 0
+
+                    // 使用事务批量处理
+                    await appDb.db.run('BEGIN TRANSACTION')
+
+                    try {
+                        // 并发控制，每次处理一定数量的文件
+                        const batchSize = 5 // 机械硬盘上较小的批次更优
+                        const batches = []
+
+                        // 将任务分批处理
+                        for (let i = 0; i < rows.length; i += batchSize) {
+                            const batch = rows.slice(i, i + batchSize)
+                            batches.push(batch)
+                        }
+
+                        for (const batch of batches) {
+                            const promises = batch.map(async (row) => {
+                                try {
+                                    const thmbObj: DataTypes.ThumbnailInfo = {
+                                        path: []
+                                    }
+
+                                    const thumbDbFilePath = path.join(
+                                        thumbPath,
+                                        row.name + '_thumbnail.db'
+                                    )
+
+                                    // 检查缩略图数据库文件是否存在
+                                    if (fs.existsSync(thumbDbFilePath)) {
+                                        let thumbDb: Database | null = null
+
+                                        try {
+                                            // 打开缩略图数据库文件
+                                            thumbDb = await open({
+                                                filename: thumbDbFilePath,
+                                                driver: sqlite3.Database
+                                            })
+
+                                            // 查询数据库中所有filename
+                                            const thumbnailFiles = await thumbDb.all(
+                                                'SELECT filename FROM thumbnails ORDER BY id ASC'
+                                            )
+
+                                            // 更新thmbObj.path数组
+                                            thmbObj.path = thumbnailFiles.map(
+                                                (item) => item.filename
+                                            )
+
+                                            // 将更新后的对象转换回JSON字符串
+                                            const updatedThumbnailJson = JSON.stringify(thmbObj)
+
+                                            // 更新数据库中的记录
+                                            await appDb.db.run(
+                                                'UPDATE files SET thumbnail = ? WHERE id = ?',
+                                                [updatedThumbnailJson, row.id]
+                                            )
+
+                                            count++
+                                            if (count % 10 === 0 || count === totalNum) {
+                                                logger.log(
+                                                    `${count}/${totalNum} Updated thumbnail for file: ${row.name}`
+                                                )
+                                            }
+                                        } finally {
+                                            // 确保数据库连接被关闭
+                                            if (thumbDb) {
+                                                await thumbDb.close()
+                                            }
+                                        }
+                                    } else {
+                                        logger.log(`Thumbnail DB not found: ${thumbDbFilePath}`)
+                                    }
+                                } catch (error) {
+                                    logger.error(
+                                        `Error processing thumbnail for file ${row.name} (ID: ${row.id}):`,
+                                        error
+                                    )
+                                }
+                            })
+
+                            // 等待当前批次完成
+                            await Promise.all(promises)
+                        }
+
+                        // 提交事务
+                        await appDb.db.run('COMMIT')
+
+                        logger.log(`Successfully processed thumbnail data for ${totalNum} records`)
+                    } catch (error) {
+                        // 发生错误时回滚事务
+                        await appDb.db.run('ROLLBACK')
+                        logger.error('Transaction failed, rolled back:', error)
+                        throw error
+                    }
+                } catch (error) {
+                    logger.error('Error processing thumbnail data:', error)
+                }
+            }
+        } else {
             let bNeedSavePrjInfo = false
             let bNeedGenThumb = false
             let bNeedClassifyFile = false
