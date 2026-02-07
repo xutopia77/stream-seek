@@ -945,8 +945,9 @@ class Util {
             console.log(`search file failed: ${response.status}`)
             return response
         }
-        console.info('search file success', response.data)
+        console.info('search thumb success', response.data)
         appStore.thumbList = response.data?.files || []
+        appStore.thumbTotalNum = response.data?.total || 0
         if (appStore.thumbList.length == 0) {
             util.addToastInfo(
                 `没有文件，当前模式:${appStore.prj.repoType == DataTypes.RepoType.Trash ? '回收站' : '正常'}`

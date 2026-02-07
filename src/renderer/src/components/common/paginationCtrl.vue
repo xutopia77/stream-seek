@@ -58,7 +58,7 @@ import '@renderer/assets/common.css'
 import util from '@renderer/utils/util'
 
 const props = defineProps({
-    pagType: {
+    pageType: {
         type: String,
         default: 'video',
         validator: (value: string) => ['video', 'thumb'].includes(value)
@@ -82,7 +82,7 @@ const pageSize = computed({
 
 const totalPages = computed(() => {
     let total = appStore.videoTotalNum
-    if (props.pagType === 'thumb') {
+    if (props.pageType === 'thumb') {
         total = appStore.thumbTotalNum
     }
     if (total == 0) return 0
@@ -90,19 +90,17 @@ const totalPages = computed(() => {
 })
 
 const totalNum = computed(() => {
-    return props.pagType === 'thumb' ? appStore.thumbTotalNum : appStore.videoTotalNum
+    return props.pageType === 'thumb' ? appStore.thumbTotalNum : appStore.videoTotalNum
 })
 const jumpPageNum = ref(1) // 用于跳转的页码输入
 
 // 搜索处理函数
 const handleSearch = (): void => {
-    if (props.pagType === 'thumb') {
+    if (props.pageType === 'thumb') {
         util.thumbGet()
     } else {
         util.files_get(null)
     }
-    // 搜索后重置到第一页
-    currentPage.value = 1
 }
 
 // 页面大小改变处理
