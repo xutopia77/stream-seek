@@ -13,6 +13,7 @@ import { Util } from './Utils.js'
 import express from 'express'
 import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
+import { dialog } from 'electron'
 
 // function logRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
 //     if (resp.code === 0) {
@@ -1271,7 +1272,107 @@ class AppProc {
         return resp
     }
 
-    async start_process_cmd(req: DataTypes.Req): Promise<DataTypes.Resp> {
+    async handle_get_key_frame_info(
+        req: DataTypes.Req<DataTypes.Req_FrameInfo>
+    ): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
+        const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
+        resp.bOver = false
+        const filePath = req.data?.filepath
+        if (filePath == null) {
+            resp.code = 1
+            resp.status = 'filePath is null'
+            return resp
+        }
+        mediaProc
+            .get_frame_info(filePath)
+            .then((resp: DataTypes.Resp<DataTypes.FrameInfo>) => {
+                workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+            })
+            .catch((error: unknown) => {
+                logger.error('get frame info err:', error)
+                workQueue.addResp({
+                    cmd: req.cmd,
+                    data: JSON.stringify({ code: 1, status: error })
+                })
+            })
+        resp.code = 0
+        resp.status = 'success'
+        resp.bOver = false
+        return resp
+    }
+
+    async handle_create_prj(
+        req: DataTypes.Req<DataTypes.CreatePrjReq>,
+        mainWindow: Electron.BrowserWindow
+    ): Promise<DataTypes.Resp<DataTypes.CreatePrjResp>> {
+        const resp = new DataTypes.Resp<DataTypes.CreatePrjResp>()
+        try {
+            // 显示文件夹选择对话框
+            const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+                properties: ['openDirectory']
+            })
+
+            if (canceled) {
+                // 用户取消选择，返回取消状态
+                return resp.err('User canceled the folder selection')
+            }
+            const folderPath = filePaths[0]
+            // 获取当前文件夹下内容是否为空
+            const folderContent = fs.readdirSync(folderPath)
+            if (folderContent.length > 0) {
+                logger.info('The selected folder is not empty')
+                return resp.err('The selected folder is not empty')
+            }
+            return await appProc.create_prj(req, Util.pathToLinuxStyle(folderPath))
+        } catch (error) {
+            logger.error('Error creating project file:', error)
+            return resp.err(
+                `Error creating project file: ${error instanceof Error ? error.message : String(error)}`
+            )
+        }
+    }
+
+    async handle_open_prj(
+        mainWindow: Electron.BrowserWindow
+    ): Promise<DataTypes.Resp<DataTypes.Prj>> {
+        const resp = new DataTypes.Resp<DataTypes.Prj>()
+        try {
+            // 显示文件选择对话框
+            const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+                properties: ['openFile'],
+                filters: [
+                    { name: 'Project Files', extensions: ['json'] }, // 可根据实际需求修改文件类型
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            })
+
+            if (canceled) {
+                // 用户取消选择，返回取消状态
+                return resp.err('User canceled the file selection')
+            }
+
+            const filePath = filePaths[0]
+            logger.info('Selected file path:', filePath)
+            const fileContent = await fs.promises.readFile(filePath, 'utf-8')
+            const prjInfo = JSON.parse(fileContent) as DataTypes.Prj
+            appCfg.prj = prjInfo
+            appCfg.appInfo.prjFile = filePath
+            appProc.saveAppCfg()
+            resp.success('File opened successfully').data = prjInfo
+            return resp
+        } catch (error) {
+            // 处理异常，返回错误信息
+            logger.error('Error opening project file:', error)
+            return resp.err(
+                `Error opening project file: ${error instanceof Error ? error.message : String(error)}`
+            )
+        }
+    }
+
+    async start_process_cmd(
+        req: DataTypes.Req,
+        mainWin: Electron.BrowserWindow | null
+    ): Promise<DataTypes.Resp> {
         function convertCmdRequest<T>(req: DataTypes.Req): DataTypes.Req<T> {
             const cmdReq: DataTypes.Req<T> = {
                 cmd: req.cmd,
@@ -1289,16 +1390,16 @@ class AppProc {
             case DataTypes.CmdType.get_key_frame_info: {
                 const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
-                return appProc.make_cmd_response(await handle_get_key_frame_info(cmdReq))
+                return appProc.make_cmd_response(await this.handle_get_key_frame_info(cmdReq))
             }
             case 'create_prj': {
                 const cmdReq = convertCmdRequest<DataTypes.CreatePrjReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-                return appProc.make_cmd_response(await handle_create_prj(cmdReq, this.mainWindow!))
+                return appProc.make_cmd_response(await this.handle_create_prj(cmdReq, mainWin!))
             }
             case DataTypes.CmdType.prjOpen: {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-                return appProc.make_cmd_response(await handle_open_prj(this.mainWindow!))
+                return appProc.make_cmd_response(await this.handle_open_prj(mainWin!))
             }
             case DataTypes.CmdType.search_file: {
                 logger.info(`cmd:${cmd}:${cseq}`)
@@ -1366,8 +1467,6 @@ class AppProc {
             }
         }
     }
-
-
 }
 
 const appProc = new AppProc()
