@@ -90,8 +90,8 @@ export const useAppStore = defineStore('app', {
         func_get_ele_video: null,
         // ------
         rightPanel: DataTypes.WorkPanel.List,
-        fileSearchPage: 0,
-        fileSearchPageSize: 200,
+        fileSearchPage: 1,
+        fileSearchPageSize: 10,
         videoTotalNum: 0,
         thumbTotalNum: 0,
         thumbList: [],

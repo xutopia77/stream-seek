@@ -29,7 +29,7 @@
                 >
             </li>
         </ul>
-        <PaginationCtrl />
+        <PaginationCtrl page-type="video" />
     </div>
 </template>
 

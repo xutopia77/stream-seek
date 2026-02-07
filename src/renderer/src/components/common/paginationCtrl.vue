@@ -54,8 +54,16 @@ import { computed, ref } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+// import * as DataTypes from '../../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
+
+const props = defineProps({
+    pagType: {
+        type: String,
+        default: 'video',
+        validator: (value: string) => ['video', 'thumb'].includes(value)
+    }
+})
 
 // 分页相关
 const currentPage = computed({
@@ -72,20 +80,34 @@ const pageSize = computed({
     }
 })
 
-// todo
-const totalPages = computed(() => appStore.videoTotalNum / appStore.fileSearchPageSize)
-const totalNum = computed(() => appStore.videoTotalNum)
+const totalPages = computed(() => {
+    let total = appStore.videoTotalNum
+    if (props.pagType === 'thumb') {
+        total = appStore.thumbTotalNum
+    }
+    if (total == 0) return 0
+    return Math.ceil(total / appStore.fileSearchPageSize)
+})
+
+const totalNum = computed(() => {
+    return props.pagType === 'thumb' ? appStore.thumbTotalNum : appStore.videoTotalNum
+})
 const jumpPageNum = ref(1) // 用于跳转的页码输入
 
 // 搜索处理函数
 const handleSearch = (): void => {
-    util.files_get(null)
+    if (props.pagType === 'thumb') {
+        util.thumbGet()
+    } else {
+        util.files_get(null)
+    }
     // 搜索后重置到第一页
     currentPage.value = 1
 }
 
 // 页面大小改变处理
 const handlePageSizeChange = (): void => {
+    handleSearch()
     currentPage.value = 1 // 每页大小变化时回到第一页
 }
 
@@ -94,6 +116,7 @@ const goToPage = (pageNum: number): void => {
     if (pageNum < 1 || pageNum > totalPages.value) return
 
     currentPage.value = pageNum
+    handleSearch()
 }
 
 // 跳转到输入的页码
@@ -103,8 +126,8 @@ const jumpToPage = (): void => {
     } else if (jumpPageNum.value > totalPages.value) {
         jumpPageNum.value = totalPages.value
     }
-
     currentPage.value = jumpPageNum.value
+    handleSearch()
 }
 </script>
 

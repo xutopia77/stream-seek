@@ -494,7 +494,7 @@ class Util {
         if (appStartResp.prj != null) {
             appStore.prj = appStartResp.prj
             console.log('get prj success ', appStartResp.prj)
-            await util.search_file()
+            await util.files_get(null)
             await util.tags_get(null)
         } else {
             console.log('get prj failed')
@@ -579,7 +579,7 @@ class Util {
             } else {
                 // util.addToastInfo(`删除成功`)
                 appStore.curCheckedVideo.clear()
-                await util.search_file()
+                await this.files_get(null)
                 util.addToastInfo(`${delStr} 成功`)
             }
         }
@@ -713,6 +713,8 @@ class Util {
             }
         }
         appStore.videoList = response.data?.files || []
+        appStore.videoTotalNum = response.data?.total || 0
+        console.info('search file success', response.data)
         return response
     }
 
@@ -879,7 +881,7 @@ class Util {
                         console.log('cut video failed', response)
                     } else {
                         util.addToastInfo(`删除完成:${response.status}`)
-                        util.search_file()
+                        this.files_get(null)
                     }
                 }
                 break
@@ -953,36 +955,6 @@ class Util {
         return response
     }
 
-    async search_file(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        const req: DataTypes.Req<DataTypes.FilesReq> = {
-            cmd: DataTypes.CmdType.search_file
-        }
-        req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
-        if (appStore.prj.repoType == DataTypes.RepoType.Trash) {
-            req.data = DataTypes.FilesReq.makeReqStatusDel(null)
-        }
-        if (!req.data) {
-            const resp = new DataTypes.Resp<DataTypes.FilesResp>()
-            resp.code = DataTypes.RespCode.Error
-            return resp
-        }
-        req.data.page = appStore.fileSearchPage
-        req.data.pageSize = appStore.fileSearchPageSize
-        const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
-        if (response.code != 0) {
-            util.addToastErr(`search file failed: ${response.status}`)
-            console.log(`search file failed: ${response.status}`)
-            return response
-        }
-        console.info('search file success', response.data)
-        appStore.videoList = response.data?.files || []
-        if (appStore.videoList.length == 0) {
-            util.addToastInfo(
-                `没有文件，当前模式:${appStore.prj.repoType == DataTypes.RepoType.Trash ? '回收站' : '正常'}`
-            )
-        }
-        return response
-    }
     async search_tag(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         const req: DataTypes.Req<DataTypes.FilesReq> = {
             cmd: DataTypes.CmdType.tagsSearch
