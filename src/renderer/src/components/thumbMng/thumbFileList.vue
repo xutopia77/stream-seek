@@ -3,9 +3,9 @@
         <ul>
             <!-- 修改部分：添加动态类名和 checkbox -->
             <li
-                v-for="(video, index) in videoList"
+                v-for="(video, index) in thumbList"
                 :key="index"
-                :class="{ selected: video === appStore.curSltVideo }"
+                :class="{ selected: video === appStore.curSltThumb }"
             >
                 <label class="vscode-checkbox">
                     <input
@@ -37,8 +37,8 @@ import { computed, onBeforeMount, ref, onMounted, onUnmounted } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
-import * as DataTypes from '../../../../../bridge/dataTypedef'
-const videoList = computed<DataTypes.File[]>(() => appStore.videoList)
+import * as DataTypes from '../../../../bridge/dataTypedef'
+const thumbList = computed<DataTypes.File[]>(() => appStore.thumbList)
 
 // 记录上一次选中的索引
 const lastSelectedIndex = ref(-1)
@@ -77,7 +77,7 @@ const toggleVideoSelection = (
         const start = Math.min(lastSelectedIndex.value, currentIndex)
         const end = Math.max(lastSelectedIndex.value, currentIndex)
         for (let i = start; i <= end; i++) {
-            const item = videoList.value[i]
+            const item = thumbList.value[i]
             if (isChecked) {
                 appStore.curCheckedVideo.add(item)
             } else {
@@ -97,7 +97,7 @@ const toggleVideoSelection = (
 onBeforeMount(() => {})
 
 const btn_playVideo = (video: DataTypes.File): void => {
-    appStore.curSltVideo = video
+    appStore.curSltThumb = video
 }
 
 /**
