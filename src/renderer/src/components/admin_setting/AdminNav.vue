@@ -9,6 +9,9 @@
         <router-link to="/admin/tag_mng" class="no-underline-link">
             <button class="xc-button">标签管理</button>
         </router-link>
+        <router-link to="/thumb_mng" class="no-underline-link">
+            <button class="xc-button">缩略图管理</button>
+        </router-link>
     </div>
 </template>
 

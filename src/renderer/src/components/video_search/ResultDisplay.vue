@@ -1,14 +1,14 @@
 <template>
-  <div class="result-display-container">
-    <div id="timeline" class="result-display">
-      <div v-if="displayOption === 'single'">
-        <ResultDisplaySingle />
-      </div>
-      <div v-else>
-        <ResultDisplayTimeline />
-      </div>
+    <div class="result-display-container">
+        <div id="timeline" class="result-display">
+            <div v-if="displayOption === 'single'">
+                <ResultDisplaySingle />
+            </div>
+            <div v-else>
+                <ResultDisplayTimeline />
+            </div>
+        </div>
     </div>
-  </div>
 </template>
 
 <script lang="ts" setup>
@@ -21,13 +21,13 @@ import ResultDisplaySingle from './ResultDisplaySingle.vue'
 const appStore = useAppStore()
 
 const displayOption = computed<string>(() => {
-  return appStore.queryCtrl.displayOption
+    return appStore.queryCtrl.displayOption
 })
 </script>
 
 <style scoped>
 .result-display-container {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 </style>

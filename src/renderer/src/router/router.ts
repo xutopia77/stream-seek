@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Admin from '../components/Admin.vue'
 import CreatePrj from '../components/CreatePrj.vue'
 import VideoPreview from '../components/VideoPreview.vue'
+import thumbMng from '@renderer/components/thumbMng/thumbMng.vue'
 
 // 定义路由配置数组，使用 RouteRecordRaw 类型进行类型注解
 const routes: RouteRecordRaw[] = [
@@ -33,11 +34,16 @@ const routes: RouteRecordRaw[] = [
             // { path: 'DbInfo', component: () => import('@/components/AdminEntry/DbInfo.vue') },
             // { path: 'OtherMisc', component: () => import('@/components/AdminEntry/OtherMisc.vue') },
         ]
-
     },
     {
         path: '/create_prj',
         component: CreatePrj
+        // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
+        // children: adminRouter.options.routes // 嵌套子路由
+    },
+    {
+        path: '/thumb_mng',
+        component: thumbMng
         // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
         // children: adminRouter.options.routes // 嵌套子路由
     }

@@ -46,6 +46,9 @@
                     >
                         视频查看🎞️
                     </button>
+                    <button class="xc-button menu-button" @click.stop="btn_viewChange('bck_home')">
+                        返回主页
+                    </button>
                 </div>
             </div>
             <div class="menu-item">
@@ -182,6 +185,9 @@ const btn_viewChange = (mode: string): void => {
             break
         case 'list_show':
             appStore.rightPanel = DataTypes.WorkPanel.List
+            break
+        case 'bck_home':
+            router.push('/')
             break
         default:
             break
