@@ -161,7 +161,7 @@ export class IpcHandlers {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
                 return make_cmd_response(await handle_create_prj(cmdReq, this.mainWindow!))
             }
-            case 'open_prj': {
+            case DataTypes.CmdType.prjOpen: {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
                 return make_cmd_response(await handle_open_prj(this.mainWindow!))
             }
@@ -184,12 +184,12 @@ export class IpcHandlers {
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
             //     return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
             // }
-            case 'delete_video': {
+            case DataTypes.CmdType.videoDel: {
                 const cmdReq = convertCmdRequest<DataTypes.DeleteFileReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.files.length}`)
                 return make_cmd_response(await appProc.handle_delete_file(cmdReq))
             }
-            case 'slt_video': {
+            case DataTypes.CmdType.sltVideo: {
                 const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
                 return make_cmd_response(await appProc.handle_select_video(cmdReq))
@@ -199,7 +199,7 @@ export class IpcHandlers {
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq}`)
             //     return make_cmd_response(await handle_query_video(cmdReq))
             // }
-            case 'sync_prj': {
+            case DataTypes.CmdType.prjSync: {
                 const cmdReq = convertCmdRequest<DataTypes.SyncPrjReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.type}`)
                 return make_cmd_response(await appProc.handle_sync_work(cmdReq))
@@ -209,7 +209,7 @@ export class IpcHandlers {
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
             //     return make_cmd_response(await recordsProc.start_sync_trash(cmdReq))
             // }
-            case 'file_tags_set': {
+            case DataTypes.CmdType.fileTagsSet: {
                 const cmdReq = convertCmdRequest<DataTypes.FileTagsReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, fileTags len:${cmdReq.data?.fileTags.length}`)
                 return make_cmd_response(await appProc.handle_file_tags_set(cmdReq))

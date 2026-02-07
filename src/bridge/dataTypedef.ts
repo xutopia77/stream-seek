@@ -1,10 +1,17 @@
 export enum CmdType {
+    heartBeat = 'heart_beat',
     createPrj = 'create_prj',
     app_start = 'app_start',
     get_key_frame_info = 'get_key_frame_info',
     tags_get = 'tags_get',
     files_get = 'files_get',
-    search_file = 'search_file'
+    fileTagsSet = 'file_tags_set',
+    search_file = 'search_file',
+    sltVideo = 'slt_video',
+    thumbGet = 'thumbGet',
+    prjOpen = 'open_prj',
+    prjSync = 'sync_prj',
+    videoDel = 'delete_video'
 }
 
 export class AppInfo {
@@ -571,7 +578,7 @@ export class Resp<T = string> {
 }
 
 export interface Req<T = string> {
-    cmd: string
+    cmd: CmdType
     data?: T
     cseq?: number
 }
