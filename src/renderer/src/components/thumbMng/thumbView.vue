@@ -1,7 +1,6 @@
 <template>
     <div class="thumbnail-container xc-scrollbar">
         <div v-for="thumb in thumbnailImages" :key="thumb.path" class="thumbnail-card">
-            <!-- <img :src="thumb.path" :alt="thumb.name" /> -->
             <img :src="thumbUrlMake(thumb)" :alt="thumb.name" />
             <span class="xc-text" @click="btnclk_card_check(thumb)">{{ thumb.btnName }}</span>
             <span class="xc-text">{{ Thumbnail.makeDisplayName(thumb.name) }}</span>

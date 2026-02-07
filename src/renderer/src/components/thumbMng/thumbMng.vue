@@ -2,7 +2,6 @@
     <div class="video-preview-container">
         <div class="preview-container">
             <div class="preview-image">
-                <!-- <video src="./data/00_20250313113251_20250313114420.mp4" controls></video> -->
                 <ThumbView></ThumbView>
             </div>
             <div class="work-panel">
@@ -10,6 +9,7 @@
             </div>
         </div>
         <div class="control-container">
+            <ThumbInfoBar />
             <ThumbCtrlBar />
         </div>
     </div>
@@ -19,6 +19,7 @@
 import ThumbList from './thumbFileList.vue'
 import ThumbView from './thumbView.vue'
 import ThumbCtrlBar from './thumbCtrlBar.vue'
+import ThumbInfoBar from './thumbInfoBar.vue'
 import { onMounted, computed } from 'vue'
 import util from '@renderer/utils/util'
 import { useAppStore } from '@renderer/stores/AppStore'
@@ -30,7 +31,6 @@ let rightPanel = computed(() => appStore.rightPanel)
 onMounted(() => {
     util.thumbGet()
 })
-
 </script>
 
 <style scoped>
