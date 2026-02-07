@@ -90,11 +90,11 @@ import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import * as DataTypes from '../../../../../bridge/dataTypedef'
+import util from '@renderer/utils/util'
 
 const videoList = computed<DataTypes.File[]>(() => appStore.videoList)
 
 // 搜索相关
-const searchQuery = ref('')
 const filteredVideoList = ref<DataTypes.File[]>([])
 
 // 分页相关
@@ -140,15 +140,7 @@ const handleKeyUp = (): void => {
 
 // 搜索处理函数
 const handleSearch = (): void => {
-    if (!searchQuery.value.trim()) {
-        filteredVideoList.value = [...videoList.value]
-    } else {
-        const query = searchQuery.value.toLowerCase().trim()
-        filteredVideoList.value = videoList.value.filter((video) => {
-            return DataTypes.File.makeDisplayName(video).toLowerCase().includes(query)
-        })
-    }
-
+    util.files_get(null)
     // 搜索后重置到第一页
     currentPage.value = 1
 }
