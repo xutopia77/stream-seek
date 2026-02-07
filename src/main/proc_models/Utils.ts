@@ -56,12 +56,23 @@ class Util {
 
     static thumbDbCreateSqlGet(): string {
         return `
-                CREATE TABLE IF NOT EXISTS thumbnails (
+                CREATE TABLE IF NOT EXISTS files (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     filename TEXT NOT NULL,
                     raw BLOB,
                     type INTEGER NOT NULL,
                     desc TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `
+    }
+    static thumbDbCreateSqlInfoGet(): string {
+        return `
+                CREATE TABLE IF NOT EXISTS infos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    type INTEGER NOT NULL,
+                    content TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `

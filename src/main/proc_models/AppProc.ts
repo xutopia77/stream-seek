@@ -253,9 +253,7 @@ async function startHttpSrv(port: number): Promise<void> {
             })
 
             // 从数据库中查询出对应的缩略图图片
-            const row = await thumbDb.get('SELECT raw FROM thumbnails WHERE filename =?', [
-                timestamp
-            ])
+            const row = await thumbDb.get('SELECT raw FROM files WHERE filename =?', [timestamp])
 
             await thumbDb.close()
 
@@ -264,7 +262,7 @@ async function startHttpSrv(port: number): Promise<void> {
                 return
             }
 
-            const imageData = row.image_data
+            const imageData = row.raw
             res.setHeader('Content-Type', 'image/jpeg')
             res.send(imageData)
         } catch (error) {

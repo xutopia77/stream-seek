@@ -55,10 +55,11 @@ const dataRepo = ref<DataTypes.DataRepo[]>([
     {
         name: 'test_data',
         path: 'D:/02_workspace/05_timeCapsule/02_stream_manager/test_data',
-        thumbnailPath: ''
+        thumbnailPath: '',
+        framePath: ''
     },
-    { name: '', path: '', thumbnailPath: '' },
-    { name: '', path: '', thumbnailPath: '' }
+    { name: '', path: '', thumbnailPath: '', framePath: '' },
+    { name: '', path: '', thumbnailPath: '', framePath: '' }
 ])
 
 watch(

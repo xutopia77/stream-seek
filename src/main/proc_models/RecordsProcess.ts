@@ -455,6 +455,7 @@ class RecordsProc {
                 driver: sqlite3.Database
             })
             await thumbDb.exec(Util.thumbDbCreateSqlGet())
+            await thumbDb.exec(Util.thumbDbCreateSqlInfoGet())
 
             // 开始事务以提高批量插入性能
             await thumbDb.run('BEGIN TRANSACTION')
@@ -463,9 +464,24 @@ class RecordsProc {
                 // 遍历 tmpThumbDir 目录下的所有文件，并把缩略图文件批量插入到thumbDb数据库
                 const files = await fs.promises.readdir(tmpThumbDir)
 
+                // 将媒体信息插入到 infos 表
+                if (fileInfo.mediaInfo !== null) {
+                    let infoStmt
+                    try {
+                        infoStmt = await thumbDb.prepare(
+                            'INSERT INTO infos (name, type, content) VALUES (?, ?, ?)'
+                        )
+                        await infoStmt.run('mediaInfo', 1, JSON.stringify(fileInfo.mediaInfo))
+                    } finally {
+                        if (infoStmt) {
+                            await infoStmt.finalize()
+                        }
+                    }
+                }
+
                 // 使用预编译语句提高插入效率
                 const stmt = await thumbDb.prepare(
-                    'INSERT INTO thumbnails (filename, raw, type, desc) VALUES (?, ?, ?, ?)'
+                    'INSERT INTO files (filename, raw, type, desc) VALUES (?, ?, ?, ?)'
                 )
 
                 // 控制并发数以避免内存占用过高，同时提高机械硬盘的顺序读取效率
