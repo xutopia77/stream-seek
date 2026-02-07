@@ -253,7 +253,7 @@ async function startHttpSrv(port: number): Promise<void> {
             })
 
             // 从数据库中查询出对应的缩略图图片
-            const row = await thumbDb.get('SELECT image_data FROM thumbnails WHERE filename =?', [
+            const row = await thumbDb.get('SELECT raw FROM thumbnails WHERE filename =?', [
                 timestamp
             ])
 
@@ -443,7 +443,7 @@ class AppProc {
         // 1, make prj info
         const prjInfo: DataTypes.Prj = new DataTypes.Prj()
         prjInfo.name = path.basename(prjPath)
-        prjInfo.version = '1.0.0'
+        prjInfo.version = Util.defaultVersionGet()
         prjInfo.path = prjPath
         prjInfo.dataRepo = req.data.dataRepo
         {
@@ -461,8 +461,13 @@ class AppProc {
             for (const repo of prjInfo.dataRepo) {
                 repo.thumbnailPath = path.join(prjPath, 'thumbnail', repo.name)
                 if (!fs.existsSync(repo.thumbnailPath)) {
-                    fs.mkdirSync(repo.thumbnailPath)
+                    fs.mkdirSync(repo.thumbnailPath, { recursive: true })
                     fs.mkdirSync(Util.thumbTrashPathMake(repo.thumbnailPath))
+                }
+                repo.framePath = path.join(prjPath, 'frame', repo.name)
+                if (!fs.existsSync(repo.framePath)) {
+                    fs.mkdirSync(repo.framePath, { recursive: true })
+                    fs.mkdirSync(Util.thumbTrashPathMake(repo.framePath))
                 }
             }
         }
@@ -558,30 +563,64 @@ class AppProc {
         logger.log('start gen thumbnail total=', searchRe.data?.total)
         let count = 0
         for (const fileInfo of searchRe.data?.files ?? []) {
-            const startTime = Date.now()
-            const respThumb = await recordsProc.gen_thumbnail(fileInfo)
-            const endTime = Date.now()
-            const duration = ((endTime - startTime) / 1000).toFixed(3)
             count++
-            if (respThumb.code !== 0) {
-                if (respThumb.code == DataTypes.RespCode.FileExist) {
-                    continue
-                }
-                workQueue.set_status(
-                    logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
+            {
+                const startTime = Date.now()
+                const respThumb = await recordsProc.gen_thumbnail(
+                    fileInfo,
+                    DataTypes.ThumbType.Thumb
                 )
-                continue
-            } else {
-                workQueue.set_status(
-                    logger.info(
-                        `${count}/${searchRe.data?.total} gen thumbnail ${respThumb.status} num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} s, ${fileInfo.path}`
+                const endTime = Date.now()
+                const duration = ((endTime - startTime) / 1000).toFixed(3)
+                if (respThumb.code !== 0) {
+                    if (respThumb.code == DataTypes.RespCode.FileExist) {
+                        continue
+                    }
+                    workQueue.set_status(
+                        logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
                     )
-                )
+                    continue
+                } else {
+                    workQueue.set_status(
+                        logger.info(
+                            `${count}/${searchRe.data?.total} gen thumbnail ${respThumb.status} num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} s, ${fileInfo.path}`
+                        )
+                    )
+                }
+                if (respThumb.data != null && respThumb.data.length > 0) {
+                    fileInfo.thumbnail = new DataTypes.ThumbnailInfo()
+                    fileInfo.thumbnail.path = respThumb.data
+                    await appDb.file_update(fileInfo)
+                }
             }
-            if (respThumb.data != null && respThumb.data.length > 0) {
-                fileInfo.thumbnail = new DataTypes.ThumbnailInfo()
-                fileInfo.thumbnail.path = respThumb.data
-                await appDb.file_update(fileInfo)
+            {
+                const startTime = Date.now()
+                const respThumb = await recordsProc.gen_thumbnail(
+                    fileInfo,
+                    DataTypes.ThumbType.Frame
+                )
+                const endTime = Date.now()
+                const duration = ((endTime - startTime) / 1000).toFixed(3)
+                if (respThumb.code !== 0) {
+                    if (respThumb.code == DataTypes.RespCode.FileExist) {
+                        continue
+                    }
+                    workQueue.set_status(
+                        logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
+                    )
+                    continue
+                } else {
+                    workQueue.set_status(
+                        logger.info(
+                            `${count}/${searchRe.data?.total} gen thumbnail ${respThumb.status} num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} s, ${fileInfo.path}`
+                        )
+                    )
+                }
+                if (respThumb.data != null && respThumb.data.length > 0) {
+                    fileInfo.thumbnail = new DataTypes.ThumbnailInfo()
+                    fileInfo.thumbnail.path = respThumb.data
+                    await appDb.file_update(fileInfo)
+                }
             }
         }
         return resp
@@ -972,10 +1011,7 @@ class AppProc {
                     logger.warn(`thumbnail not exist in repo path ${tra.repo.path}`)
                     bThumbExist = false
                 } else {
-                    tra.repo.path = recordsProc.thumbnail_trash_path_get_mp4(
-                        fInfo?.repo,
-                        fInfo?.path
-                    )
+                    tra.repo.path = recordsProc.thumTrashPathGetByMp4(fInfo?.repo, fInfo?.path)
                     if (!fs.existsSync(tra.repo.path)) {
                         logger.warn(`thumbnail not exist in repo trash path ${tra.repo.path}`)
                         bThumbExist = false
@@ -1129,10 +1165,18 @@ class AppProc {
                     const filepath = fInfo.path
                     const filename = fInfo.name
                     const distFilename = path.join(trashFolderPath, filename)
+                    const repo = DataTypes.DataRepo.getRepoByPath(fInfo.repo, appCfg.prj.dataRepo)
+                    if (repo == null) {
+                        logger.error(`delete file err, repo null`)
+                        continue
+                    }
                     let attempts = 0
                     const maxAttempts = 3 // 最大尝试次数
                     async function attemptRename(): Promise<void> {
                         try {
+                            if (repo == null) {
+                                return
+                            }
                             await fs.promises.rename(filepath, distFilename)
                             fInfo.status = DataTypes.FileStatus.Deleted
                             const respUp = await appDb.file_update(fInfo)
@@ -1143,13 +1187,15 @@ class AppProc {
                                     )
                                 )
                             } else {
-                                const thumbTrashFileDbPath = Util.thumbTrashFileDbPathMake(
-                                    thumbPath,
-                                    filename
+                                const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
+                                    repo,
+                                    filename,
+                                    DataTypes.ThumbType.Thumb
                                 )
-                                const thumbFileDbPath = Util.thumbFileDbPathMake(
-                                    thumbPath,
-                                    filename
+                                const thumbFileDbPath = Util.thumbFileDbPathGet(
+                                    repo,
+                                    filename,
+                                    DataTypes.ThumbType.Thumb
                                 )
                                 if (!fs.existsSync(Util.thumbTrashPathMake(thumbPath))) {
                                     fs.mkdirSync(Util.thumbTrashPathMake(thumbPath))

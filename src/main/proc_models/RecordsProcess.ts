@@ -268,7 +268,7 @@ class RecordsProc {
         return path.join(repo.thumbnailPath, path.basename(fPath, '.mp4'))
     }
 
-    thumbnail_trash_path_get_mp4(repoName: string, fileName: string): string {
+    thumTrashPathGetByMp4(repoName: string, fileName: string): string {
         const repo = DataTypes.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
         if (repo == null) {
             return ''
@@ -294,7 +294,16 @@ class RecordsProc {
         return resp.success('success')
     }
 
-    async gen_thumbnail(fileInfo: DataTypes.File): Promise<DataTypes.Resp<string[]>> {
+    /**
+     * 生成缩略图
+     * @param fileInfo 文件信息
+     * @param genType 生成类型
+     * @returns 缩略图路径数组
+     */
+    async gen_thumbnail(
+        fileInfo: DataTypes.File,
+        genType: DataTypes.ThumbType
+    ): Promise<DataTypes.Resp<string[]>> {
         const resp = new DataTypes.Resp<string[]>()
         resp.data = []
         const filepath = fileInfo.path
@@ -303,13 +312,13 @@ class RecordsProc {
         if (repo == null) {
             return resp.err('repo is null')
         }
-        const thumbDbFilePath = Util.thumbFileDbPathMake(repo.thumbnailPath, filename)
-        const thumbnail_dir = repo.thumbnailPath
-        if (thumbnail_dir === '') {
+        const thumbDbFilePath = Util.thumbFileDbPathGet(repo, filename, genType)
+        const thumbPath = Util.thumbPathGet(repo, genType)
+        const trashThumbDbPath = Util.thumbTrashFileDbPathGet(repo, fileInfo.name, genType)
+        if (thumbPath === '') {
             return resp.err('thumbnail dir is empty')
         }
         let bExist = true
-        //1, 检查对应的文件的缩略图是否已经存在
         try {
             await fs.promises.access(thumbDbFilePath, fs.constants.F_OK)
         } catch (error) {
@@ -318,15 +327,11 @@ class RecordsProc {
         }
         if (!bExist) {
             try {
-                const trashThumbnailDbPath = this.thumbnail_trash_path_get_mp4(
-                    fileInfo.repo,
-                    fileInfo.name
-                )
-                await fs.promises.access(trashThumbnailDbPath, fs.constants.F_OK)
+                await fs.promises.access(trashThumbDbPath, fs.constants.F_OK)
                 try {
-                    await fs.promises.rename(trashThumbnailDbPath, thumbDbFilePath)
+                    await fs.promises.rename(trashThumbDbPath, thumbDbFilePath)
                     logger.info(
-                        `find thumbnail in trash, move ${trashThumbnailDbPath} to ${thumbDbFilePath}`
+                        `find thumbnail in trash, move ${trashThumbDbPath} to ${thumbDbFilePath}`
                     )
                     bExist = true
                 } catch (error) {
@@ -361,15 +366,15 @@ class RecordsProc {
         }
 
         //2, 先删除临时文件夹，再创建新文件夹
-        const tmp_thubmbnail_dir = path.join(thumbnail_dir, 'tmp')
+        const tmpThumbDir = path.join(thumbPath, 'tmp')
         try {
-            await fs.promises.access(tmp_thubmbnail_dir)
-            await fs.promises.rm(tmp_thubmbnail_dir, { recursive: true })
+            await fs.promises.access(tmpThumbDir)
+            await fs.promises.rm(tmpThumbDir, { recursive: true })
         } catch (error) {
             if (!error) console.log(error)
         }
         try {
-            await fs.promises.mkdir(tmp_thubmbnail_dir, { recursive: true })
+            await fs.promises.mkdir(tmpThumbDir, { recursive: true })
         } catch (error) {
             logger.log(`mkdir error ${error}`)
             return resp.err(`mkdir error ${error}`)
@@ -388,11 +393,11 @@ class RecordsProc {
         while (time <= duration) {
             const picTime = startTimeSeconds + time
             const thumbFileName = `${DataTypes.FileTools.parsetimeToTimeStr(picTime)}.jpg`
-            const outputPath = path.join(tmp_thubmbnail_dir, thumbFileName)
+            const outputPath = path.join(tmpThumbDir, thumbFileName)
             resp.data.push(thumbFileName)
             const width = 640 // 设置图片宽度
             const height = 480 // 设置图片高度
-            const args = [
+            let args = [
                 '-v',
                 'error',
                 '-ss',
@@ -405,6 +410,19 @@ class RecordsProc {
                 `${width}x${height}`,
                 outputPath
             ]
+            if (genType == DataTypes.ThumbType.Frame) {
+                args = [
+                    '-v',
+                    'error',
+                    '-ss',
+                    time.toString(),
+                    '-i',
+                    filepath,
+                    '-vframes',
+                    '1',
+                    outputPath
+                ]
+            }
 
             try {
                 await new Promise((resolve, reject) => {
@@ -436,25 +454,18 @@ class RecordsProc {
                 filename: thumbDbFilePath,
                 driver: sqlite3.Database
             })
-            await thumbDb.exec(`
-                CREATE TABLE IF NOT EXISTS thumbnails (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    filename TEXT NOT NULL,
-                    image_data BLOB NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            `)
+            await thumbDb.exec(Util.thumbDbCreateSqlGet())
 
             // 开始事务以提高批量插入性能
             await thumbDb.run('BEGIN TRANSACTION')
 
             try {
-                // 遍历 tmp_thubmbnail_dir 目录下的所有文件，并把缩略图文件批量插入到thumbDb数据库
-                const files = await fs.promises.readdir(tmp_thubmbnail_dir)
+                // 遍历 tmpThumbDir 目录下的所有文件，并把缩略图文件批量插入到thumbDb数据库
+                const files = await fs.promises.readdir(tmpThumbDir)
 
                 // 使用预编译语句提高插入效率
                 const stmt = await thumbDb.prepare(
-                    'INSERT INTO thumbnails (filename, image_data) VALUES (?, ?)'
+                    'INSERT INTO thumbnails (filename, raw, type, desc) VALUES (?, ?, ?, ?)'
                 )
 
                 // 控制并发数以避免内存占用过高，同时提高机械硬盘的顺序读取效率
@@ -464,7 +475,7 @@ class RecordsProc {
 
                     // 并行读取一批文件的内容
                     const filePromises = batch.map(async (file) => {
-                        const filePath = path.join(tmp_thubmbnail_dir, file)
+                        const filePath = path.join(tmpThumbDir, file)
                         const fileStat = await fs.promises.stat(filePath)
                         if (fileStat.isFile()) {
                             const imageData = await fs.promises.readFile(filePath)
@@ -479,7 +490,7 @@ class RecordsProc {
                     for (const result of results) {
                         if (result !== null) {
                             const [filename, imageData] = result
-                            await stmt.run(filename, imageData)
+                            await stmt.run(filename, imageData, 1, '')
                         }
                     }
                 }
@@ -496,7 +507,7 @@ class RecordsProc {
 
         // 删除临时文件夹
         try {
-            await fs.promises.rm(tmp_thubmbnail_dir, { recursive: true })
+            await fs.promises.rm(tmpThumbDir, { recursive: true })
         } catch (error) {
             logger.log(`remove tmp folder error, ${error}`)
             return resp.err(`remove tmp folder error, ${error}`)

@@ -1,6 +1,10 @@
 import * as path from 'path'
-
+import * as DataTypes from '../../bridge/dataTypedef'
 class Util {
+    static defaultVersionGet(): string {
+        return '2.2.0'
+    }
+
     static getCurTime(): string {
         // 获取当前的时间的字符串，精确到秒，格式为：YYYY-MM-DD hh:mm:ss
         const now = new Date()
@@ -17,14 +21,50 @@ class Util {
         const normalizedPath = path.normalize(inputPath)
         return normalizedPath.replace(/\\/g, '/')
     }
-    static thumbFileDbPathMake(thumbPath: string, filename: string): string {
-        return path.join(thumbPath, `${filename}_thumbnail.db`)
+    static thumbFileDbPathGet(
+        repo: DataTypes.DataRepo,
+        filename: string,
+        type: DataTypes.ThumbType
+    ): string {
+        if (type == DataTypes.ThumbType.Frame) {
+            return path.join(repo.framePath, `${filename}.db`)
+        }
+        return path.join(repo.thumbnailPath, `${filename}_thumbnail.db`)
     }
-    static thumbTrashFileDbPathMake(thumbPath: string, filename: string): string {
-        return path.join(thumbPath, '.trash', `${filename}_thumbnail.db`)
+
+    static thumbTrashFileDbPathGet(
+        repo: DataTypes.DataRepo,
+        filename: string,
+        type: DataTypes.ThumbType
+    ): string {
+        if (type == DataTypes.ThumbType.Frame) {
+            return path.join(repo.framePath, '.trash', `${filename}.db`)
+        }
+        return path.join(repo.thumbnailPath, '.trash', `${filename}_thumbnail.db`)
     }
+
     static thumbTrashPathMake(thumbPath: string): string {
         return path.join(thumbPath, '.trash')
+    }
+
+    static thumbPathGet(repo: DataTypes.DataRepo, type: DataTypes.ThumbType): string {
+        if (type == DataTypes.ThumbType.Frame) {
+            return repo.framePath
+        }
+        return repo.thumbnailPath
+    }
+
+    static thumbDbCreateSqlGet(): string {
+        return `
+                CREATE TABLE IF NOT EXISTS thumbnails (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    filename TEXT NOT NULL,
+                    raw BLOB,
+                    type INTEGER NOT NULL,
+                    desc TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `
     }
 }
 

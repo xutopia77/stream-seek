@@ -325,6 +325,7 @@ export class DataRepo {
     path: string = ''
     name: string = '' // 需要唯一
     thumbnailPath: string = ''
+    framePath: string = ''
     static getRepoByPath(name: string, repos: DataRepo[]): DataRepo | null {
         for (const repo of repos) {
             if (repo.name == name) {
@@ -340,10 +341,15 @@ export enum ThumbStrategy {
     BySize = 'size'
 }
 
+export enum ThumbType {
+    Thumb = 'thumb',
+    Frame = 'frame'
+}
+
 // 项目配置，存储在项目json文件中
 export class Prj {
     name: string = ''
-    version: string = '1.0.1'
+    version: string = '2.2.0'
     path: string = '' //  project path
     thumbStrategy: ThumbStrategy = ThumbStrategy.BySize // 缩略图策略
     thumbEachSec: number = 0.1 // 每多少秒生成一张缩略图
