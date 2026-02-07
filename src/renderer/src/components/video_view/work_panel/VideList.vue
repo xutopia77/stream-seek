@@ -3,7 +3,7 @@
         <ul>
             <!-- 修改部分：添加动态类名和 checkbox -->
             <li
-                v-for="(video, index) in videoList"
+                v-for="(video, index) in currentPageVideos"
                 :key="index"
                 :class="{ selected: video === appStore.curSltVideo }"
             >
@@ -15,7 +15,7 @@
                             toggleVideoSelection(
                                 video,
                                 ($event.target as HTMLInputElement).checked,
-                                index
+                                index + currentPageStartIndex
                             )
                         "
                     />
@@ -25,20 +25,108 @@
                     class="xc-text"
                     :style="getVideoLevelColorStyle(video)"
                     @click="btn_playVideo(video)"
-                    >{{ `${index + 1}:${DataTypes.File.makeDisplayName(video)}` }}</span
+                    >{{
+                        `${currentPageStartIndex + index + 1}:${DataTypes.File.makeDisplayName(video)}`
+                    }}</span
                 >
             </li>
         </ul>
+
+        <!-- 分页控制区域 -->
+        <div class="pagination-controls">
+            <div class="pagination-info">
+                <span class="page-info">
+                    第 {{ currentPage }} 页 / 共 {{ totalPages }} 页 (共
+                    {{ filteredVideoList.length }} 条记录)
+                </span>
+            </div>
+
+            <div class="pagination-nav">
+                <button
+                    :disabled="currentPage <= 1"
+                    class="xc-button"
+                    @click="goToPage(currentPage - 1)"
+                >
+                    ◀
+                </button>
+
+                <div class="page-numbers">
+                    <button
+                        v-for="pageNum in visiblePageNumbers"
+                        :key="pageNum"
+                        :class="{ active: pageNum === currentPage }"
+                        class="page-btn"
+                        @click="goToPage(pageNum)"
+                    >
+                        {{ pageNum }}
+                    </button>
+                </div>
+
+                <button
+                    :disabled="currentPage >= totalPages"
+                    class="xc-button"
+                    @click="goToPage(currentPage + 1)"
+                >
+                    ▶
+                </button>
+                <div class="page-size-selector">
+                    <select v-model="pageSize" class="size-select" @change="handlePageSizeChange">
+                        <option :value="10">每页10条</option>
+                        <option :value="20">每页20条</option>
+                        <option :value="50">每页50条</option>
+                        <option :value="100">每页100条</option>
+                    </select>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, ref, onMounted, onUnmounted } from 'vue'
+import { computed, onBeforeMount, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import * as DataTypes from '../../../../../bridge/dataTypedef'
+
 const videoList = computed<DataTypes.File[]>(() => appStore.videoList)
+
+// 搜索相关
+const searchQuery = ref('')
+const filteredVideoList = ref<DataTypes.File[]>([])
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(20) // 默认每页显示20条
+const totalPages = computed(() => Math.ceil(filteredVideoList.value.length / pageSize.value))
+const currentPageStartIndex = computed(() => (currentPage.value - 1) * pageSize.value)
+
+// 获取当前页面的视频列表
+const currentPageVideos = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return filteredVideoList.value.slice(start, end)
+})
+
+// 显示的页码范围，最多显示7个页码按钮
+const visiblePageNumbers = computed(() => {
+    const pages = []
+    const maxVisiblePages = 7
+    const half = Math.floor(maxVisiblePages / 2)
+
+    let startPage = Math.max(1, currentPage.value - half)
+    let endPage = Math.min(totalPages.value, startPage + maxVisiblePages - 1)
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1)
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        pages.push(i)
+    }
+
+    return pages
+})
 
 // 记录上一次选中的索引
 const lastSelectedIndex = ref(-1)
@@ -56,9 +144,48 @@ const handleKeyUp = (): void => {
     isShiftPressed.value = false
 }
 
+// 搜索处理函数
+const handleSearch = (): void => {
+    if (!searchQuery.value.trim()) {
+        filteredVideoList.value = [...videoList.value]
+    } else {
+        const query = searchQuery.value.toLowerCase().trim()
+        filteredVideoList.value = videoList.value.filter((video) => {
+            return DataTypes.File.makeDisplayName(video).toLowerCase().includes(query)
+        })
+    }
+
+    // 搜索后重置到第一页
+    currentPage.value = 1
+}
+
+// 页面大小改变处理
+const handlePageSizeChange = (): void => {
+    currentPage.value = 1 // 每页大小变化时回到第一页
+}
+
+// 跳转到指定页
+const goToPage = (pageNum: number): void => {
+    if (pageNum < 1 || pageNum > totalPages.value) return
+
+    currentPage.value = pageNum
+}
+
+// 当视频列表发生变化时，重新执行搜索
+watch(
+    videoList,
+    () => {
+        handleSearch()
+    },
+    { immediate: true }
+)
+
 onMounted(() => {
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
+
+    // 初始化过滤后的视频列表
+    filteredVideoList.value = [...videoList.value]
 })
 
 onUnmounted(() => {
@@ -145,6 +272,8 @@ const getVideoLevelColorStyle = (video): string => {
     overflow-x: auto;
     border-right: 1px solid #333;
     /* 右侧边框 */
+    display: flex;
+    flex-direction: column;
 }
 
 /* 兼容 Firefox */
@@ -157,6 +286,8 @@ const getVideoLevelColorStyle = (video): string => {
     list-style-type: none;
     padding: 0;
     margin: 0;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .page-container li {
@@ -191,5 +322,126 @@ const getVideoLevelColorStyle = (video): string => {
     padding: 0px;
     margin: 0px;
     opacity: 0.7;
+}
+
+/* 分页控制区域样式 */
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px;
+    background-color: var(--xc-background-color);
+    border-top: 1px solid #333;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 150px;
+}
+
+.page-info {
+    font-size: 12px;
+    color: var(--xc-text-color);
+    white-space: nowrap;
+}
+
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 2;
+    min-width: 200px;
+}
+
+.nav-btn {
+    padding: 4px 12px;
+    margin: 0 4px;
+    background-color: #2d2d30;
+    border: 1px solid #3c3c41;
+    color: var(--xc-text-color);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background-color: #3c3c41;
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-numbers {
+    display: flex;
+    margin: 0 8px;
+}
+
+.page-btn {
+    padding: 4px 8px;
+    margin: 0 2px;
+    background-color: #2d2d30;
+    border: 1px solid #3c3c41;
+    color: var(--xc-text-color);
+    border-radius: 3px;
+    cursor: pointer;
+    min-width: 30px;
+    text-align: center;
+}
+
+.page-btn:hover {
+    background-color: #3c3c41;
+}
+
+.page-btn.active {
+    background-color: #094771;
+    border-color: #094771;
+}
+
+.page-size-selector {
+    flex: 1;
+    min-width: 120px;
+    text-align: right;
+}
+
+.size-select {
+    padding: 4px 8px;
+    background-color: #2d2d30;
+    border: 1px solid #3c3c41;
+    border-radius: 3px;
+    color: var(--xc-text-color);
+    outline: none;
+}
+
+.size-select:focus {
+    border-color: #007fd4;
+}
+
+/* 小屏幕适配 */
+@media (max-width: 768px) {
+    .pagination-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .pagination-nav {
+        order: 3;
+        justify-content: center;
+    }
+
+    .pagination-info {
+        order: 2;
+    }
+
+    .page-size-selector {
+        order: 4;
+        text-align: center;
+    }
 }
 </style>
