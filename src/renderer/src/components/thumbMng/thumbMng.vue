@@ -19,7 +19,6 @@
 import ThumbList from './thumbFileList.vue'
 import ThumbView from './thumbView.vue'
 import ThumbCtrlBar from './thumbCtrlBar.vue'
-import ThumbInfoBar from './thumbInfoBar.vue'
 import { onMounted, computed } from 'vue'
 import util from '@renderer/utils/util'
 import { useAppStore } from '@renderer/stores/AppStore'

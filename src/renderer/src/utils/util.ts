@@ -391,7 +391,7 @@ const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<v
     }
 
     const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
-        cmd: 'cut_video',
+        cmd: DataTypes.CmdType.videoCut,
         data: prjInfo
     }
     const response = await IpcApi.trigger_event(req)
@@ -563,7 +563,7 @@ class Util {
     async delete_video(reqInfo: DataTypes.DeleteFileReq): Promise<void> {
         util.stop_play()
         const req: DataTypes.Req<DataTypes.DeleteFileReq> = {
-            cmd: 'delete_video',
+            cmd: DataTypes.CmdType.videoDel,
             data: reqInfo
         }
         const response = await IpcApi.trigger_event(req)
@@ -618,7 +618,7 @@ class Util {
             return
         }
         const req: DataTypes.Req<DataTypes.Req_SltFile> = {
-            cmd: 'slt_video',
+            cmd: DataTypes.CmdType.sltVideo,
             data: {
                 filepath: video.path
             }
@@ -673,7 +673,7 @@ class Util {
 
     async sync_prj(types: DataTypes.SyncType[]): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
         const req: DataTypes.Req<DataTypes.SyncPrjReq> = {
-            cmd: 'sync_prj',
+            cmd: DataTypes.CmdType.prjSync,
             data: {
                 type: types,
                 prj: appStore.prj
@@ -692,7 +692,7 @@ class Util {
         reqParam: DataTypes.FilesReq | null
     ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         const req: DataTypes.Req<DataTypes.FilesReq> = {
-            cmd: 'files_get',
+            cmd: DataTypes.CmdType.files_get,
             data: reqParam == null ? new DataTypes.FilesReq() : reqParam
         }
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
@@ -713,7 +713,7 @@ class Util {
         reqParam: DataTypes.TagsReq | null
     ): Promise<DataTypes.Resp<DataTypes.TagsResp>> {
         const req: DataTypes.Req<DataTypes.TagsReq> = {
-            cmd: 'tags_get',
+            cmd: DataTypes.CmdType.tags_get,
             data: reqParam == null ? new DataTypes.TagsReq() : reqParam
         }
         const response: DataTypes.Resp<DataTypes.TagsResp> = await IpcApi.trigger_event(req)
@@ -735,7 +735,7 @@ class Util {
         param: DataTypes.FileTagsSetParam | null = null
     ): Promise<void> {
         const req: DataTypes.Req<DataTypes.FileTagsReq> = {
-            cmd: 'file_tags_set',
+            cmd: DataTypes.CmdType.fileTagsSet,
             data: fileTags
         }
         const response: DataTypes.Resp = await IpcApi.trigger_event(req)
@@ -964,7 +964,7 @@ class Util {
     }
     async search_tag(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         const req: DataTypes.Req<DataTypes.FilesReq> = {
-            cmd: 'search_tag'
+            cmd: DataTypes.CmdType.tagsSearch
         }
         req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
