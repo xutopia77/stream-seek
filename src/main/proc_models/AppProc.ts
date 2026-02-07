@@ -15,15 +15,6 @@ import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
 import { dialog } from 'electron'
 
-// function logRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
-//     if (resp.code === 0) {
-//         logger.info(resp.status)
-//     } else {
-//         logger.error(resp.status)
-//     }
-//     return resp
-// }
-
 function logStatusRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
     if (resp.code === 0) {
         workQueue.set_status(logger.info(resp.status))
@@ -1323,7 +1314,7 @@ class AppProc {
                 logger.info('The selected folder is not empty')
                 return resp.err('The selected folder is not empty')
             }
-            return await appProc.create_prj(req, Util.pathToLinuxStyle(folderPath))
+            return await this.create_prj(req, Util.pathToLinuxStyle(folderPath))
         } catch (error) {
             logger.error('Error creating project file:', error)
             return resp.err(
@@ -1357,7 +1348,7 @@ class AppProc {
             const prjInfo = JSON.parse(fileContent) as DataTypes.Prj
             appCfg.prj = prjInfo
             appCfg.appInfo.prjFile = filePath
-            appProc.saveAppCfg()
+            this.saveAppCfg()
             resp.success('File opened successfully').data = prjInfo
             return resp
         } catch (error) {
@@ -1386,25 +1377,30 @@ class AppProc {
         switch (cmd) {
             case DataTypes.CmdType.app_start:
                 logger.info(`cmd:${cmd}:${cseq}`)
-                return appProc.make_cmd_response(await appProc.handle_app_start())
+                return this.make_cmd_response(await this.handle_app_start())
             case DataTypes.CmdType.get_key_frame_info: {
                 const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
-                return appProc.make_cmd_response(await this.handle_get_key_frame_info(cmdReq))
+                return this.make_cmd_response(await this.handle_get_key_frame_info(cmdReq))
             }
             case 'create_prj': {
                 const cmdReq = convertCmdRequest<DataTypes.CreatePrjReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-                return appProc.make_cmd_response(await this.handle_create_prj(cmdReq, mainWin!))
+                return this.make_cmd_response(await this.handle_create_prj(cmdReq, mainWin!))
             }
             case DataTypes.CmdType.prjOpen: {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-                return appProc.make_cmd_response(await this.handle_open_prj(mainWin!))
+                return this.make_cmd_response(await this.handle_open_prj(mainWin!))
             }
             case DataTypes.CmdType.search_file: {
                 logger.info(`cmd:${cmd}:${cseq}`)
                 const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
-                return appProc.make_cmd_response(await appProc.handle_search_file(cmdReq))
+                return this.make_cmd_response(await this.handle_search_file(cmdReq))
+            }
+            case DataTypes.CmdType.thumbGet: {
+                logger.info(`cmd:${cmd}:${cseq}`)
+                const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
+                return this.make_cmd_response(await this.handle_search_file(cmdReq))
             }
             // case 'traversal_folder': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
@@ -1423,12 +1419,12 @@ class AppProc {
             case DataTypes.CmdType.videoDel: {
                 const cmdReq = convertCmdRequest<DataTypes.DeleteFileReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.files.length}`)
-                return appProc.make_cmd_response(await appProc.handle_delete_file(cmdReq))
+                return this.make_cmd_response(await this.handle_delete_file(cmdReq))
             }
             case DataTypes.CmdType.sltVideo: {
                 const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
-                return appProc.make_cmd_response(await appProc.handle_select_video(cmdReq))
+                return this.make_cmd_response(await this.handle_select_video(cmdReq))
             }
             // case 'query_video': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
@@ -1438,7 +1434,7 @@ class AppProc {
             case DataTypes.CmdType.prjSync: {
                 const cmdReq = convertCmdRequest<DataTypes.SyncPrjReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.type}`)
-                return appProc.make_cmd_response(await appProc.handle_sync_work(cmdReq))
+                return this.make_cmd_response(await this.handle_sync_work(cmdReq))
             }
             // case 'sync_trash': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_SyncTrash>(req)
@@ -1448,17 +1444,17 @@ class AppProc {
             case DataTypes.CmdType.fileTagsSet: {
                 const cmdReq = convertCmdRequest<DataTypes.FileTagsReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, fileTags len:${cmdReq.data?.fileTags.length}`)
-                return appProc.make_cmd_response(await appProc.handle_file_tags_set(cmdReq))
+                return this.make_cmd_response(await this.handle_file_tags_set(cmdReq))
             }
             case DataTypes.CmdType.tags_get: {
                 const cmdReq = convertCmdRequest<DataTypes.TagsReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}`)
-                return appProc.make_cmd_response(await appProc.handle_tags_get(cmdReq))
+                return this.make_cmd_response(await this.handle_tags_get(cmdReq))
             }
             case DataTypes.CmdType.files_get: {
                 const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}`)
-                return appProc.make_cmd_response(await appProc.handle_files_get(cmdReq))
+                return this.make_cmd_response(await this.handle_files_get(cmdReq))
             }
             default: {
                 console.log(`Unknown event: ${cmd}:${cseq}`)

@@ -915,9 +915,33 @@ class Util {
         return splitInfo
     }
 
+    async thumbGet(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
+        const req: DataTypes.Req<DataTypes.FilesReq> = {
+            cmd: DataTypes.CmdType.search_file
+        }
+        req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
+        if (appStore.prj.repoType == DataTypes.RepoType.Trash) {
+            req.data = DataTypes.FilesReq.makeReqStatusDel(null)
+        }
+        const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
+        if (response.code != 0) {
+            util.addToastErr(`search file failed: ${response.status}`)
+            console.log(`search file failed: ${response.status}`)
+            return response
+        }
+        console.info('search file success', response.data)
+        appStore.thumbList = response.data?.files || []
+        if (appStore.thumbList.length == 0) {
+            util.addToastInfo(
+                `没有文件，当前模式:${appStore.prj.repoType == DataTypes.RepoType.Trash ? '回收站' : '正常'}`
+            )
+        }
+        return response
+    }
+
     async search_file(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         const req: DataTypes.Req<DataTypes.FilesReq> = {
-            cmd: 'search_file'
+            cmd: DataTypes.CmdType.search_file
         }
         req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
         if (appStore.prj.repoType == DataTypes.RepoType.Trash) {

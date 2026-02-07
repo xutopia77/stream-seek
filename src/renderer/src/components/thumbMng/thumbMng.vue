@@ -49,6 +49,7 @@ import '@renderer/assets/common.css'
 import { IpcApi } from '@renderer/utils/ipcApi'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 import { useAppStore } from '@renderer/stores/AppStore'
+import util from '@renderer/utils/util'
 
 const appStore = useAppStore()
 
@@ -116,37 +117,9 @@ function toggleSelection(thumb: Thumbnail): void {
 
 // 加载缩略图
 async function loadThumbnails(): Promise<void> {
-    if (!appStore.curSltVideo) {
-        console.warn('未选中视频，无法加载缩略图')
-        return
-    }
-
     loading.value = true
-    try {
-        // 这里需要从后端获取视频的缩略图列表
-        // 由于现有API结构，我们可能需要创建新的IPC调用来获取缩略图列表
-        const resp = await IpcApi.trigger_event<DataTypes.File, DataTypes.File>({
-            cmd: DataTypes.CmdType.thumbGet,
-            data: appStore.curSltVideo
-        })
-
-        if (resp.code === 0 && resp.data?.thumbnail?.path) {
-            thumbnails.value = resp.data.thumbnail.path.map((path) => ({
-                path,
-                name: path,
-                indexTime: DataTypes.FileTools.parse_timestr_2_seconds(path),
-                selected: false
-            }))
-        } else {
-            console.warn('未能获取缩略图列表:', resp.status)
-            thumbnails.value = []
-        }
-    } catch (error) {
-        console.error('加载缩略图失败:', error)
-        thumbnails.value = []
-    } finally {
-        loading.value = false
-    }
+    await util.thumbGet()
+    loading.value = false
 }
 
 // 删除选中的缩略图

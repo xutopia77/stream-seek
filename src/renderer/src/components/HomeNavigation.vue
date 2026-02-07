@@ -147,7 +147,7 @@ const btn_createPrj = async (): Promise<void> => {
 
 const btn_openPrj = async (): Promise<void> => {
     const req: DataTypes.Req = {
-        cmd: 'open_prj'
+        cmd: DataTypes.CmdType.prjOpen
     }
     const response: DataTypes.Resp = await IpcApi.trigger_event(req)
     if (response.code != 0) {
