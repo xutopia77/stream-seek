@@ -1,89 +1,137 @@
 <template>
     <div class="thumbnail-management-container xc-scrollbar">
-        <div class="toolbar">
-            <button class="action-btn refresh-btn" @click="loadThumbnails">🔄 刷新</button>
-            <button
-                class="action-btn delete-btn"
-                :disabled="selectedCount === 0"
-                @click="deleteSelectedThumbnails"
-            >
-                🗑️ 删除选中 ({{ selectedCount }})
-            </button>
-            <div class="status-info">总共 {{ thumbnails.length }} 张缩略图</div>
-        </div>
-
-        <div class="thumbnail-grid">
-            <div
-                v-for="thumb in thumbnails"
-                :key="thumb.path"
-                class="thumbnail-card"
-                :class="{ selected: thumb.selected }"
-                @click="toggleSelection(thumb)"
-            >
-                <div class="thumbnail-wrapper">
-                    <img :src="thumbUrlMake(thumb)" :alt="thumb.name" />
-                    <div class="checkbox-overlay">
-                        <span>{{ thumb.selected ? '✅' : '⬜' }}</span>
+        <div class="layout-container">
+            <!-- 左侧：缩略图预览区域 -->
+            <div class="left-panel">
+                <div class="panel-header">
+                    <h3>缩略图预览</h3>
+                    <div class="controls">
+                        <button @click="refreshThumbnails" class="action-btn refresh-btn">🔄 刷新</button>
+                        <button @click="deleteSelectedThumbnails" class="action-btn delete-btn" :disabled="selectedThumbnails.length === 0">
+                            🗑️ 删除选中 ({{ selectedThumbnails.length }})
+                        </button>
                     </div>
                 </div>
-                <div class="thumbnail-info">
-                    <span class="thumbnail-name" :title="thumb.name">{{
-                        formatThumbnailName(thumb.name)
-                    }}</span>
-                    <span class="thumbnail-time">{{ formatTime(thumb.name) }}</span>
+                
+                <div class="thumbnail-grid">
+                    <div 
+                        v-for="thumb in currentThumbnails" 
+                        :key="thumb.path" 
+                        class="thumbnail-card"
+                        :class="{ 'selected': isSelected(thumb) }"
+                        @click="toggleSelection(thumb)"
+                    >
+                        <div class="thumbnail-wrapper">
+                            <img :src="thumbUrlMake(thumb.path)" :alt="thumb.name" />
+                            <div class="checkbox-overlay">
+                                <span>{{ isSelected(thumb) ? '✅' : '⬜' }}</span>
+                            </div>
+                        </div>
+                        <div class="thumbnail-info">
+                            <span class="thumbnail-name" :title="thumb.name">{{ formatTime(thumb.name) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧：文件列表区域 -->
+            <div class="right-panel">
+                <div class="panel-header">
+                    <h3>文件列表</h3>
+                    <div class="file-count">
+                        共 {{ fileList.length }} 个文件
+                    </div>
+                </div>
+                
+                <div class="file-list">
+                    <div 
+                        v-for="file in fileList" 
+                        :key="file.id" 
+                        class="file-item"
+                        :class="{ 'selected': currentFile?.id === file.id }"
+                        @click="selectFile(file)"
+                    >
+                        <div class="file-info">
+                            <span class="file-name" :title="file.name">{{ file.name }}</span>
+                            <span class="file-duration">{{ formatDuration(file.duration) }}</span>
+                        </div>
+                        <div class="file-stats">
+                            <span class="thumbnail-count">缩略图: {{ file.thumbnail?.path?.length || 0 }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
+        
         <div v-if="loading" class="loading-overlay">
             <div class="loading-spinner">⏳ 加载中...</div>
         </div>
-
-        <div v-if="!thumbnails.length && !loading" class="empty-state">暂无缩略图数据</div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import '@renderer/assets/common.css'
-import { IpcApi } from '@renderer/utils/ipcApi'
+import util from '@renderer/utils/util'
 import * as DataTypes from '../../../../bridge/dataTypedef'
 import { useAppStore } from '@renderer/stores/AppStore'
-import util from '@renderer/utils/util'
 
 const appStore = useAppStore()
 
-// 定义缩略图对象的类型
-interface Thumbnail {
-    path: string
-    name: string
-    indexTime: number
-    selected: boolean
-}
-
 // 响应式数据
-const thumbnails = ref<Thumbnail[]>([])
+const fileList = ref<DataTypes.File[]>([])
+const currentThumbnails = ref<DataTypes.ThumbnailInfo[]>([])
+const selectedThumbnails = ref<DataTypes.ThumbnailInfo[]>([])
+const currentFile = ref<DataTypes.File | null>(null)
 const loading = ref<boolean>(false)
 
-// 计算选中的缩略图数量
-const selectedCount = computed(() => {
-    return thumbnails.value.filter((thumb) => thumb.selected).length
-})
-
-// 格式化缩略图名称显示
-function formatThumbnailName(name: string): string {
-    if (!name) return ''
-    // 截取文件名的前几位数字作为显示
-    if (name.length > 14) {
-        return `${name.substring(0, 8)}...${name.substring(name.length - 6)}`
+// 根据当前选中的文件更新缩略图列表
+function updateCurrentThumbnails(): void {
+    if (currentFile.value && currentFile.value.thumbnail?.path) {
+        currentThumbnails.value = currentFile.value.thumbnail.path.map(path => ({
+            path,
+            name: path,
+            indexTime: DataTypes.FileTools.parse_timestr_2_seconds(path)
+        }))
+    } else {
+        currentThumbnails.value = []
     }
-    return name
+}
+
+// 生成缩略图URL
+function thumbUrlMake(thumbPath: string): string {
+    if (!currentFile.value) {
+        console.warn('未选中文件')
+        return ''
+    }
+    return `http://localhost:58080/thumb_get?video=${encodeURIComponent(currentFile.value.name)}&thumb=${encodeURIComponent(thumbPath)}`
+}
+
+// 切换缩略图选中状态
+function toggleSelection(thumb: DataTypes.ThumbnailInfo): void {
+    const index = selectedThumbnails.value.findIndex(t => t.path === thumb.path)
+    if (index > -1) {
+        selectedThumbnails.value.splice(index, 1)
+    } else {
+        selectedThumbnails.value.push(thumb)
+    }
+}
+
+// 检查缩略图是否被选中
+function isSelected(thumb: DataTypes.ThumbnailInfo): boolean {
+    return selectedThumbnails.value.some(t => t.path === thumb.path)
+}
+
+// 选中文件
+function selectFile(file: DataTypes.File): void {
+    currentFile.value = file
+    updateCurrentThumbnails()
+    selectedThumbnails.value = [] // 清空选中项
 }
 
 // 格式化时间显示
 function formatTime(name: string): string {
     if (!name) return ''
-    // 从文件名中提取时间信息
     const timeStr = name.replace(/\.\w+$/, '') // 移除扩展名
     if (timeStr.length >= 14) {
         const year = timeStr.slice(0, 4)
@@ -92,58 +140,79 @@ function formatTime(name: string): string {
         const hour = timeStr.slice(8, 10)
         const minute = timeStr.slice(10, 12)
         const second = timeStr.slice(12, 14)
-        return `${year}-${month}-${day} ${hour}:${minute}:${second}`
+        return `${hour}:${minute}:${second}`
     }
     return timeStr
 }
 
-// 生成缩略图URL
-function thumbUrlMake(thumb: Thumbnail): string {
-    // 使用当前选中的视频信息来生成缩略图URL
-    if (!appStore.curSltVideo) {
-        console.warn('未选中视频')
-        return ''
+// 格式化时长显示
+function formatDuration(duration: number): string {
+    const hours = Math.floor(duration / 3600)
+    const minutes = Math.floor((duration % 3600) / 60)
+    const seconds = Math.floor(duration % 60)
+    
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
     }
-
-    // 注意：这里需要根据实际的后端API设计来调整
-    // 目前假设后端支持根据视频名和缩略图时间戳获取缩略图
-    return `http://localhost:58080/thumb_get?video=${encodeURIComponent(appStore.curSltVideo.name)}&thumb=${encodeURIComponent(thumb.path)}`
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
-// 切换缩略图选中状态
-function toggleSelection(thumb: Thumbnail): void {
-    thumb.selected = !thumb.selected
-}
-
-// 加载缩略图
-async function loadThumbnails(): Promise<void> {
+// 刷新缩略图
+async function refreshThumbnails(): Promise<void> {
     loading.value = true
-    await util.thumbGet()
-    loading.value = false
+    try {
+        // 使用util.thumbGet()获取缩略图文件列表
+        const resp = await util.thumbGet()
+        if (resp.code === 0 && resp.data?.files) {
+            fileList.value = resp.data.files
+            
+            // 更新appStore.thumbList.thumbnail
+            appStore.thumbList = resp.data.files
+            
+            // 如果当前没有选中文件且列表不为空，选择第一个文件
+            if (!currentFile.value && fileList.value.length > 0) {
+                selectFile(fileList.value[0])
+            }
+        } else {
+            console.warn('获取文件列表失败:', resp.status)
+            fileList.value = []
+        }
+    } catch (error) {
+        console.error('刷新缩略图失败:', error)
+        fileList.value = []
+    } finally {
+        loading.value = false
+    }
 }
 
 // 删除选中的缩略图
 async function deleteSelectedThumbnails(): Promise<void> {
-    if (selectedCount.value === 0) return
-
-    const selectedThumbs = thumbnails.value.filter((thumb) => thumb.selected)
-    if (!confirm(`确定要删除选中的 ${selectedThumbs.length} 张缩略图吗？`)) {
+    if (selectedThumbnails.value.length === 0 || !currentFile.value) return
+    
+    if (!confirm(`确定要删除选中的 ${selectedThumbnails.value.length} 张缩略图吗？`)) {
         return
     }
-
+    
     loading.value = true
     try {
-        // 这里需要实现删除缩略图的后端调用
-        // 可能需要一个新的IPC调用
-        for (const thumb of selectedThumbs) {
-            // 实现删除逻辑 - 这里需要后端API支持
-            console.log('删除缩略图:', thumb.path)
+        // TODO: 实现删除缩略图的后端调用
+        console.log('删除缩略图:', selectedThumbnails.value)
+        
+        // 从当前文件的缩略图列表中移除
+        if (currentFile.value.thumbnail?.path) {
+            const pathsToRemove = selectedThumbnails.value.map(t => t.path)
+            currentFile.value.thumbnail.path = currentFile.value.thumbnail.path.filter(
+                path => !pathsToRemove.includes(path)
+            )
+            
+            // 更新缩略图列表
+            updateCurrentThumbnails()
         }
-
-        // 从列表中移除已删除的缩略图
-        thumbnails.value = thumbnails.value.filter((thumb) => !thumb.selected)
-
-        alert(`成功删除 ${selectedThumbs.length} 张缩略图`)
+        
+        // 清空选中项
+        selectedThumbnails.value = []
+        
+        alert(`成功删除 ${selectedThumbnails.value.length} 张缩略图`)
     } catch (error) {
         console.error('删除缩略图失败:', error)
         alert('删除缩略图失败: ' + error)
@@ -152,13 +221,22 @@ async function deleteSelectedThumbnails(): Promise<void> {
     }
 }
 
-// 组件挂载时加载缩略图
-onMounted(() => {
-    loadThumbnails()
+// 初始化数据
+onMounted(async () => {
+    await refreshThumbnails()
 })
 
-// 监听当前选中视频的变化
-// 注意：这需要根据实际的store实现来调整
+// 监听appStore.thumbList的变化
+watch(
+    () => appStore.thumbList,
+    (newList) => {
+        fileList.value = newList
+        if (!currentFile.value && newList.length > 0) {
+            selectFile(newList[0])
+        }
+    },
+    { deep: true }
+)
 </script>
 
 <style scoped>
