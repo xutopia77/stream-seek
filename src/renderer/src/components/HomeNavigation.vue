@@ -38,13 +38,13 @@
                         class="xc-button menu-button"
                         @click.stop="btn_viewChange('thumb_show')"
                     >
-                        缩略图查看
+                        缩略图查看🖼️
                     </button>
                     <button
                         class="xc-button menu-button"
                         @click.stop="btn_viewChange('video_show')"
                     >
-                        视频查看
+                        视频查看🎞️
                     </button>
                 </div>
             </div>
