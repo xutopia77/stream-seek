@@ -36,6 +36,8 @@ export type AppStore = {
     rightPanel: DataTypes.WorkPanel
     fileSearchPage: number
     fileSearchPageSize: number
+    videoTotalNum: number
+    thumbTotalNum: number
 
     thumbList: DataTypes.File[]
     curSltThumb: DataTypes.File | null
@@ -90,6 +92,8 @@ export const useAppStore = defineStore('app', {
         rightPanel: DataTypes.WorkPanel.List,
         fileSearchPage: 0,
         fileSearchPageSize: 200,
+        videoTotalNum: 0,
+        thumbTotalNum: 0,
         thumbList: [],
         curSltThumb: null,
         videoList: [],
