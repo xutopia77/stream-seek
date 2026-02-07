@@ -35,48 +35,50 @@
         <!-- 分页控制区域 -->
         <div class="pagination-controls">
             <div class="pagination-info">
-                <span class="page-info">
+                <span class="xc-text">
                     第 {{ currentPage }} 页 / 共 {{ totalPages }} 页 (共
-                    {{ filteredVideoList.length }} 条记录)
+                    {{ filteredVideoList.length }} 条)
                 </span>
             </div>
 
             <div class="pagination-nav">
                 <button
                     :disabled="currentPage <= 1"
-                    class="xc-button"
+                    class="xc-button small"
                     @click="goToPage(currentPage - 1)"
                 >
                     ◀
                 </button>
 
-                <div class="page-numbers">
-                    <button
-                        v-for="pageNum in visiblePageNumbers"
-                        :key="pageNum"
-                        :class="{ active: pageNum === currentPage }"
-                        class="page-btn"
-                        @click="goToPage(pageNum)"
-                    >
-                        {{ pageNum }}
-                    </button>
+                <div class="page-jump">
+                    <span class="xc-text">跳转</span>
+                    <input
+                        v-model.number="jumpPageNum"
+                        type="number"
+                        class="page-input"
+                        :min="1"
+                        :max="totalPages"
+                        @keyup.enter="jumpToPage"
+                    />
                 </div>
 
                 <button
                     :disabled="currentPage >= totalPages"
-                    class="xc-button"
+                    class="xc-button small"
                     @click="goToPage(currentPage + 1)"
                 >
                     ▶
                 </button>
+                <span class="xc-text">每页</span>
                 <div class="page-size-selector">
                     <select v-model="pageSize" class="size-select" @change="handlePageSizeChange">
-                        <option :value="10">每页10条</option>
-                        <option :value="20">每页20条</option>
-                        <option :value="50">每页50条</option>
-                        <option :value="100">每页100条</option>
+                        <option :value="10">10</option>
+                        <option :value="20">20</option>
+                        <option :value="50">50</option>
+                        <option :value="100">100</option>
                     </select>
                 </div>
+                <span class="xc-text"> 条</span>
             </div>
         </div>
     </div>
@@ -100,32 +102,13 @@ const currentPage = ref(1)
 const pageSize = ref(20) // 默认每页显示20条
 const totalPages = computed(() => Math.ceil(filteredVideoList.value.length / pageSize.value))
 const currentPageStartIndex = computed(() => (currentPage.value - 1) * pageSize.value)
+const jumpPageNum = ref(1) // 用于跳转的页码输入
 
 // 获取当前页面的视频列表
 const currentPageVideos = computed(() => {
     const start = (currentPage.value - 1) * pageSize.value
     const end = start + pageSize.value
     return filteredVideoList.value.slice(start, end)
-})
-
-// 显示的页码范围，最多显示7个页码按钮
-const visiblePageNumbers = computed(() => {
-    const pages = []
-    const maxVisiblePages = 7
-    const half = Math.floor(maxVisiblePages / 2)
-
-    let startPage = Math.max(1, currentPage.value - half)
-    let endPage = Math.min(totalPages.value, startPage + maxVisiblePages - 1)
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-        startPage = Math.max(1, endPage - maxVisiblePages + 1)
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-        pages.push(i)
-    }
-
-    return pages
 })
 
 // 记录上一次选中的索引
@@ -169,6 +152,17 @@ const goToPage = (pageNum: number): void => {
     if (pageNum < 1 || pageNum > totalPages.value) return
 
     currentPage.value = pageNum
+}
+
+// 跳转到输入的页码
+const jumpToPage = (): void => {
+    if (jumpPageNum.value < 1) {
+        jumpPageNum.value = 1
+    } else if (jumpPageNum.value > totalPages.value) {
+        jumpPageNum.value = totalPages.value
+    }
+
+    currentPage.value = jumpPageNum.value
 }
 
 // 当视频列表发生变化时，重新执行搜索
@@ -333,7 +327,7 @@ const getVideoLevelColorStyle = (video): string => {
     background-color: var(--xc-background-color);
     border-top: 1px solid #333;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 2px;
 }
 
 .pagination-info {
@@ -344,12 +338,6 @@ const getVideoLevelColorStyle = (video): string => {
     min-width: 150px;
 }
 
-.page-info {
-    font-size: 12px;
-    color: var(--xc-text-color);
-    white-space: nowrap;
-}
-
 .pagination-nav {
     display: flex;
     align-items: center;
@@ -358,55 +346,29 @@ const getVideoLevelColorStyle = (video): string => {
     min-width: 200px;
 }
 
-.nav-btn {
-    padding: 4px 12px;
-    margin: 0 4px;
-    background-color: #2d2d30;
-    border: 1px solid #3c3c41;
-    color: var(--xc-text-color);
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.nav-btn:hover:not(:disabled) {
-    background-color: #3c3c41;
-}
-
-.nav-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.page-numbers {
-    display: flex;
-    margin: 0 8px;
-}
-
-.page-btn {
+.page-input {
+    width: 60px;
     padding: 4px 8px;
-    margin: 0 2px;
     background-color: #2d2d30;
     border: 1px solid #3c3c41;
-    color: var(--xc-text-color);
     border-radius: 3px;
-    cursor: pointer;
-    min-width: 30px;
+    color: var(--xc-text-color);
     text-align: center;
+    outline: none;
 }
 
-.page-btn:hover {
-    background-color: #3c3c41;
+/* 隐藏数字输入框的上下箭头 */
+.page-input::-webkit-outer-spin-button,
+.page-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
-.page-btn.active {
-    background-color: #094771;
-    border-color: #094771;
+.page-input:focus {
+    border-color: #007fd4;
 }
 
 .page-size-selector {
-    flex: 1;
-    min-width: 120px;
     text-align: right;
 }
 
@@ -421,27 +383,5 @@ const getVideoLevelColorStyle = (video): string => {
 
 .size-select:focus {
     border-color: #007fd4;
-}
-
-/* 小屏幕适配 */
-@media (max-width: 768px) {
-    .pagination-controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .pagination-nav {
-        order: 3;
-        justify-content: center;
-    }
-
-    .pagination-info {
-        order: 2;
-    }
-
-    .page-size-selector {
-        order: 4;
-        text-align: center;
-    }
 }
 </style>
