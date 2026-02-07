@@ -25,7 +25,7 @@ class WorkQueue {
     set_status(str: string): void {
         switch (str) {
             case DataTypes.CmdType.tags_get:
-            case DataTypes.CmdType.files_get:
+            case DataTypes.CmdType.filesGet:
             case DataTypes.CmdType.search_file:
             case DataTypes.CmdType.app_start:
                 return

@@ -96,8 +96,6 @@ const videoList = computed<DataTypes.File[]>(() => appStore.thumbList)
 // 搜索相关
 const searchQuery = ref('')
 const filteredVideoList = ref<DataTypes.File[]>([])
-
-// 分页相关
 const currentPage = ref(1)
 const pageSize = ref(20) // 默认每页显示20条
 const totalPages = computed(() => Math.ceil(filteredVideoList.value.length / pageSize.value))

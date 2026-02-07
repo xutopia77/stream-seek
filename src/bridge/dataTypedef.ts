@@ -4,7 +4,7 @@ export enum CmdType {
     app_start = 'app_start',
     get_key_frame_info = 'get_key_frame_info',
     tags_get = 'tags_get',
-    files_get = 'files_get',
+    filesGet = 'files_get',
     fileTagsSet = 'file_tags_set',
     tagsSearch = 'search_tag',
     search_file = 'search_file',

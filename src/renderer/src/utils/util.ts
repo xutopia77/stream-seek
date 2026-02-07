@@ -692,9 +692,16 @@ class Util {
         reqParam: DataTypes.FilesReq | null
     ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         const req: DataTypes.Req<DataTypes.FilesReq> = {
-            cmd: DataTypes.CmdType.files_get,
+            cmd: DataTypes.CmdType.filesGet,
             data: reqParam == null ? new DataTypes.FilesReq() : reqParam
         }
+        if (!req.data) {
+            const resp = new DataTypes.Resp<DataTypes.FilesResp>()
+            resp.code = DataTypes.RespCode.Error
+            return resp
+        }
+        req.data.page = appStore.fileSearchPage
+        req.data.pageSize = appStore.fileSearchPageSize
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
             util.addToastErr(`获取文件列表失败: ${response.status}`)
@@ -923,6 +930,13 @@ class Util {
         if (appStore.prj.repoType == DataTypes.RepoType.Trash) {
             req.data = DataTypes.FilesReq.makeReqStatusDel(null)
         }
+        if (!req.data) {
+            const resp = new DataTypes.Resp<DataTypes.FilesResp>()
+            resp.code = DataTypes.RespCode.Error
+            return resp
+        }
+        req.data.page = appStore.fileSearchPage
+        req.data.pageSize = appStore.fileSearchPageSize
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
             util.addToastErr(`search file failed: ${response.status}`)
@@ -947,6 +961,13 @@ class Util {
         if (appStore.prj.repoType == DataTypes.RepoType.Trash) {
             req.data = DataTypes.FilesReq.makeReqStatusDel(null)
         }
+        if (!req.data) {
+            const resp = new DataTypes.Resp<DataTypes.FilesResp>()
+            resp.code = DataTypes.RespCode.Error
+            return resp
+        }
+        req.data.page = appStore.fileSearchPage
+        req.data.pageSize = appStore.fileSearchPageSize
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
             util.addToastErr(`search file failed: ${response.status}`)

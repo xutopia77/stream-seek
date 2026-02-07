@@ -98,8 +98,19 @@ const searchQuery = ref('')
 const filteredVideoList = ref<DataTypes.File[]>([])
 
 // 分页相关
-const currentPage = ref(1)
-const pageSize = ref(20) // 默认每页显示20条
+const currentPage = computed({
+    get: () => appStore.fileSearchPage,
+    set: (value: number) => {
+        appStore.fileSearchPage = value
+    }
+})
+
+const pageSize = computed({
+    get: () => appStore.fileSearchPageSize,
+    set: (value: number) => {
+        appStore.fileSearchPageSize = value
+    }
+})
 const totalPages = computed(() => Math.ceil(filteredVideoList.value.length / pageSize.value))
 const currentPageStartIndex = computed(() => (currentPage.value - 1) * pageSize.value)
 const jumpPageNum = ref(1) // 用于跳转的页码输入

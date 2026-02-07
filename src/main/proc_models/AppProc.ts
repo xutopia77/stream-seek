@@ -1451,7 +1451,7 @@ class AppProc {
                 logger.info(`cmd:${cmd}:${cseq}`)
                 return this.make_cmd_response(await this.handle_tags_get(cmdReq))
             }
-            case DataTypes.CmdType.files_get: {
+            case DataTypes.CmdType.filesGet: {
                 const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}`)
                 return this.make_cmd_response(await this.handle_files_get(cmdReq))
