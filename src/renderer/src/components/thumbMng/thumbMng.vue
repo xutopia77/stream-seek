@@ -250,13 +250,47 @@ watch(
     overflow: hidden;
 }
 
-.toolbar {
+.layout-container {
     display: flex;
-    align-items: center;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 100px); /* 调整高度以适应容器 */
+}
+
+.left-panel, .right-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     padding: 10px;
-    background-color: var(--xc-header-bg-color);
+}
+
+.left-panel {
+    flex: 2;
+    border-right: 1px solid var(--xc-border-color);
+}
+
+.right-panel {
+    flex: 1;
+    min-width: 250px;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--xc-border-color);
+    margin-bottom: 10px;
+}
+
+.controls {
+    display: flex;
     gap: 10px;
+}
+
+.file-count {
+    font-size: 14px;
+    color: var(--xc-secondary-text-color);
 }
 
 .action-btn {
@@ -296,17 +330,10 @@ watch(
     background-color: #218838;
 }
 
-.status-info {
-    margin-left: auto;
-    font-size: 14px;
-    color: var(--xc-text-color);
-}
-
 .thumbnail-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 10px;
-    padding: 10px;
     flex: 1;
     overflow-y: auto;
 }
@@ -319,6 +346,7 @@ watch(
     transition: all 0.2s ease;
     cursor: pointer;
     position: relative;
+    aspect-ratio: 1/1;
 }
 
 .thumbnail-card:hover {
@@ -334,13 +362,10 @@ watch(
 .thumbnail-wrapper {
     position: relative;
     width: 100%;
-    padding-top: 100%; /* 1:1 aspect ratio */
+    height: calc(100% - 30px);
 }
 
 .thumbnail-wrapper img {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -358,9 +383,13 @@ watch(
 }
 
 .thumbnail-info {
-    padding: 5px;
+    padding: 4px;
     text-align: center;
-    font-size: 12px;
+    font-size: 11px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .thumbnail-name {
@@ -368,13 +397,56 @@ watch(
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 2px;
+    width: 100%;
 }
 
-.thumbnail-time {
-    display: block;
+.file-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.file-item {
+    padding: 10px;
+    border: 1px solid var(--xc-border-color);
+    border-radius: 4px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.file-item:hover {
+    background-color: var(--xc-hover-bg-color);
+}
+
+.file-item.selected {
+    background-color: var(--xc-selected-bg-color);
+    border-color: #007bff;
+}
+
+.file-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.file-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-duration {
     color: var(--xc-secondary-text-color);
-    font-size: 10px;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
+.file-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--xc-secondary-text-color);
 }
 
 .loading-overlay {
@@ -393,14 +465,5 @@ watch(
 .loading-spinner {
     color: white;
     font-size: 18px;
-}
-
-.empty-state {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 200px;
-    color: var(--xc-secondary-text-color);
-    font-size: 16px;
 }
 </style>
