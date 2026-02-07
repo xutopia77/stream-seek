@@ -35,6 +35,7 @@ export type AppStore = {
     func_get_ele_video: (() => HTMLVideoElement | null) | null
     rightPanel: DataTypes.WorkPanel
     thumbList: DataTypes.File[]
+    curSltThumb: DataTypes.File | null
     videoList: DataTypes.File[]
     curCheckedVideo: Set<DataTypes.File>
     curSltVideo: DataTypes.File | null // 在列表中，鼠标选中后，更新
@@ -88,6 +89,7 @@ export const useAppStore = defineStore('app', {
         videoList: [],
         curCheckedVideo: new Set<DataTypes.File>(), // 当前选中的视频列表
         curSltVideo: null, // 当前选中的视频
+        curSltThumb: null,
         curSltVideoName4Play: '', // 当前选中视频的名称，在videoPreview中watch然后，更新播放状态使用，其他地方不要用这个变量
         // curVideoInfo: null, // 当前选中的视频信息
         // ------ 视频切分信息
