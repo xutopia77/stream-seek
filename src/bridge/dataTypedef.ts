@@ -403,6 +403,7 @@ export interface Resp_CutVideo {
 
 export class DeleteFileReq {
     type: 'del' | 'destroy' = 'del' // del 移动到回收站， destroy 删除文件
+    bDelThumb: boolean = false
     // 有效字段 path， repo， 其他字段不用理会
     files: File[] = []
 }

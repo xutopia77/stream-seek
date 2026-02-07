@@ -35,7 +35,9 @@
         <span class="xc-text" style="padding-right: 3px; color: darkcyan">{{ frameInfo }}</span>
         <span class="xc-text" style="padding-right: 3px; color: chocolate">{{ frameRate }}</span>
         <!-- 显示i帧 -->
-        <button class="xc-button btn-noborder" title="显示关键帧" @click="btn_showKeyFrame">🔑</button>
+        <button class="xc-button btn-noborder" title="显示关键帧" @click="btn_showKeyFrame">
+            🔑
+        </button>
         <div class="right-area-ctrl">
             <button
                 class="xc-button btn-noborder"
@@ -51,10 +53,15 @@
             <button
                 class="xc-button btn-noborder"
                 title="删除当前所选的文件"
-                @click="btnclk_del_cur_video"
+                @click="btnclk_delSltVideos"
             >
                 🗑
             </button>
+            <select v-model="delType" class="xc-select" title="删除方式" @change="changeDelType">
+                <option value="delVideo" title="移动到回收站">🗑</option>
+                <option value="delVideoAndThumb" title="移动到回收站，同时删除缩略图">🗑+</option>
+            </select>
+
             <button
                 class="xc-button btn-noborder"
                 title="显示文件列表"
@@ -247,7 +254,15 @@ function btnclk_chg_panel(model: DataTypes.WorkPanel): void {
     appStore.rightPanel = model
 }
 
-function btnclk_del_cur_video(): void {
+let delType = ref<'delVideo' | 'delVideoAndThumb'>('delVideo')
+
+function changeDelType(): void {
+    let str = '移动到回收站'
+    if (delType.value == 'delVideoAndThumb') str = '移动到回收站，同时删除缩略图'
+    util.addToastInfo(`删除方式为：${str}`)
+}
+
+function btnclk_delSltVideos(): void {
     const curCheckedVideo = appStore.curCheckedVideo
     if (curCheckedVideo == null) {
         util.addToastInfo('没有选择的文件')
@@ -270,6 +285,8 @@ function btnclk_del_cur_video(): void {
     } else {
         req.type = 'destroy'
     }
+    req.bDelThumb = false
+    if (delType.value == 'delVideoAndThumb') req.bDelThumb = true
     console.log('delete file req', req)
     util.delete_video(req)
     appStore.curCheckedVideo.clear()

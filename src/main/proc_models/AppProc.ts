@@ -1023,6 +1023,12 @@ class AppProc {
         return resp
     }
 
+    /**
+     *      如果删除方式是 'del'， 就把文件移动到回收站，同时把缩略图也移动到回收站（不依赖于bDelThumb），
+     *  确保文件不会被误删
+     *      如果删除方式是 'destroy'， 就把文件彻底删除，但是缩略图会根据bDelThumb决定，如
+     * 果bDelThumb为true，就连同缩略图也彻底删除，如果bDelThumb为false，缩略图会保留。
+     */
     async delete_video(
         req: DataTypes.Req<DataTypes.DeleteFileReq>
     ): Promise<DataTypes.Resp<DataTypes.DeleteFileResp>> {
