@@ -43,7 +43,7 @@ class Util {
         return path.join(repo.thumbnailPath, '.trash', `${filename}_thumbnail.db`)
     }
 
-    static thumbTrashPathMake(thumbPath: string): string {
+    static thumbTrashPathGet(thumbPath: string): string {
         return path.join(thumbPath, '.trash')
     }
 

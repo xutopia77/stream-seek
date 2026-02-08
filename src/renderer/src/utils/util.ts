@@ -928,7 +928,7 @@ class Util {
         const req: DataTypes.Req<DataTypes.FilesReq> = {
             cmd: DataTypes.CmdType.search_file
         }
-        req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
+        req.data = DataTypes.FilesReq.makeReqStatusNormal(null, null)
         if (appStore.prj.repoType == DataTypes.RepoType.Trash) {
             req.data = DataTypes.FilesReq.makeReqStatusDel(null)
         }
@@ -960,7 +960,7 @@ class Util {
         const req: DataTypes.Req<DataTypes.FilesReq> = {
             cmd: DataTypes.CmdType.tagsSearch
         }
-        req.data = DataTypes.FilesReq.makeReqStatusNotDel(null, null)
+        req.data = DataTypes.FilesReq.makeReqStatusNormal(null, null)
         const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
             util.addToastErr(`search file failed: ${response.status}`)

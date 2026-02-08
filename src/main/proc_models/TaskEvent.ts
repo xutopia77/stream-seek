@@ -22,7 +22,7 @@ class WorkQueue {
         return this.curReq !== null
     }
 
-    set_status(str: string): void {
+    statusSet(str: string): void {
         switch (str) {
             case DataTypes.CmdType.tags_get:
             case DataTypes.CmdType.filesGet:
@@ -47,7 +47,7 @@ class WorkQueue {
             if (appCfg.bPrtWorkQueue) {
                 logger.info('add task to queue', req?.cmd)
             }
-            this.set_status(req.cmd)
+            this.statusSet(req.cmd)
         } else {
             if (this.curReq != null) {
                 if (appCfg.bPrtWorkQueue) {

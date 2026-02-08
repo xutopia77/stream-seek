@@ -17,9 +17,9 @@ import { dialog } from 'electron'
 
 function logStatusRespReturn<T>(resp: DataTypes.Resp<T>): DataTypes.Resp<T> {
     if (resp.code === 0) {
-        workQueue.set_status(logger.info(resp.status))
+        workQueue.statusSet(logger.info(resp.status))
     } else {
-        workQueue.set_status(logger.error(resp.status))
+        workQueue.statusSet(logger.error(resp.status))
     }
     return resp
 }
@@ -36,14 +36,14 @@ class TraversalFolder {
         if ((now % 10) * 1000 === 0) {
             logger.info(`traversal file count: ${this.fileCount}`)
         }
-        workQueue.set_status(`traversal file count: ${this.fileCount}`)
+        workQueue.statusSet(`traversal file count: ${this.fileCount}`)
         const resp: DataTypes.Resp = new DataTypes.Resp()
         const fileTimeInfo = DataTypes.FileTools.parse_filename_mi(fName)
         if (fileTimeInfo == null) {
             logger.warn(`traversal skip: ${fPath}`)
             return resp.err(`traversal skip: ${fPath}`)
         }
-        const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(fPath, this.repo.name)
+        const searchReq = DataTypes.FilesReq.makeReqStatusNormal(fPath, this.repo.name)
         const respSearch = await appDb.file_search(searchReq)
         if (respSearch.code == 0) {
             if (respSearch.data?.files.length != null && respSearch.data.files.length > 0) {
@@ -315,7 +315,7 @@ class AppProc {
         if (tagResp.code !== 0) {
             return logStatusRespReturn(resp.err(`tag search err: ${tagResp.status}`))
         }
-        workQueue.set_status(`start set file tags len= ${req.data?.fileTags.length}`)
+        workQueue.statusSet(`start set file tags len= ${req.data?.fileTags.length}`)
         let tags = tagResp.data?.tags ?? []
         for (const item of req.data?.fileTags ?? []) {
             let tagInfo = tags.find((tag) => tag.name === item.tagName)
@@ -351,22 +351,22 @@ class AppProc {
             }
             const respDel = await appDb.file_tag_delete_all(fileTag.fileId)
             if (respDel.code !== 0) {
-                workQueue.set_status(logger.error(`delete file tag err: ${respDel.status}`))
+                workQueue.statusSet(logger.error(`delete file tag err: ${respDel.status}`))
                 resp.err('delete file tags error')
             }
             const respUpdate = await appDb.file_tag_insert(fileTag)
             if (respUpdate.code !== 0) {
-                workQueue.set_status(logger.error(`insert file tag err: ${respUpdate.status}`))
+                workQueue.statusSet(logger.error(`insert file tag err: ${respUpdate.status}`))
                 resp.err('insert file tags error')
             } else {
-                workQueue.set_status(
+                workQueue.statusSet(
                     logger.info(
                         `insert file tag success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
                     )
                 )
             }
         }
-        workQueue.set_status(
+        workQueue.statusSet(
             logger.info(
                 `set file tags success:  ${req.data?.fileTags != null && req.data?.fileTags?.length > 0 ? 'tag name : ' + req.data?.fileTags[0].tagName : 'no tag'}`
             )
@@ -381,7 +381,7 @@ class AppProc {
     async handle_files_get(
         req: DataTypes.Req<DataTypes.FilesReq>
     ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        return await appDb.file_view_search(req.data == null ? null : req.data)
+        return await appDb.fileViewSearch(req.data == null ? null : req.data)
     }
 
     async save_prj_info(prjInfo: DataTypes.Prj): Promise<DataTypes.Resp> {
@@ -452,12 +452,12 @@ class AppProc {
                 repo.thumbnailPath = path.join(prjPath, 'thumbnail', repo.name)
                 if (!fs.existsSync(repo.thumbnailPath)) {
                     fs.mkdirSync(repo.thumbnailPath, { recursive: true })
-                    fs.mkdirSync(Util.thumbTrashPathMake(repo.thumbnailPath))
+                    fs.mkdirSync(Util.thumbTrashPathGet(repo.thumbnailPath))
                 }
                 repo.framePath = path.join(prjPath, 'frame', repo.name)
                 if (!fs.existsSync(repo.framePath)) {
                     fs.mkdirSync(repo.framePath, { recursive: true })
-                    fs.mkdirSync(Util.thumbTrashPathMake(repo.framePath))
+                    fs.mkdirSync(Util.thumbTrashPathGet(repo.framePath))
                 }
             }
         }
@@ -539,13 +539,13 @@ class AppProc {
     async handle_search_file(
         req: DataTypes.Req<DataTypes.FilesReq>
     ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        return appDb.file_view_search(req.data == null ? null : req.data)
+        return appDb.fileViewSearch(req.data == null ? null : req.data)
     }
 
     async start_gen_thumbnail(): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
-        const searchRe = await appDb.file_view_search(
-            DataTypes.FilesReq.makeReqStatusNotDel(null, null)
+        const searchRe = await appDb.fileViewSearch(
+            DataTypes.FilesReq.makeReqStatusNormal(null, null)
         )
         if (searchRe.code !== 0) {
             return resp.err('search file error')
@@ -566,12 +566,12 @@ class AppProc {
                     if (respThumb.code == DataTypes.RespCode.FileExist) {
                         continue
                     }
-                    workQueue.set_status(
+                    workQueue.statusSet(
                         logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
                     )
                     continue
                 } else {
-                    workQueue.set_status(
+                    workQueue.statusSet(
                         logger.info(
                             `${count}/${searchRe.data?.total} gen thumbnail ${respThumb.status} num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} s, ${fileInfo.path}`
                         )
@@ -580,7 +580,7 @@ class AppProc {
                 if (respThumb.data != null && respThumb.data.length > 0) {
                     fileInfo.thumbnail = new DataTypes.ThumbnailInfo()
                     fileInfo.thumbnail.path = respThumb.data
-                    await appDb.file_update(fileInfo)
+                    await appDb.fileUpdate(fileInfo)
                 }
             }
             {
@@ -595,12 +595,12 @@ class AppProc {
                     if (respThumb.code == DataTypes.RespCode.FileExist) {
                         continue
                     }
-                    workQueue.set_status(
+                    workQueue.statusSet(
                         logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
                     )
                     continue
                 } else {
-                    workQueue.set_status(
+                    workQueue.statusSet(
                         logger.info(
                             `${count}/${searchRe.data?.total} gen thumbnail ${respThumb.status} num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} s, ${fileInfo.path}`
                         )
@@ -609,7 +609,7 @@ class AppProc {
                 if (respThumb.data != null && respThumb.data.length > 0) {
                     fileInfo.thumbnail = new DataTypes.ThumbnailInfo()
                     fileInfo.thumbnail.path = respThumb.data
-                    await appDb.file_update(fileInfo)
+                    await appDb.fileUpdate(fileInfo)
                 }
             }
         }
@@ -634,12 +634,12 @@ class AppProc {
 
             // 2, start search file from db
             {
-                workQueue.set_status(logger.info('start classify folder:', repo.path))
-                const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
+                workQueue.statusSet(logger.info('start classify folder:', repo.path))
+                const searchReq = DataTypes.FilesReq.makeReqStatusNormal(null, repo.name)
                 searchReq.order = 'asc'
                 searchReq.orderBy = 'startTimeSec'
                 searchReq.status = []
-                const searchResp = await appDb.file_view_search(searchReq)
+                const searchResp = await appDb.fileViewSearch(searchReq)
                 if (searchResp.code !== 0) {
                     logger.error(`search file error: ${searchResp.status}`)
                     continue
@@ -649,26 +649,26 @@ class AppProc {
                 for (const fInfo of fileList) {
                     if (!fs.existsSync(fInfo.path)) {
                         if (fInfo.status == DataTypes.FileStatus.Normal) {
-                            workQueue.set_status(
+                            workQueue.statusSet(
                                 logger.error(`file not exist destroy: ${fInfo.path}`)
                             )
                             fInfo.status = DataTypes.FileStatus.Destroy
-                            await appDb.file_update(fInfo)
+                            await appDb.fileUpdate(fInfo)
                             continue
                         }
                         if (fInfo.status == DataTypes.FileStatus.Deleted) {
                             const fTrashPath = recordsProc.file_trash_path_get(fInfo)
                             if (fTrashPath == '' || !fs.existsSync(fTrashPath)) {
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.info(`file not exist destroy: ${fInfo.path}`)
                                 )
                                 fInfo.status = DataTypes.FileStatus.Destroy
-                                await appDb.file_update(fInfo)
+                                await appDb.fileUpdate(fInfo)
                                 continue
                             } else {
-                                workQueue.set_status(logger.info(`update file path: ${fTrashPath}`))
+                                workQueue.statusSet(logger.info(`update file path: ${fTrashPath}`))
                                 fInfo.path = fTrashPath
-                                await appDb.file_update(fInfo)
+                                await appDb.fileUpdate(fInfo)
                                 continue
                             }
                         }
@@ -683,11 +683,11 @@ class AppProc {
                             if (tmp1 == tmp2) {
                                 continue
                             }
-                            workQueue.set_status(
+                            workQueue.statusSet(
                                 logger.error(`file status ${fInfo.status} err : ${fInfo.path}`)
                             )
                             fInfo.status = DataTypes.FileStatus.Destroy
-                            await appDb.file_update(fInfo)
+                            await appDb.fileUpdate(fInfo)
                             continue
                         }
                     }
@@ -695,10 +695,10 @@ class AppProc {
             }
             // 4, search file from db again
             {
-                const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(null, repo.name)
+                const searchReq = DataTypes.FilesReq.makeReqStatusNormal(null, repo.name)
                 searchReq.order = 'asc'
                 searchReq.orderBy = 'startTimeSec'
-                const searchResp = await appDb.file_view_search(searchReq)
+                const searchResp = await appDb.fileViewSearch(searchReq)
                 if (searchResp.code !== 0) {
                     logger.error(`search file error: ${searchResp.status}`)
                     continue
@@ -735,12 +735,12 @@ class AppProc {
                         }
                         fs.renameSync(fileInfo.path, dstPath)
                         fileInfo.path = dstPath
-                        const updateResp = await appDb.file_update(fileInfo)
+                        const updateResp = await appDb.fileUpdate(fileInfo)
                         if (updateResp.code !== 0) {
                             logger.error(`update file error: ${updateResp.status}`)
                             continue
                         }
-                        workQueue.set_status(
+                        workQueue.statusSet(
                             logger.info(
                                 `${fileCnt}/${fileList.length} group file success: ${fileInfo.path}`
                             )
@@ -753,7 +753,7 @@ class AppProc {
                 logger.info(`start classify thumbnail trash folder: ${repo.thumbnailPath}`)
                 // 1, search deleted file
                 const searchReq = DataTypes.FilesReq.makeReqStatusDel(repo.name)
-                const searchResp = await appDb.file_view_search(searchReq)
+                const searchResp = await appDb.fileViewSearch(searchReq)
                 if (searchResp.code !== 0) {
                     logger.error(`search del file error: ${searchResp.status}`)
                     continue
@@ -763,8 +763,8 @@ class AppProc {
                 for (const fInfo of fileList) {
                     fCnt++
                     // logger.info(`file : ${fInfo.path}`)
-                    const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(fInfo.path, fInfo.repo)
-                    const searchResp = await appDb.file_view_search(searchReq)
+                    const searchReq = DataTypes.FilesReq.makeReqStatusNormal(fInfo.path, fInfo.repo)
+                    const searchResp = await appDb.fileViewSearch(searchReq)
                     if (searchResp.code == 0) {
                         if (
                             searchResp.data?.files.length != null &&
@@ -859,7 +859,7 @@ class AppProc {
             }
 
             if (bNeedSavePrjInfo) {
-                workQueue.set_status(logger.info(`save prj info start`))
+                workQueue.statusSet(logger.info(`save prj info start`))
                 const prjInfo = req.data.prj
                 if (prjInfo == null) {
                     return logStatusRespReturn(resp.err('prjInfo is null,err'))
@@ -869,20 +869,20 @@ class AppProc {
                     return logStatusRespReturn(resp.err(`save prj info error ${saveResp.status}`))
                 }
                 resp.data.prj = prjInfo
-                workQueue.set_status(
+                workQueue.statusSet(
                     logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`)
                 )
             }
 
             if (bNeedClassifyFile) {
-                workQueue.set_status(logger.log('classify file start'))
+                workQueue.statusSet(logger.log('classify file start'))
                 const classifyResp = await this.start_classify_file(req.data.prj.dataRepo)
                 if (classifyResp.code !== 0) {
                     return logStatusRespReturn(
                         resp.err(`classify file error ${classifyResp.status}`)
                     )
                 }
-                workQueue.set_status(logger.log('classify file ', classifyResp.status))
+                workQueue.statusSet(logger.log('classify file ', classifyResp.status))
             }
 
             if (bNeedGenThumb) {
@@ -899,7 +899,7 @@ class AppProc {
             }
         }
 
-        workQueue.set_status('sync work success')
+        workQueue.statusSet('sync work success')
         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
         return resp
     }
@@ -969,7 +969,7 @@ class AppProc {
         }
         const searchReq = new DataTypes.FilesReq()
         searchReq.path = video_path
-        const searchRe = await appDb.file_view_search(searchReq)
+        const searchRe = await appDb.fileViewSearch(searchReq)
         if (searchRe.code !== 0) {
             return resp.err('search file error')
         }
@@ -1037,7 +1037,7 @@ class AppProc {
             return logStatusRespReturn(resp.err('file is null'))
         }
 
-        workQueue.set_status(logger.info(`delete file start`))
+        workQueue.statusSet(logger.info(`delete file start`))
 
         if (req.data.type == 'destroy') {
             for (const item of req.data.files) {
@@ -1047,11 +1047,11 @@ class AppProc {
                 }
                 const trashFolderPath = path.join(fRepo.path, '.trash')
 
-                const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(item.path, item.repo)
+                const searchReq = DataTypes.FilesReq.makeReqStatusNormal(item.path, item.repo)
                 searchReq.status = []
-                const searchResp = await appDb.file_view_search(searchReq)
+                const searchResp = await appDb.fileViewSearch(searchReq)
                 if (searchResp.code !== 0) {
-                    workQueue.set_status(
+                    workQueue.statusSet(
                         logger.error(
                             `search file ${item.repo} ${item.path} err: ${searchResp.status}`
                         )
@@ -1059,7 +1059,7 @@ class AppProc {
                     continue
                 }
                 if (searchResp.data?.files.length === 0) {
-                    workQueue.set_status(
+                    workQueue.statusSet(
                         logger.error(`delete file ${item.repo} ${item.path} not found`)
                     )
                     continue
@@ -1068,6 +1068,7 @@ class AppProc {
                 for (const fInfo of searchResp.data?.files || []) {
                     const filepath = fInfo.path
                     const filename = fInfo.name
+                    // 回收站文件名称
                     const distFilename = path.join(trashFolderPath, filename)
                     let attempts = 0
                     const maxAttempts = 3 // 最大尝试次数
@@ -1081,22 +1082,22 @@ class AppProc {
                                 fs.unlinkSync(filepath)
                             }
                             fInfo.status = DataTypes.FileStatus.Destroy
-                            const respUp = await appDb.file_update(fInfo)
+                            const respUp = await appDb.fileUpdate(fInfo)
                             if (respUp.code != 0) {
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.error(
                                         `update file status error: ${respUp.status} ${filepath}`
                                     )
                                 )
                             } else {
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.log(`rm original video: ${distFilename}`)
                                 )
                             }
                         } catch (err) {
                             attempts++
                             if (attempts < maxAttempts) {
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.error(
                                         `rm original video attempt ${attempts} failed, retrying in 1 second...`,
                                         err
@@ -1105,7 +1106,7 @@ class AppProc {
                                 await new Promise((resolve) => setTimeout(resolve, 1000))
                                 await attemptRename()
                             } else {
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.error(
                                         'rm original video err after multiple attempts:',
                                         err
@@ -1130,20 +1131,13 @@ class AppProc {
                 }
                 const thumbPath = fRepo.thumbnailPath
                 const trashFolderPath = path.join(fRepo.path, '.trash')
-                {
-                    if (!fs.existsSync(trashFolderPath)) {
-                        fs.mkdirSync(trashFolderPath)
-                    }
-                    // const resp_str = await make_trash_folder(trashFolderPath)
-                    // if (resp_str.length > 0) {
-                    //     logger.error('make trash folder error:', resp_str, item.path)
-                    //     return logStatusRespReturn(resp.err(resp_str))
-                    // }
+                if (!fs.existsSync(trashFolderPath)) {
+                    fs.mkdirSync(trashFolderPath)
                 }
-                const searchReq = DataTypes.FilesReq.makeReqStatusNotDel(item.path, item.repo)
-                const searchResp = await appDb.file_view_search(searchReq)
+                const searchReq = DataTypes.FilesReq.makeReqStatusNormal(item.path, item.repo)
+                const searchResp = await appDb.fileViewSearch(searchReq)
                 if (searchResp.code !== 0) {
-                    workQueue.set_status(
+                    workQueue.statusSet(
                         logger.error(
                             `search file ${item.repo} ${item.path} err: ${searchResp.status}`
                         )
@@ -1151,7 +1145,7 @@ class AppProc {
                     continue
                 }
                 if (searchResp.data?.files.length === 0) {
-                    workQueue.set_status(
+                    workQueue.statusSet(
                         logger.error(`delete file ${item.repo} ${item.path} not found`)
                     )
                     continue
@@ -1175,9 +1169,9 @@ class AppProc {
                             }
                             await fs.promises.rename(filepath, distFilename)
                             fInfo.status = DataTypes.FileStatus.Deleted
-                            const respUp = await appDb.file_update(fInfo)
+                            const respUp = await appDb.fileUpdate(fInfo)
                             if (respUp.code != 0) {
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.error(
                                         `update file status error: ${respUp.status} ${filepath}`
                                     )
@@ -1193,11 +1187,11 @@ class AppProc {
                                     filename,
                                     DataTypes.ThumbType.Thumb
                                 )
-                                if (!fs.existsSync(Util.thumbTrashPathMake(thumbPath))) {
-                                    fs.mkdirSync(Util.thumbTrashPathMake(thumbPath))
+                                if (!fs.existsSync(Util.thumbTrashPathGet(thumbPath))) {
+                                    fs.mkdirSync(Util.thumbTrashPathGet(thumbPath))
                                 }
                                 await fs.promises.rename(thumbFileDbPath, thumbTrashFileDbPath)
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.log(
                                         `delete original video: ${filepath}, move to ${distFilename}`
                                     )
@@ -1206,7 +1200,7 @@ class AppProc {
                         } catch (err) {
                             attempts++
                             if (attempts < maxAttempts) {
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.error(
                                         `move original video attempt ${attempts} failed, retrying in 1 second...`,
                                         err
@@ -1215,7 +1209,7 @@ class AppProc {
                                 await new Promise((resolve) => setTimeout(resolve, 1000))
                                 await attemptRename()
                             } else {
-                                workQueue.set_status(
+                                workQueue.statusSet(
                                     logger.error(
                                         'move original video err after multiple attempts:',
                                         err
@@ -1234,7 +1228,7 @@ class AppProc {
             }
         }
 
-        workQueue.set_status(logger.info(`delete file over`))
+        workQueue.statusSet(logger.info(`delete file over`))
         resp.data = {}
         return resp
     }

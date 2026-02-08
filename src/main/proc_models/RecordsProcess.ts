@@ -283,7 +283,7 @@ class RecordsProc {
         const resp = new DataTypes.Resp<string>()
         const searchReq = new DataTypes.FilesReq()
         searchReq.path = fPath
-        const searchResp = await appDb.file_view_search(searchReq)
+        const searchResp = await appDb.fileViewSearch(searchReq)
         if (searchResp.code !== 0) {
             return resp.err('search file error')
         }

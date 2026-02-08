@@ -480,7 +480,7 @@ export class FilesReq {
     order: 'asc' | 'desc' = 'asc' // 枚举值直接传入数据库
     orderBy: 'id' | 'name' | 'startTimeSec' | 'created_at' | 'updated_at' = 'startTimeSec' // 枚举值直接传入数据库
 
-    static makeReqStatusNotDel(path: string | null, repo: string | null): FilesReq {
+    static makeReqStatusNormal(path: string | null, repo: string | null): FilesReq {
         const req = new FilesReq()
         req.path = path
         req.repo = repo

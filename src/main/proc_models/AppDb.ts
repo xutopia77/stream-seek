@@ -248,7 +248,7 @@ class AppDb {
     }
 
     // 修改视频信息
-    async file_update(fInfo: DataTypes.File): Promise<DataTypes.Resp> {
+    async fileUpdate(fInfo: DataTypes.File): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
         try {
             if (!this.db) throw new Error('Database not initialized')
@@ -522,7 +522,7 @@ class AppDb {
         return resp
     }
 
-    async file_view_search(
+    async fileViewSearch(
         req: DataTypes.FilesReq | null
     ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         const resp = new DataTypes.Resp<DataTypes.FilesResp>()
