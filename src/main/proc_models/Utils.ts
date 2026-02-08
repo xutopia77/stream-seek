@@ -1,5 +1,6 @@
 import * as path from 'path'
 import * as Dty from '../../bridge/dataTypedef'
+import appCfg from './AppCfg'
 class Util {
     static defaultVersionGet(): string {
         return '2.2.0'
@@ -21,18 +22,16 @@ class Util {
         const normalizedPath = path.normalize(inputPath)
         return normalizedPath.replace(/\\/g, '/')
     }
-    static thumbFileDbPathGet(repo: Dty.DataRepo, filename: string, type: Dty.ThumbType): string {
+    static thumbDbPathGet(filename: string, type: Dty.ThumbType): string {
+        const repo = appCfg.prj.dataRepo[0]
         if (type == Dty.ThumbType.Frame) {
             return path.join(repo.framePath, `${filename}.db`)
         }
         return path.join(repo.thumbnailPath, `${filename}_thumbnail.db`)
     }
 
-    static thumbTrashFileDbPathGet(
-        repo: Dty.DataRepo,
-        filename: string,
-        type: Dty.ThumbType
-    ): string {
+    static thumbTrashDbPathGet(filename: string, type: Dty.ThumbType): string {
+        const repo = appCfg.prj.dataRepo[0]
         if (type == Dty.ThumbType.Frame) {
             return path.join(repo.framePath, '.trash', `${filename}.db`)
         }
@@ -43,7 +42,8 @@ class Util {
         return path.join(thumbPath, '.trash')
     }
 
-    static thumbPathGet(repo: Dty.DataRepo, type: Dty.ThumbType): string {
+    static thumbPathGet(type: Dty.ThumbType): string {
+        const repo = appCfg.prj.dataRepo[0]
         if (type == Dty.ThumbType.Frame) {
             return repo.framePath
         }

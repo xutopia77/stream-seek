@@ -494,7 +494,13 @@ class Util {
         if (appStartResp.prj != null) {
             appStore.prj = appStartResp.prj
             console.log('get prj success ', appStartResp.prj)
-            await util.files_get(null)
+            const searchReq = new Dty.FilesReq()
+            const fStatus =
+                appStore.prj.repoType == Dty.RepoType.Normal
+                    ? Dty.Fstatus.Normal
+                    : Dty.Fstatus.Deleted
+            searchReq.status.push(fStatus)
+            await util.files_get(searchReq)
             await util.tags_get(null)
         } else {
             console.log('get prj failed')
@@ -579,7 +585,13 @@ class Util {
             } else {
                 // util.addToastInfo(`删除成功`)
                 appStore.curCheckedVideo.clear()
-                await this.files_get(null)
+                const searchReq = new Dty.FilesReq()
+                const fStatus =
+                    appStore.prj.repoType == Dty.RepoType.Normal
+                        ? Dty.Fstatus.Normal
+                        : Dty.Fstatus.Deleted
+                searchReq.status.push(fStatus)
+                await this.files_get(searchReq)
                 util.addToastInfo(`${delStr} 成功`)
             }
         }
@@ -686,6 +698,35 @@ class Util {
         return response
     }
 
+    async thumbGet(reqParam: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
+        const req: Dty.Req<Dty.FilesReq> = {
+            cmd: Dty.CmdType.filesGet,
+            data: reqParam == null ? new Dty.FilesReq() : reqParam
+        }
+        if (!req.data) {
+            const resp = new Dty.Resp<Dty.FilesResp>()
+            resp.code = Dty.RespCode.Error
+            return resp
+        }
+        req.data.page = appStore.fileSearchPage
+        req.data.pageSize = appStore.fileSearchPageSize
+        const response: Dty.Resp<Dty.FilesResp> = await IpcApi.trigger_event(req)
+        if (response.code != 0) {
+            util.addToastErr(`search file failed: ${response.status}`)
+            console.log(`search file failed: ${response.status}`)
+            return response
+        }
+        console.info('search thumb success', response.data)
+        appStore.thumbList = response.data?.files || []
+        appStore.thumbTotalNum = response.data?.total || 0
+        if (appStore.thumbList.length == 0) {
+            util.addToastInfo(
+                `没有文件，当前模式:${appStore.prj.repoType == Dty.RepoType.Trash ? '回收站' : '正常'}`
+            )
+        }
+        return response
+    }
+
     async files_get(reqParam: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
         const req: Dty.Req<Dty.FilesReq> = {
             cmd: Dty.CmdType.filesGet,
@@ -751,7 +792,13 @@ class Util {
             }
             if (param != null) {
                 if (param.bNeedUpdate) {
-                    await this.files_get(null)
+                    const searchReq = new Dty.FilesReq()
+                    const fStatus =
+                        appStore.prj.repoType == Dty.RepoType.Normal
+                            ? Dty.Fstatus.Normal
+                            : Dty.Fstatus.Deleted
+                    searchReq.status.push(fStatus)
+                    await this.files_get(searchReq)
                     await this.tags_get(null)
                 }
                 if (param.bNeedSltCurVideo) {
@@ -875,7 +922,13 @@ class Util {
                         console.log('cut video failed', response)
                     } else {
                         util.addToastInfo(`删除完成:${response.status}`)
-                        this.files_get(null)
+                        const searchReq = new Dty.FilesReq()
+                        const fStatus =
+                            appStore.prj.repoType == Dty.RepoType.Normal
+                                ? Dty.Fstatus.Normal
+                                : Dty.Fstatus.Deleted
+                        searchReq.status.push(fStatus)
+                        this.files_get(searchReq)
                     }
                 }
                 break
@@ -916,38 +969,6 @@ class Util {
             frameNum: 0
         }
         return splitInfo
-    }
-
-    async thumbGet(): Promise<Dty.Resp<Dty.FilesResp>> {
-        const req: Dty.Req<Dty.FilesReq> = {
-            cmd: Dty.CmdType.search_file
-        }
-        req.data = Dty.FilesReq.makeReqStatusNormal(null, null)
-        if (appStore.prj.repoType == Dty.RepoType.Trash) {
-            req.data = Dty.FilesReq.makeReqStatusDel(null)
-        }
-        if (!req.data) {
-            const resp = new Dty.Resp<Dty.FilesResp>()
-            resp.code = Dty.RespCode.Error
-            return resp
-        }
-        req.data.page = appStore.fileSearchPage
-        req.data.pageSize = appStore.fileSearchPageSize
-        const response: Dty.Resp<Dty.FilesResp> = await IpcApi.trigger_event(req)
-        if (response.code != 0) {
-            util.addToastErr(`search file failed: ${response.status}`)
-            console.log(`search file failed: ${response.status}`)
-            return response
-        }
-        console.info('search thumb success', response.data)
-        appStore.thumbList = response.data?.files || []
-        appStore.thumbTotalNum = response.data?.total || 0
-        if (appStore.thumbList.length == 0) {
-            util.addToastInfo(
-                `没有文件，当前模式:${appStore.prj.repoType == Dty.RepoType.Trash ? '回收站' : '正常'}`
-            )
-        }
-        return response
     }
 
     async search_tag(): Promise<Dty.Resp<Dty.FilesResp>> {

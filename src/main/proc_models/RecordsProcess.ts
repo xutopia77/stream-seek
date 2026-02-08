@@ -309,9 +309,9 @@ class RecordsProc {
         if (repo == null) {
             return resp.err('repo is null')
         }
-        const thumbDbFilePath = Util.thumbFileDbPathGet(repo, filename, genType)
+        const thumbDbFilePath = Util.thumbDbPathGet(repo, filename, genType)
         const thumbPath = Util.thumbPathGet(repo, genType)
-        const trashThumbDbPath = Util.thumbTrashFileDbPathGet(repo, fileInfo.name, genType)
+        const trashThumbDbPath = Util.thumbTrashDbPathGet(repo, fileInfo.name, genType)
         if (thumbPath === '') {
             return resp.err('thumbnail dir is empty')
         }

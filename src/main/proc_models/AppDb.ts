@@ -348,13 +348,10 @@ class AppDb {
             if (result.changes === 0) {
                 resp.err('Video not found')
             } else {
-                resp.success('Video updated successfully')
+                resp.success('success')
             }
         } catch (error) {
-            logger.error('Error updating video:', error)
-            resp.err(
-                `Error updating video: ${error instanceof Error ? error.message : String(error)}`
-            )
+            resp.err(logger.error('err:', error))
         }
         return resp
     }
@@ -550,7 +547,7 @@ class AppDb {
             const countQuery = searchParam.countQuery
             const params: unknown[] = searchParam.params
             const countParams: unknown[] = searchParam.countParams
-
+            // logger.info(`search query:${query}`)
             // 执行统计总记录数的查询
             const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
             const total = countResult?.total || 0

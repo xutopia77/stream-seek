@@ -97,13 +97,17 @@ const jumpPageNum = ref(1) // 用于跳转的页码输入
 // 搜索处理函数
 const handleSearch = (): void => {
     if (props.pageType === 'thumb') {
-        util.thumbGet()
+        let searchReq = new Dty.FilesReq()
+        const fStatus =
+            appStore.prj.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
+        searchReq.status.push(fStatus)
+        util.thumbGet(searchReq)
     } else {
         let searchReq = new Dty.FilesReq()
         const fStatus =
             appStore.prj.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
         searchReq.status.push(fStatus)
-        util.files_get(null)
+        util.files_get(searchReq)
     }
 }
 

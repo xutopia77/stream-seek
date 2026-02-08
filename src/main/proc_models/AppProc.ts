@@ -24,13 +24,58 @@ function logStatusRespReturn<T>(resp: Dty.Resp<T>): Dty.Resp<T> {
     return resp
 }
 
+/**
+ * 安全地重命名文件，检查源文件存在性和目标文件冲突
+ * @param srcPath 源文件路径
+ * @param destPath 目标文件路径
+ * @param type 重命名类型
+ *          force ： 强制移动，如果目标文件存在，先把目标文件删除，再移动
+ *          strict ： 严格模式，如果目标文件存在，不做处理
+ */
+async function fileSafeRename(
+    srcPath: string,
+    destPath: string,
+    type: 'force' | 'strict' = 'strict'
+): Promise<'destExist' | 'srcNot' | 'success' | 'err'> {
+    try {
+        // 检查源文件是否存在
+        if (!fs.existsSync(srcPath)) {
+            logger.warn(`Source file does not exist: ${srcPath}`)
+            return 'srcNot'
+        }
+
+        // 如果目标文件已存在，先删除它
+        if (fs.existsSync(destPath)) {
+            // logger.info(`Destination file already exists, removing: ${destPath}`)
+            if (type == 'force') {
+                await fs.promises.unlink(destPath)
+            } else {
+                return 'destExist'
+            }
+        }
+
+        // 确保目标目录存在
+        const destDir = path.dirname(destPath)
+        if (!fs.existsSync(destDir)) {
+            await fs.promises.mkdir(destDir, { recursive: true })
+        }
+
+        // 执行重命名操作
+        await fs.promises.rename(srcPath, destPath)
+        return 'success'
+    } catch (error) {
+        logger.error(`Failed to rename file from ${srcPath} to ${destPath}:`, error)
+        return 'err'
+    }
+}
+
 class TraversalFolder {
     type: string | null = null // search时才遍历子文件夹
     repo: Dty.DataRepo = new Dty.DataRepo()
     bSort: boolean = false
     status: Dty.TrasStatus = new Dty.TrasStatus()
 
-    async proc_one_file(fPath: string, fName: string, stats: fs.Stats): Promise<Dty.Resp> {
+    async procOneFile(fPath: string, fName: string, stats: fs.Stats): Promise<Dty.Resp> {
         const resp: Dty.Resp = new Dty.Resp()
 
         this.status.fileNum++
@@ -117,7 +162,7 @@ class TraversalFolder {
                                 stack.push(filePath)
                             } else {
                                 try {
-                                    await this.proc_one_file(filePath, file, stats)
+                                    await this.procOneFile(filePath, file, stats)
                                 } catch (procError) {
                                     console.error(`Error processing file ${filePath}:`, procError)
                                 }
@@ -159,15 +204,13 @@ class TraversalFolder {
 
         logger.info(`Starting to check database with ${totalFiles} files`)
         while (processedCount < totalFiles) {
-            let chkStatus = ''
             const fSearchReq = new Dty.FilesReq()
             fSearchReq.page = Math.floor(processedCount / batchSize) + 1
             fSearchReq.pageSize = batchSize
 
             const searchResult = await appDb.filesSearch(fSearchReq)
             if (!searchResult.isSuccess()) {
-                chkStatus = `Failed to fetch files page ${fSearchReq.page}`
-                return resp.err(logger.error(chkStatus))
+                return resp.err(logger.error(`Failed to fetch files page ${fSearchReq.page}`))
             }
 
             if (!searchResult.data || !searchResult.data.files) {
@@ -175,6 +218,7 @@ class TraversalFolder {
                 break
             }
             for (const fInfo of searchResult.data.files) {
+                let chkStatus = ''
                 if (!fs.existsSync(fInfo.path)) {
                     if (fInfo.status != Dty.Fstatus.Destroy) {
                         fInfo.status = Dty.Fstatus.Destroy
@@ -196,16 +240,10 @@ class TraversalFolder {
                         }
                     }
                 }
-                const repo = Dty.DataRepo.getRepoByPath(fInfo.repo, appCfg.prj.dataRepo)
-                if (repo != null) {
+                {
                     {
-                        const thumbDbFilePath = Util.thumbFileDbPathGet(
-                            repo,
-                            fInfo.name,
-                            Dty.ThumbType.Frame
-                        )
-                        const trashThumbDbPath = Util.thumbTrashFileDbPathGet(
-                            repo,
+                        const thumbDbFilePath = Util.thumbDbPathGet(fInfo.name, Dty.ThumbType.Frame)
+                        const trashThumbDbPath = Util.thumbTrashDbPathGet(
                             fInfo.name,
                             Dty.ThumbType.Frame
                         )
@@ -229,13 +267,8 @@ class TraversalFolder {
                         }
                     }
                     {
-                        const thumbDbFilePath = Util.thumbFileDbPathGet(
-                            repo,
-                            fInfo.name,
-                            Dty.ThumbType.Thumb
-                        )
-                        const trashThumbDbPath = Util.thumbTrashFileDbPathGet(
-                            repo,
+                        const thumbDbFilePath = Util.thumbDbPathGet(fInfo.name, Dty.ThumbType.Thumb)
+                        const trashThumbDbPath = Util.thumbTrashDbPathGet(
                             fInfo.name,
                             Dty.ThumbType.Thumb
                         )
@@ -260,7 +293,7 @@ class TraversalFolder {
                     }
                 }
                 logger.info(
-                    `file check ${processedCount + 1}/${totalFiles}: ${chkStatus == '' ? 'normal' : chkStatus}`
+                    `file check ${processedCount + 1}/${totalFiles}: ${chkStatus == '' ? 'success' : chkStatus}`
                 )
                 processedCount++
             }
@@ -396,18 +429,20 @@ async function startHttpSrv(port: number): Promise<void> {
                     `Invalid request: missing thumbnailPath ${appCfg.prj.dataRepo[0].thumbnailPath}`
                 )
                 res.status(400).send('Invalid request: missing thumbnailPath')
-            }
-
-            // 动态构建数据库路径（根据实际情况调整）
-            const thumbDbPath = path.join(
-                appCfg.prj.dataRepo[0].thumbnailPath,
-                `${videoId}_thumbnail.db`
-            )
-            // 检查数据库文件是否存在
-            if (!fs.existsSync(thumbDbPath)) {
-                logger.error(`Database not found: ${thumbDbPath}`)
-                res.status(404).send(`Database not found: ${thumbDbPath}`)
                 return
+            }
+            const thumbDbFilePath = Util.thumbDbPathGet(videoId, Dty.ThumbType.Thumb)
+            const trashThumbDbPath = Util.thumbTrashDbPathGet(videoId, Dty.ThumbType.Thumb)
+
+            let thumbDbPath = thumbDbFilePath
+            // 检查数据库文件是否存在
+            if (!fs.existsSync(thumbDbFilePath)) {
+                if (!trashThumbDbPath) {
+                    logger.error(`Database not found: ${thumbDbFilePath}`)
+                    res.status(404).send(`Database not found: ${thumbDbFilePath}`)
+                    return
+                }
+                thumbDbPath = trashThumbDbPath
             }
 
             const thumbDb: Database = await open({
@@ -1220,12 +1255,6 @@ class AppProc {
                     const maxAttempts = 3 // 最大尝试次数
                     async function attemptRename(): Promise<void> {
                         try {
-                            const repo = Dty.DataRepo.getRepoByPath(fInfo.repo, appCfg.prj.dataRepo)
-                            if (repo == null) {
-                                logger.error(`delete file err, repo null`)
-                                return
-                            }
-
                             if (fs.existsSync(distFilename)) {
                                 fs.unlinkSync(distFilename)
                                 logger.info(`rm file ${distFilename}`)
@@ -1244,46 +1273,42 @@ class AppProc {
                                     )
                                 )
                             } else {
-                                workQueue.statusSet(`rm original video success: ${distFilename}`)
+                                workQueue.statusSet(`file rm success: ${distFilename}`)
                                 if (req.data?.bDelThumb) {
                                     {
-                                        const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
-                                            repo,
+                                        const thumbTrashDbPath = Util.thumbTrashDbPathGet(
                                             filename,
                                             Dty.ThumbType.Thumb
                                         )
-                                        const thumbFileDbPath = Util.thumbFileDbPathGet(
-                                            repo,
+                                        const thumbDbPath = Util.thumbDbPathGet(
                                             filename,
                                             Dty.ThumbType.Thumb
                                         )
-                                        if (fs.existsSync(thumbTrashFileDbPath)) {
-                                            fs.unlinkSync(thumbTrashFileDbPath)
-                                            logger.info(`rm thumb file ${thumbTrashFileDbPath}`)
+                                        if (fs.existsSync(thumbTrashDbPath)) {
+                                            fs.unlinkSync(thumbTrashDbPath)
+                                            logger.info(`thumb file rm ${thumbTrashDbPath}`)
                                         }
-                                        if (fs.existsSync(thumbFileDbPath)) {
-                                            fs.unlinkSync(thumbFileDbPath)
-                                            logger.info(`rm thumb file ${thumbFileDbPath}`)
+                                        if (fs.existsSync(thumbDbPath)) {
+                                            fs.unlinkSync(thumbDbPath)
+                                            logger.info(`thumb file rm ${thumbDbPath}`)
                                         }
                                     }
                                     {
-                                        const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
-                                            repo,
+                                        const thumbTrashDbPath = Util.thumbTrashDbPathGet(
                                             filename,
                                             Dty.ThumbType.Frame
                                         )
-                                        const thumbFileDbPath = Util.thumbFileDbPathGet(
-                                            repo,
+                                        const thumbDbPath = Util.thumbDbPathGet(
                                             filename,
                                             Dty.ThumbType.Frame
                                         )
-                                        if (fs.existsSync(thumbTrashFileDbPath)) {
-                                            fs.unlinkSync(thumbTrashFileDbPath)
-                                            logger.info(`rm frame file ${thumbTrashFileDbPath}`)
+                                        if (fs.existsSync(thumbTrashDbPath)) {
+                                            fs.unlinkSync(thumbTrashDbPath)
+                                            logger.info(`rm frame file ${thumbTrashDbPath}`)
                                         }
-                                        if (fs.existsSync(thumbFileDbPath)) {
-                                            fs.unlinkSync(thumbFileDbPath)
-                                            logger.info(`rm frame file ${thumbFileDbPath}`)
+                                        if (fs.existsSync(thumbDbPath)) {
+                                            fs.unlinkSync(thumbDbPath)
+                                            logger.info(`rm frame file ${thumbDbPath}`)
                                         }
                                     }
                                 }
@@ -1323,24 +1348,17 @@ class AppProc {
                 if (fRepo == null || fRepo.path == '') {
                     return resp.err(`repo not exist ${item.repo},${item.path}`)
                 }
-                const thumbPath = fRepo.thumbnailPath
                 const trashFolderPath = path.join(fRepo.path, '.trash')
                 if (!fs.existsSync(trashFolderPath)) {
                     fs.mkdirSync(trashFolderPath)
                 }
                 const searchReq = Dty.FilesReq.makeReqStatusNormal(item.path, item.repo)
                 const searchResp = await appDb.fileViewSearch(searchReq)
-                if (searchResp.code !== 0) {
+                if (searchResp.code !== 0 || searchResp.data?.files.length === 0) {
                     workQueue.statusSet(
                         logger.error(
                             `search file ${item.repo} ${item.path} err: ${searchResp.status}`
                         )
-                    )
-                    continue
-                }
-                if (searchResp.data?.files.length === 0) {
-                    workQueue.statusSet(
-                        logger.error(`delete file ${item.repo} ${item.path} not found`)
                     )
                     continue
                 }
@@ -1349,68 +1367,63 @@ class AppProc {
                     const filepath = fInfo.path
                     const filename = fInfo.name
                     const distFilename = path.join(trashFolderPath, filename)
-                    const repo = Dty.DataRepo.getRepoByPath(fInfo.repo, appCfg.prj.dataRepo)
-                    if (repo == null) {
-                        logger.error(`delete file err, repo null`)
-                        continue
-                    }
                     let attempts = 0
                     const maxAttempts = 3 // 最大尝试次数
                     async function attemptRename(): Promise<void> {
                         try {
-                            if (repo == null) {
-                                return
-                            }
+                            // 移动文件
                             if (fs.existsSync(filepath)) {
                                 await fs.promises.rename(filepath, distFilename)
                             }
+                            // 更新数据库
                             fInfo.status = Dty.Fstatus.Deleted
+                            fInfo.path = distFilename
                             const respUp = await appDb.fileUpdate(fInfo)
                             if (respUp.code != 0) {
                                 workQueue.statusSet(
-                                    logger.error(
-                                        `update file status error: ${respUp.status} ${filepath}`
-                                    )
+                                    logger.error(`file update error: ${respUp.status} ${filepath}`)
                                 )
                             } else {
                                 workQueue.statusSet(
-                                    logger.info(
-                                        `delete original video: ${filepath}, move to ${distFilename}`
-                                    )
+                                    logger.info(`file move: ${filepath} to ${distFilename}`)
                                 )
+                                // 移动缩略图文件
                                 {
-                                    const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
-                                        repo,
+                                    const thumbTrashDbPath = Util.thumbTrashDbPathGet(
                                         filename,
                                         Dty.ThumbType.Thumb
                                     )
-                                    const thumbFileDbPath = Util.thumbFileDbPathGet(
-                                        repo,
+                                    const thumbDbPath = Util.thumbDbPathGet(
                                         filename,
                                         Dty.ThumbType.Thumb
                                     )
-                                    if (!fs.existsSync(Util.thumbTrashPathGet(thumbPath))) {
-                                        fs.mkdirSync(Util.thumbTrashPathGet(thumbPath))
-                                    }
-                                    await fs.promises.rename(thumbFileDbPath, thumbTrashFileDbPath)
-                                    logger.info(`thumb file: ${filepath}, move to ${distFilename}`)
+                                    const rmResp = await fileSafeRename(
+                                        thumbDbPath,
+                                        thumbTrashDbPath,
+                                        'force'
+                                    )
+                                    logger.info(
+                                        `thumb file move: ${thumbDbPath} to ${thumbTrashDbPath} ${rmResp}`
+                                    )
                                 }
+                                // 移动抽帧文件
                                 {
-                                    const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
-                                        repo,
+                                    const thumbTrashDbPath = Util.thumbTrashDbPathGet(
                                         filename,
                                         Dty.ThumbType.Frame
                                     )
-                                    const thumbFileDbPath = Util.thumbFileDbPathGet(
-                                        repo,
+                                    const thumbDbPath = Util.thumbDbPathGet(
                                         filename,
                                         Dty.ThumbType.Frame
                                     )
-                                    if (!fs.existsSync(Util.thumbTrashPathGet(thumbPath))) {
-                                        fs.mkdirSync(Util.thumbTrashPathGet(thumbPath))
-                                    }
-                                    await fs.promises.rename(thumbFileDbPath, thumbTrashFileDbPath)
-                                    logger.info(`frame file: ${filepath}, move to ${distFilename}`)
+                                    const rmResp = await fileSafeRename(
+                                        thumbDbPath,
+                                        thumbTrashDbPath,
+                                        'force'
+                                    )
+                                    logger.info(
+                                        `frame file move: ${thumbDbPath} to ${thumbTrashDbPath} ${rmResp}`
+                                    )
                                 }
                             }
                         } catch (err) {
@@ -1418,7 +1431,7 @@ class AppProc {
                             if (attempts < maxAttempts) {
                                 workQueue.statusSet(
                                     logger.error(
-                                        `move original video attempt ${attempts} failed, retrying in 1 second...`,
+                                        `file move attempt ${attempts} failed, retrying in 1 second...`,
                                         err
                                     )
                                 )
@@ -1426,10 +1439,7 @@ class AppProc {
                                 await attemptRename()
                             } else {
                                 workQueue.statusSet(
-                                    logger.error(
-                                        'move original video err after multiple attempts:',
-                                        err
-                                    )
+                                    logger.error('file move err after multiple attempts:', err)
                                 )
                                 throw err
                             }
