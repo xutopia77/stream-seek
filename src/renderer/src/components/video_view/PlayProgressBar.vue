@@ -52,7 +52,7 @@ const appStore = useAppStore()
 // import { IpcApi } from '../../utils/ipcApi'
 import util from '../../utils/util.js'
 import MessageShow from '../util/MessageShow'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import * as Dty from '../../../../bridge/dataTypedef'
 
 const mergedProgressBar = ref<HTMLElement | null>(null)
 const isDragging = ref<boolean>(false)
@@ -75,7 +75,7 @@ const seekVideo = (time: number): void => {
 }
 
 let videoSplitInfo = computed(() => {
-    let resp: DataTypes.SplitInfo[] = []
+    let resp: Dty.SplitInfo[] = []
     if (
         appStore.curSltVideo?.splitInfo != null &&
         appStore.curSltVideo?.splitInfo.splits?.length > 0
@@ -100,13 +100,13 @@ let videoSplitInfo = computed(() => {
 })
 
 // 生成进度条片段数据
-const barClips = ref<DataTypes.BarClip[]>([])
+const barClips = ref<Dty.BarClip[]>([])
 // 监听 barColorCfg 和 curSltVideo 的变化
 watch(
     [
-        (): DataTypes.File | null => appStore.curSltVideo,
+        (): Dty.File | null => appStore.curSltVideo,
         (): number | undefined => appStore.curSltVideo?.mediaInfo?.duration,
-        (): DataTypes.SplitInfo[] | undefined => appStore.curSltVideo?.splitInfo?.splits
+        (): Dty.SplitInfo[] | undefined => appStore.curSltVideo?.splitInfo?.splits
     ],
     () => {
         if (appStore.curSltVideo?.mediaInfo?.duration == null) {
@@ -148,14 +148,14 @@ watch(
 
 // tooltip 相关
 const showTip = ref<boolean>(false)
-const currentClip = ref<DataTypes.BarClip>()
+const currentClip = ref<Dty.BarClip>()
 
-const showTooltip = (clip: DataTypes.BarClip): void => {
+const showTooltip = (clip: Dty.BarClip): void => {
     showTip.value = true
     currentClip.value = clip
 }
 
-const handleMouseOut = (event: MouseEvent, clip: DataTypes.BarClip): void => {
+const handleMouseOut = (event: MouseEvent, clip: Dty.BarClip): void => {
     const tooltip = (event.target as HTMLElement).querySelector('.tooltip')
     if (!tooltip || !tooltip.contains(event.relatedTarget as Node)) {
         showTip.value = false

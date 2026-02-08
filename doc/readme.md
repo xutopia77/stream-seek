@@ -78,7 +78,7 @@ interface Resp<T = string> {
   data?: T
 }
 
-async function trigger_event<T = string, R = string>(req: DataTypes.Req<T>): Promise<DataTypes.Resp<R>>
+async function trigger_event<T = string, R = string>(req: Dty.Req<T>): Promise<Dty.Resp<R>>
 ```
 
 发送时，入参是一个对象Req，返回值是一个Promise对象，Promise对象的resolve值是一个对象Resp

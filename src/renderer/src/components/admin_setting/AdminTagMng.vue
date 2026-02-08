@@ -49,26 +49,26 @@
 import { computed, ref } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import * as Dty from '../../../../bridge/dataTypedef'
 
 const allTags = computed(() => {
     return appStore.tags
 })
-const selectedTagItem = ref<DataTypes.Tag | null>(null)
-function selectTag(item: DataTypes.Tag): void {
+const selectedTagItem = ref<Dty.Tag | null>(null)
+function selectTag(item: Dty.Tag): void {
     selectedTagItem.value = item
 }
 
 // 控制编辑弹窗的显示与隐藏
 const isEditDialogVisible = ref(false)
 // 存储正在编辑的标签
-const editingTag = ref<DataTypes.Tag>({ name: '', color: '', id: 0 })
+const editingTag = ref<Dty.Tag>({ name: '', color: '', id: 0 })
 // 显示编辑弹窗
-function btn_showEditDialog(item: DataTypes.Tag): void {
+function btn_showEditDialog(item: Dty.Tag): void {
     editingTag.value = { ...item }
     isEditDialogVisible.value = true
 }
-function btn_deletetag(item: DataTypes.Tag): void {
+function btn_deletetag(item: Dty.Tag): void {
     console.log(item)
     // Utils.tag_delete(item)
 }

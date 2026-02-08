@@ -11,9 +11,9 @@
                 <ThumbnailView v-show="viewModel === 'thumbnail'"></ThumbnailView>
             </div>
             <div class="work-panel">
-                <VideList v-if="rightPanel === DataTypes.WorkPanel.List" />
-                <VideoOperatePanel v-if="rightPanel === DataTypes.WorkPanel.Operate" />
-                <VideoInfo v-if="rightPanel === DataTypes.WorkPanel.VideoInfo" />
+                <VideList v-if="rightPanel === Dty.WorkPanel.List" />
+                <VideoOperatePanel v-if="rightPanel === Dty.WorkPanel.Operate" />
+                <VideoInfo v-if="rightPanel === Dty.WorkPanel.VideoInfo" />
             </div>
         </div>
         <div class="control-container">
@@ -36,7 +36,7 @@ import { ref, onMounted, watch, onBeforeMount, computed, onUnmounted, onBeforeUn
 import util from '@renderer/utils/util'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
-import * as DataTypes from '../../../bridge/dataTypedef'
+import * as Dty from '../../../bridge/dataTypedef'
 // import MessageShow from './util/MessageShow'
 
 let rightPanel = computed(() => appStore.rightPanel)
@@ -60,12 +60,12 @@ watch(
             }
             return
         }
-        const clearReq = new DataTypes.ClearSltInfoReq()
+        const clearReq = new Dty.ClearSltInfoReq()
         clearReq.bNotClear_curSltVideo = true
         util.clear_cur_slt_video_info(clearReq)
         console.log(`video info ${appStore.curSltVideo}`)
 
-        const playReq = new PlayReq(DataTypes.File.makePlayUrl(appStore.curSltVideo))
+        const playReq = new PlayReq(Dty.File.makePlayUrl(appStore.curSltVideo))
         if (videoRef.value == null) {
             return
         }
@@ -124,7 +124,7 @@ watch(
                 console.log('video ref null')
                 return
             }
-            const playReq = new PlayReq(DataTypes.File.makePlayUrl(appStore.curSltVideo))
+            const playReq = new PlayReq(Dty.File.makePlayUrl(appStore.curSltVideo))
             util.play_video(videoRef.value, playReq)
         }
     }
@@ -144,7 +144,7 @@ watch(
                     console.log('video ref null')
                     return
                 }
-                const playReq = new PlayReq(DataTypes.File.makePlayUrl(appStore.curSltVideo))
+                const playReq = new PlayReq(Dty.File.makePlayUrl(appStore.curSltVideo))
                 if (appStore.thumbSeekTime != 0) {
                     playReq.playStartTimeSec = appStore.thumbSeekTime
                 }

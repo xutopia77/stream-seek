@@ -54,7 +54,7 @@ import { computed, ref } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import * as Dty from '../../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
 
 const props = defineProps({
@@ -99,11 +99,9 @@ const handleSearch = (): void => {
     if (props.pageType === 'thumb') {
         util.thumbGet()
     } else {
-        let searchReq = new DataTypes.FilesReq()
+        let searchReq = new Dty.FilesReq()
         const fStatus =
-            appStore.prj.repoType == DataTypes.RepoType.Normal
-                ? DataTypes.FileStatus.Normal
-                : DataTypes.FileStatus.Deleted
+            appStore.prj.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
         searchReq.status.push(fStatus)
         util.files_get(null)
     }

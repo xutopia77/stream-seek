@@ -14,7 +14,7 @@
 import '@renderer/assets/common.css'
 // import util from '@renderer/utils/util'
 // const appStore = useAppStore()
-// import * as DataTypes from '../../../../bridge/dataTypedef'
+// import * as Dty from '../../../../bridge/dataTypedef'
 
 function btn_thumbDel(): void {
     console.log('asdf')

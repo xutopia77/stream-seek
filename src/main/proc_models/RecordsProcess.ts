@@ -6,7 +6,7 @@ import appDb from './AppDb'
 import * as path from 'path'
 import * as fs from 'fs'
 import { execFile } from 'child_process'
-import * as DataTypes from '../../bridge/dataTypedef'
+import * as Dty from '../../bridge/dataTypedef'
 import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
 import { Util } from './Utils.js'
@@ -24,18 +24,18 @@ import { Util } from './Utils.js'
 // }
 
 // // 检查文件记录时间是否连续
-// function check_record_time(files: DataTypes.FileInfo[]): void {
+// function check_record_time(files: Dty.FileInfo[]): void {
 //     // let lastStartTime: string = ''
 //     let lastEndTime: string = ''
 //     for (let i = 0; i < files.length; i++) {
 //         const file = files[i]
-//         const parseRe = DataTypes.FileTools.parse_filename_mi(file.title)
+//         const parseRe = Dty.FileTools.parse_filename_mi(file.title)
 //         if (parseRe == null) {
 //             continue
 //         }
 //         const { startTime, endTime } = parseRe
-//         const lastEndTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(lastEndTime)
-//         const startTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(startTime)
+//         const lastEndTimeSeconds = Dty.FileTools.parse_timestr_2_seconds(lastEndTime)
+//         const startTimeSeconds = Dty.FileTools.parse_timestr_2_seconds(startTime)
 //         const timeDiff = Math.abs(startTimeSeconds - lastEndTimeSeconds)
 //         if (timeDiff > 1) {
 //             logger.log(
@@ -49,16 +49,16 @@ import { Util } from './Utils.js'
 
 // // 文件分类处理
 // async function file_classify(
-//     req: DataTypes.Req<DataTypes.Req_SearchFile>,
-//     files: DataTypes.FileInfo[]
-// ): Promise<DataTypes.Resp> {
-//     const resp = new DataTypes.Resp()
+//     req: Dty.Req<Dty.Req_SearchFile>,
+//     files: Dty.FileInfo[]
+// ): Promise<Dty.Resp> {
+//     const resp = new Dty.Resp()
 //     const folderpath = req.data?.folder
 //     if (folderpath === undefined) {
 //         return resp.err('folder is undefined')
 //     }
 
-//     function calculateFilesInfo(files: DataTypes.FileInfo[]): {
+//     function calculateFilesInfo(files: Dty.FileInfo[]): {
 //         totalSize: number
 //         totalCount: number
 //     } {
@@ -75,10 +75,10 @@ import { Util } from './Utils.js'
 //         return filesInfo
 //     }
 
-//     function groupFiles(files: DataTypes.FileInfo[]): DataTypes.FileInfo[][] {
+//     function groupFiles(files: Dty.FileInfo[]): Dty.FileInfo[][] {
 //         // 每 100 个文件一组进行分类
 //         const groupNum = appCfg.folderClassifyNum
-//         const groupedFiles: DataTypes.FileInfo[][] = []
+//         const groupedFiles: Dty.FileInfo[][] = []
 //         for (let i = 0; i < files.length; i += groupNum) {
 //             groupedFiles.push(files.slice(i, i + groupNum))
 //         }
@@ -87,7 +87,7 @@ import { Util } from './Utils.js'
 
 //     async function moveFilesToFolders(
 //         // 创建文件夹并移动文件
-//         groupedFiles: DataTypes.FileInfo[][],
+//         groupedFiles: Dty.FileInfo[][],
 //         baseDir: string
 //     ): Promise<void> {
 //         for (let i = 0; i < groupedFiles.length; i++) {
@@ -130,8 +130,8 @@ import { Util } from './Utils.js'
 
 //     // 根据文件名中的时间戳进行排序
 //     const sortFiles = files.slice().sort((a, b) => {
-//         const startTimeA = DataTypes.FileTools.parse_filename_mi(a.title)?.startTime
-//         const startTimeB = DataTypes.FileTools.parse_filename_mi(b.title)?.startTime
+//         const startTimeA = Dty.FileTools.parse_filename_mi(a.title)?.startTime
+//         const startTimeB = Dty.FileTools.parse_filename_mi(b.title)?.startTime
 //         if (startTimeA === undefined) {
 //             return 0
 //         }
@@ -186,8 +186,8 @@ import { Util } from './Utils.js'
 
 // // 开始切割视频
 // async function start_cut_video(
-//     req: DataTypes.Req<DataTypes.Req_CutVideo>
-// ): Promise<DataTypes.Resp<DataTypes.Resp_CutVideo>> {
+//     req: Dty.Req<Dty.Req_CutVideo>
+// ): Promise<Dty.Resp<Dty.Resp_CutVideo>> {
 //     mediaProc
 //         .cutVideo(req)
 //         .then((resp) => {
@@ -196,7 +196,7 @@ import { Util } from './Utils.js'
 //         .catch((error) => {
 //             workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
 //         })
-//     const resp = new DataTypes.Resp<DataTypes.Resp_CutVideo>()
+//     const resp = new Dty.Resp<Dty.Resp_CutVideo>()
 //     resp.code = 0
 //     resp.status = 'success'
 //     resp.bOver = false
@@ -204,9 +204,9 @@ import { Util } from './Utils.js'
 // }
 
 // async function start_sync_trash(
-//     req: DataTypes.Req<DataTypes.Req_SyncTrash>
-// ): Promise<DataTypes.Resp> {
-//     const resp = new DataTypes.Resp()
+//     req: Dty.Req<Dty.Req_SyncTrash>
+// ): Promise<Dty.Resp> {
+//     const resp = new Dty.Resp()
 //     if (req.data?.folder === undefined) {
 //         return resp.err('folder is undefined')
 //     }
@@ -216,7 +216,7 @@ import { Util } from './Utils.js'
 //     traversalFolder.folder = req.data.folder
 //     traversalFolder
 //         .start()
-//         .then(async (resp: DataTypes.Resp<DataTypes.TraversalFolder>) => {
+//         .then(async (resp: Dty.Resp<Dty.TraversalFolder>) => {
 //             if (resp.data?.files != null) {
 //                 logger.log(
 //                     `traversal folder ${traversalFolder.folder} : ${resp.status}, ${resp.data.files?.length}`
@@ -244,8 +244,8 @@ class RecordsProc {
     // start_cut_video = start_cut_video
     // start_sync_trash = start_sync_trash
 
-    file_trash_path_get(fInfo: DataTypes.File): string {
-        const repo = DataTypes.DataRepo.getRepoByPath(fInfo.repo, appCfg.prj.dataRepo)
+    file_trash_path_get(fInfo: Dty.File): string {
+        const repo = Dty.DataRepo.getRepoByPath(fInfo.repo, appCfg.prj.dataRepo)
         if (repo == null) {
             return ''
         }
@@ -258,7 +258,7 @@ class RecordsProc {
 
     // get file thumbnail full path by file path
     thumbnail_path_get_mp4(repoName: string, fPath: string): string {
-        const repo = DataTypes.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
+        const repo = Dty.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
         if (repo == null) {
             return ''
         }
@@ -269,7 +269,7 @@ class RecordsProc {
     }
 
     thumTrashPathGetByMp4(repoName: string, fileName: string): string {
-        const repo = DataTypes.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
+        const repo = Dty.DataRepo.getRepoByPath(repoName, appCfg.prj.dataRepo)
         if (repo == null) {
             return ''
         }
@@ -279,9 +279,9 @@ class RecordsProc {
         return path.join(repo.thumbnailPath, '.trash', `${fileName}_thumbnail.db`)
     }
 
-    async thumbnail_get_mp4_path(fPath: string): Promise<DataTypes.Resp<string>> {
-        const resp = new DataTypes.Resp<string>()
-        const searchReq = new DataTypes.FilesReq()
+    async thumbnail_get_mp4_path(fPath: string): Promise<Dty.Resp<string>> {
+        const resp = new Dty.Resp<string>()
+        const searchReq = new Dty.FilesReq()
         searchReq.path = fPath
         const searchResp = await appDb.fileViewSearch(searchReq)
         if (searchResp.code !== 0) {
@@ -300,15 +300,12 @@ class RecordsProc {
      * @param genType 生成类型
      * @returns 缩略图路径数组
      */
-    async gen_thumbnail(
-        fileInfo: DataTypes.File,
-        genType: DataTypes.ThumbType
-    ): Promise<DataTypes.Resp<string[]>> {
-        const resp = new DataTypes.Resp<string[]>()
+    async gen_thumbnail(fileInfo: Dty.File, genType: Dty.ThumbType): Promise<Dty.Resp<string[]>> {
+        const resp = new Dty.Resp<string[]>()
         resp.data = []
         const filepath = fileInfo.path
         const filename = fileInfo.name
-        const repo = DataTypes.DataRepo.getRepoByPath(fileInfo.repo, appCfg.prj.dataRepo)
+        const repo = Dty.DataRepo.getRepoByPath(fileInfo.repo, appCfg.prj.dataRepo)
         if (repo == null) {
             return resp.err('repo is null')
         }
@@ -347,7 +344,7 @@ class RecordsProc {
         if (bExist) {
             resp.success('thumbnail exist')
             logger.info(`thumbnail exist: ${fileInfo.path}`)
-            resp.code = DataTypes.RespCode.FileExist
+            resp.code = Dty.RespCode.FileExist
             return resp
         }
 
@@ -380,19 +377,19 @@ class RecordsProc {
             return resp.err(`mkdir error ${error}`)
         }
         // 3, 获取文件名称中的信息
-        const parseRe = DataTypes.FileTools.parse_filename_mi(filename)
+        const parseRe = Dty.FileTools.parse_filename_mi(filename)
         if (parseRe == null) {
             return resp.err(`parse filename error ${filename}`)
         }
         const { startTime, endTime } = parseRe
-        const startTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(startTime)
-        const endTimeSeconds = DataTypes.FileTools.parse_timestr_2_seconds(endTime)
+        const startTimeSeconds = Dty.FileTools.parse_timestr_2_seconds(startTime)
+        const endTimeSeconds = Dty.FileTools.parse_timestr_2_seconds(endTime)
         const duration = endTimeSeconds - startTimeSeconds
         let time = 0
         let bOver = true
         while (time <= duration) {
             const picTime = startTimeSeconds + time
-            const thumbFileName = `${DataTypes.FileTools.parsetimeToTimeStr(picTime)}.jpg`
+            const thumbFileName = `${Dty.FileTools.parsetimeToTimeStr(picTime)}.jpg`
             const outputPath = path.join(tmpThumbDir, thumbFileName)
             resp.data.push(thumbFileName)
             const width = 640 // 设置图片宽度
@@ -410,7 +407,7 @@ class RecordsProc {
                 `${width}x${height}`,
                 outputPath
             ]
-            if (genType == DataTypes.ThumbType.Frame) {
+            if (genType == Dty.ThumbType.Frame) {
                 args = [
                     '-v',
                     'error',

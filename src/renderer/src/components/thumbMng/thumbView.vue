@@ -12,7 +12,7 @@
 import { ref, watch, onMounted } from 'vue'
 import '@renderer/assets/common.css'
 import util from '../../utils/util'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import * as Dty from '../../../../bridge/dataTypedef'
 // import { IpcApi } from '../../utils/ipcApi'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
@@ -91,7 +91,7 @@ function update_thumbnail_images(thumbnailImages: Thumbnail[]): void {
         const thumb = appStore.curSltThumb.thumbnail.path[i]
         const thumbInfo = new Thumbnail()
         thumbInfo.path = thumb
-        thumbInfo.indexTime = DataTypes.FileTools.parse_timestr_2_seconds(thumb)
+        thumbInfo.indexTime = Dty.FileTools.parse_timestr_2_seconds(thumb)
         thumbInfo.name = util.getFilenameFromPath(thumb)
         thumbInfo.btnName = '⬜'
         thumbnailImages.push(thumbInfo)

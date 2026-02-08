@@ -48,7 +48,7 @@ const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import util from '../../../utils/util.js'
 // import { IpcApi } from '../../utils/ipcApi'
-import * as DataTypes from '../../../../../bridge/dataTypedef'
+import * as Dty from '../../../../../bridge/dataTypedef'
 
 // ------ 切换视图
 const curViewBtn = computed(() => {
@@ -74,7 +74,7 @@ const btnclk_splitVideo = (): void => {
     const curpercent = (currentTime / videoDuration) * 100
     if (
         appStore.curSltVideo?.splitInfo.splits.some(
-            (item: DataTypes.SplitInfo) => item.percent === curpercent
+            (item: Dty.SplitInfo) => item.percent === curpercent
         )
     ) {
         return
@@ -83,7 +83,7 @@ const btnclk_splitVideo = (): void => {
         return
     }
     appStore.curSltVideo.splitInfo.splits.sort(
-        (a: DataTypes.SplitInfo, b: DataTypes.SplitInfo) => a.percent - b.percent
+        (a: Dty.SplitInfo, b: Dty.SplitInfo) => a.percent - b.percent
     )
 
     for (let i = 0; i < appStore.curSltVideo.splitInfo.splits.length; i++) {
@@ -109,7 +109,7 @@ const videoSplitInfo = computed(() => {
     return splitInfo
 })
 
-const selectedSplitInfo = ref<DataTypes.SplitInfo | null>({
+const selectedSplitInfo = ref<Dty.SplitInfo | null>({
     percent: 0,
     startTime: 0,
     endTime: 0,
@@ -121,7 +121,7 @@ const selectedSplitInfo = ref<DataTypes.SplitInfo | null>({
     frameIdx: 0
 })
 
-const selectSplitInfo = (splitInfo: DataTypes.SplitInfo): void => {
+const selectSplitInfo = (splitInfo: Dty.SplitInfo): void => {
     selectedSplitInfo.value = splitInfo
     console.log(splitInfo)
 }
@@ -139,7 +139,7 @@ const removeVideosplit = (): void => {
         const confirmDelete = confirm('确定要删除当前选中的片段信息记录吗？')
         if (confirmDelete) {
             const index = appStore.curSltVideo?.splitInfo.splits.findIndex(
-                (item: DataTypes.SplitInfo) => item.percent === selectedSplitInfo.value?.percent
+                (item: Dty.SplitInfo) => item.percent === selectedSplitInfo.value?.percent
             )
             if (index !== -1) {
                 appStore.curSltVideo.splitInfo.splits.splice(index, 1)
@@ -163,7 +163,7 @@ const removeVideoRecord = (): void => {
         return
     }
     const index = appStore.curSltVideo.splitInfo.splits.findIndex(
-        (item: DataTypes.SplitInfo) => item.percent == selectedSplitInfo?.value?.percent
+        (item: Dty.SplitInfo) => item.percent == selectedSplitInfo?.value?.percent
     )
     if (index === -1) {
         return
@@ -181,7 +181,7 @@ const restoreVideoRecord = (): void => {
         return
     }
     const index = appStore.curSltVideo.splitInfo.splits.findIndex(
-        (item: DataTypes.SplitInfo) => item.percent == selectedSplitInfo?.value?.percent
+        (item: Dty.SplitInfo) => item.percent == selectedSplitInfo?.value?.percent
     )
     if (index === -1) {
         return
@@ -192,7 +192,7 @@ const restoreVideoRecord = (): void => {
 const exportVideoRecord = async (): Promise<void> => {
     return util.export_cut_video(null)
 
-    // const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
+    // const prjInfo: Dty.Req_CutVideo | null = await util.make_prj_info()
     // if (prjInfo === null) {
     //   util.addToastErr(`no project info`)
     //   return
@@ -203,7 +203,7 @@ const exportVideoRecord = async (): Promise<void> => {
     // }
     // util.stop_play()
 
-    // const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
+    // const req: Dty.Req<Dty.Req_CutVideo> = {
     //   cmd: 'cut_video',
     //   data: prjInfo
     // }

@@ -8,7 +8,7 @@ import appProc from './AppProc'
 // import { Util } from './Utils.js'
 import { workQueue } from './TaskEvent'
 // import type { WorkResp } from './Utils.js'
-import * as DataTypes from '../../bridge/dataTypedef'
+import * as Dty from '../../bridge/dataTypedef'
 // import appCfg from './AppCfg.js'
 
 export class IpcHandlers {
@@ -18,15 +18,12 @@ export class IpcHandlers {
         this.mainWindow = null
     }
 
-    handle_event = async (
-        event: IpcMainInvokeEvent,
-        ...args: string[]
-    ): Promise<DataTypes.Resp> => {
+    handle_event = async (event: IpcMainInvokeEvent, ...args: string[]): Promise<Dty.Resp> => {
         if (!event) {
             console.log(`event is null`)
         }
         // console.log(`Handling event----: ${event}`)
-        const req: DataTypes.Req<string> = JSON.parse(args[0])
+        const req: Dty.Req<string> = JSON.parse(args[0])
         if (req.cmd != 'heart_beat') {
             // console.log(`Arguments: ${args}`);
         }

@@ -3,11 +3,11 @@ import appCfg from './AppCfg'
 import { exec, execSync } from 'child_process'
 // import * as path from 'path'
 // import * as fs from 'fs'
-import * as DataTypes from '../../bridge/dataTypedef'
+import * as Dty from '../../bridge/dataTypedef'
 // import appDb from './AppDb'
 // import { TraversalFolder } from './Utils.js'
 // 获取帧信息
-async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
+async function getFrameInfo(filepath: string): Promise<Dty.Resp<Dty.FrameInfo>> {
     return new Promise((resolve, reject) => {
         const cmd = `${appCfg.ffprobeExe} -v error -i ${filepath} -skip_frame nokey -select_streams v -show_frames -show_entries frame=pict_type,pts_time -of json`
         exec(cmd, (error, stdout, stderr) => {
@@ -22,10 +22,10 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
             try {
                 const jsonData = JSON.parse(stdout)
                 // 遍历jsonData，把pts_time转换为数字
-                jsonData.frames.forEach((frame: DataTypes.Frame) => {
+                jsonData.frames.forEach((frame: Dty.Frame) => {
                     frame.pts_time = frame.pts_time ? frame.pts_time : 0
                 })
-                const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
+                const resp = new Dty.Resp<Dty.FrameInfo>()
                 resp.success('success').data = jsonData
                 resolve(resp)
             } catch (parseError) {
@@ -37,11 +37,11 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 
 // // 生成分割信息
 // async function make_split_info(
-//     req: DataTypes.Req<DataTypes.Req_CutVideo>
-// ): Promise<DataTypes.Resp<CutSplitInfo[]>> {
+//     req: Dty.Req<Dty.Req_CutVideo>
+// ): Promise<Dty.Resp<CutSplitInfo[]>> {
 //     function processSplitInKeyFrame(
 //         splitInfo: CutSplitInfo[],
-//         keyFrameSplitInfo: DataTypes.Frame[]
+//         keyFrameSplitInfo: Dty.Frame[]
 //     ): CutSplitInfo[] {
 //         const makeSartTime = (t: number): number => {
 //             return t < 0.0001 ? 0 : t - 0.0001
@@ -87,7 +87,7 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 //         return splitCutInfo
 //     }
 
-//     const resp = new DataTypes.Resp<CutSplitInfo[]>()
+//     const resp = new Dty.Resp<CutSplitInfo[]>()
 //     if (req.data?.fileInfo === undefined) {
 //         return resp.err('fileInfo is null')
 //     }
@@ -169,10 +169,10 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 
 // async function traversalFolderByFolder(
 //     baseFolder: string
-// ): Promise<DataTypes.Resp<DataTypes.TraversalFolder>> {
+// ): Promise<Dty.Resp<Dty.TraversalFolder>> {
 //     const traversalFolder = new TraversalFolder()
 //     traversalFolder.folder = baseFolder
-//     const traversalResp: DataTypes.Resp<DataTypes.TraversalFolder> = await traversalFolder.start()
+//     const traversalResp: Dty.Resp<Dty.TraversalFolder> = await traversalFolder.start()
 //     return traversalResp
 // }
 // async function make_trash_folder(folderPath: string): Promise<string> {
@@ -195,9 +195,9 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 // }
 
 // async function cutVideo(
-//     req: DataTypes.Req<DataTypes.Req_CutVideo>
-// ): Promise<DataTypes.Resp<DataTypes.Resp_CutVideo>> {
-//     const resp = new DataTypes.Resp<DataTypes.Resp_CutVideo>()
+//     req: Dty.Req<Dty.Req_CutVideo>
+// ): Promise<Dty.Resp<Dty.Resp_CutVideo>> {
+//     const resp = new Dty.Resp<Dty.Resp_CutVideo>()
 //     if (!req.data?.filepath) {
 //         return resp.err('filepath is null')
 //     }
@@ -215,8 +215,8 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 //         endTimeIn: number
 //     ): string | null {
 //         const filename = path.basename(filepath)
-//         const startTime = DataTypes.FileTools.parse_filename_mi(filename)?.startTime
-//         const baseStartTimeSec = DataTypes.FileTools.parse_timestr_2_seconds(
+//         const startTime = Dty.FileTools.parse_filename_mi(filename)?.startTime
+//         const baseStartTimeSec = Dty.FileTools.parse_timestr_2_seconds(
 //             startTime == null ? '' : startTime
 //         )
 //         // startTimeSec和endTimeSec是毫秒，baseStartTimeSec是秒 现在要把startTimeSec和endTimeSec转换为秒
@@ -230,8 +230,8 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 //             return null
 //         }
 //         // 现在把startTimeSec和endTimeSec转换为20250301104336格式的字符串
-//         const startTimeStr = DataTypes.FileTools.parse_seconds_2_timestr(startTimeSec)
-//         const endTimeStr = DataTypes.FileTools.parse_seconds_2_timestr(endTimeSec)
+//         const startTimeStr = Dty.FileTools.parse_seconds_2_timestr(startTimeSec)
+//         const endTimeStr = Dty.FileTools.parse_seconds_2_timestr(endTimeSec)
 //         const distFilename = `10_${startTimeStr}_${endTimeStr}.mp4`
 //         logger.log(
 //             `cut parameter, src filename:${filename}, startTime:${startTime}(${baseStartTimeSec}), clip start:${startTimeStr}(${startTimeSec}), end:${endTimeStr}(${endTimeSec}); dest filename:${distFilename}`
@@ -277,7 +277,7 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 //     //------ make cut split info
 //     let cutSplitInfo: CutSplitInfo[] = []
 //     {
-//         const makeResp: DataTypes.Resp<CutSplitInfo[]> = await make_split_info(req)
+//         const makeResp: Dty.Resp<CutSplitInfo[]> = await make_split_info(req)
 //         if (makeResp.code !== 0) {
 //             return resp.err(makeResp.status)
 //         }
@@ -325,7 +325,7 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 //         } catch (err) {
 //             return resp.err(`move original video err ${err}`)
 //         }
-//         const respData: DataTypes.Resp_CutVideo = {
+//         const respData: Dty.Resp_CutVideo = {
 //             traversalResp: await traversalFolderByFolder(baseFolder)
 //         }
 //         resp.data = respData
@@ -392,7 +392,7 @@ async function getFrameInfo(filepath: string): Promise<DataTypes.Resp<DataTypes.
 //     }
 //     //------ traversal folder after cut
 //     {
-//         const respData: DataTypes.Resp_CutVideo = {
+//         const respData: Dty.Resp_CutVideo = {
 //             traversalResp: await traversalFolderByFolder(baseFolder)
 //         }
 //         resp.data = respData
@@ -433,14 +433,14 @@ class MediaProcess {
     // cutVideo = cutVideo
     get_frame_info = getFrameInfo
 
-    async getVideoInfo(filePath: string): Promise<DataTypes.MediaInfo> {
+    async getVideoInfo(filePath: string): Promise<Dty.MediaInfo> {
         // let video_path = 'D:/02_workspace/05_timeCapsule/01_stream_manager_ui/stream_manager_ui/src/data/00_20250310042708_20250310051906.mp4'
         const video_path = filePath
         const cmd = `${appCfg.ffprobeExe} -v error -of json -show_format -show_streams ${video_path}`
         const output = execSync(cmd).toString()
         const jsonData = JSON.parse(output)
 
-        const mediaInfo: DataTypes.MediaInfo = {
+        const mediaInfo: Dty.MediaInfo = {
             nb_streams: 0,
             duration: 0,
             size: 0,

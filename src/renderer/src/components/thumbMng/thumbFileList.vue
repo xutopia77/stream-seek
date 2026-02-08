@@ -25,7 +25,7 @@
                     class="xc-text"
                     :style="getVideoLevelColorStyle(video)"
                     @click="btn_playVideo(video)"
-                    >{{ `${index + 1}:${DataTypes.File.makeDisplayName(video)}` }}</span
+                    >{{ `${index + 1}:${Dty.File.makeDisplayName(video)}` }}</span
                 >
             </li>
         </ul>
@@ -39,9 +39,9 @@ import { computed, onBeforeMount, ref, onMounted, onUnmounted } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import * as Dty from '../../../../bridge/dataTypedef'
 
-const videoList = computed<DataTypes.File[]>(() => appStore.thumbList)
+const videoList = computed<Dty.File[]>(() => appStore.thumbList)
 
 // 记录上一次选中的索引
 const lastSelectedIndex = ref(-1)
@@ -70,11 +70,7 @@ onUnmounted(() => {
 })
 
 // 切换视频的选中状态
-const toggleVideoSelection = (
-    video: DataTypes.File,
-    isChecked: boolean,
-    currentIndex: number
-): void => {
+const toggleVideoSelection = (video: Dty.File, isChecked: boolean, currentIndex: number): void => {
     console.log(`Video ${video.name} is ${isChecked ? 'selected' : 'deselected'}`)
     if (isShiftPressed.value && lastSelectedIndex.value !== -1) {
         const start = Math.min(lastSelectedIndex.value, currentIndex)
@@ -99,7 +95,7 @@ const toggleVideoSelection = (
 
 onBeforeMount(() => {})
 
-const btn_playVideo = (video: DataTypes.File): void => {
+const btn_playVideo = (video: Dty.File): void => {
     appStore.curSltThumb = video
 }
 
@@ -199,5 +195,4 @@ const getVideoLevelColorStyle = (video): string => {
     margin: 0px;
     opacity: 0.7;
 }
-
 </style>

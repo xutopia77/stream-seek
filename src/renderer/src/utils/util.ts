@@ -1,16 +1,16 @@
 import type { AppStore } from '../stores/AppStore'
 let appStore: AppStore
 
-import * as DataTypes from '../../../bridge/dataTypedef'
+import * as Dty from '../../../bridge/dataTypedef'
 import { IpcApi } from './ipcApi'
 
-async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
-    const resp = new DataTypes.Resp<DataTypes.FrameInfo>()
+async function getKeyFrameInfo(): Promise<Dty.Resp<Dty.FrameInfo>> {
+    const resp = new Dty.Resp<Dty.FrameInfo>()
     if (appStore?.curSltVideo === null || appStore?.curSltVideo?.mediaInfo === null) {
         return resp.err('no video selected')
     }
-    const req: DataTypes.Req<DataTypes.Req_FrameInfo> = {
-        cmd: DataTypes.CmdType.get_key_frame_info,
+    const req: Dty.Req<Dty.Req_FrameInfo> = {
+        cmd: Dty.CmdType.get_key_frame_info,
         data: {
             filepath: appStore?.curSltVideo?.path
         }
@@ -25,7 +25,7 @@ async function getKeyFrameInfo(): Promise<DataTypes.Resp<DataTypes.FrameInfo>> {
     return resp
 }
 
-function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void {
+function folder_file_proc(resp: Dty.Resp<Dty.TraversalFolder>): void {
     if (resp.code !== 0) {
         util.addToastErr(`打开文件夹失败: ${resp.status}`)
         return
@@ -38,7 +38,7 @@ function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void
         util.addToastErr(`打开文件夹失败: ${resp.status}`)
         return
     }
-    const respData: DataTypes.TraversalFolder = resp.data
+    const respData: Dty.TraversalFolder = resp.data
     const files = respData.files
     if (files === undefined) {
         return
@@ -49,13 +49,13 @@ function folder_file_proc(resp: DataTypes.Resp<DataTypes.TraversalFolder>): void
     appStore.videoList = files
 }
 
-function processVideoEvent(videoEvent: DataTypes.FileEventInfo[][]): void {
+function processVideoEvent(videoEvent: Dty.FileEventInfo[][]): void {
     const colorSegments: { startTime: number; endTime: number; color: string }[] = []
     let startTime = 0
     const barBaseColor = '#555'
     let lastColor = barBaseColor
 
-    let eventInTimePoint: DataTypes.FileEventInfo[] = []
+    let eventInTimePoint: Dty.FileEventInfo[] = []
     // 首先把二维数组中每个数组的最大值取出来，变成一维数组
     for (const event of videoEvent) {
         if (event.length === 0) {
@@ -120,12 +120,12 @@ const formatSecond2Time = (timeSec: number): string => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 }
 
-async function make_prj_info(): Promise<DataTypes.Req_CutVideo | null> {
+async function make_prj_info(): Promise<Dty.Req_CutVideo | null> {
     if (appStore?.curSltVideo === null) {
         util.addToastInfo(`当前没有选择视频文件`)
         return null
     }
-    const prjInfo: DataTypes.Req_CutVideo = {
+    const prjInfo: Dty.Req_CutVideo = {
         fileInfo: appStore.curSltVideo,
         filepath: appStore.curSltVideo?.path || '',
         filename: util.getFilenameFromPath(appStore.curSltVideo?.path || '')
@@ -150,7 +150,7 @@ const formatTime = (time: number): string => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
 }
 
-function splitInfoCorrect(splitInfos: DataTypes.SplitInfo[], videoDuration: number): void {
+function splitInfoCorrect(splitInfos: Dty.SplitInfo[], videoDuration: number): void {
     // 把开始时间，结束时间，颜色确定后，再矫正一些关键信息
     for (let i = 0; i < splitInfos.length; i++) {
         const splitInfo = splitInfos[i]
@@ -294,7 +294,7 @@ function toggle_play(videoRef: HTMLVideoElement): void {
         return filepath.replace(/\\/g, '/')
     }
     let p1 = convert_filepath_to_linux_style(videoRef.src)
-    let p2 = convert_filepath_to_linux_style(DataTypes.File.makePlayUrl(appStore.curSltVideo))
+    let p2 = convert_filepath_to_linux_style(Dty.File.makePlayUrl(appStore.curSltVideo))
     // 再去掉p1，p2的前缀file:// 或者 file:///
     if (p1?.startsWith('file:///')) {
         p1 = p1.substring(8)
@@ -307,15 +307,15 @@ function toggle_play(videoRef: HTMLVideoElement): void {
         p2 = p2.substring(7)
     }
     if (p1 !== p2) {
-        const playReq = new PlayReq(DataTypes.File.makePlayUrl(appStore.curSltVideo))
+        const playReq = new PlayReq(Dty.File.makePlayUrl(appStore.curSltVideo))
         util.play_video(videoRef, playReq)
     } else {
         videoRef.play()
     }
 }
 
-function update_bar_clips(): DataTypes.BarClip[] {
-    const barClips: DataTypes.BarClip[] = []
+function update_bar_clips(): Dty.BarClip[] {
+    const barClips: Dty.BarClip[] = []
 
     if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return barClips
@@ -372,8 +372,8 @@ function update_bar_clips(): DataTypes.BarClip[] {
     return barClips
 }
 
-const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<void> => {
-    const prjInfo: DataTypes.Req_CutVideo | null = await util.make_prj_info()
+const export_cut_video = async (cutReq: Dty.CutVideoReq | null): Promise<void> => {
+    const prjInfo: Dty.Req_CutVideo | null = await util.make_prj_info()
     if (prjInfo === null) {
         util.addToastErr(`no project info`)
         return
@@ -390,8 +390,8 @@ const export_cut_video = async (cutReq: DataTypes.CutVideoReq | null): Promise<v
         }
     }
 
-    const req: DataTypes.Req<DataTypes.Req_CutVideo> = {
-        cmd: DataTypes.CmdType.videoCut,
+    const req: Dty.Req<Dty.Req_CutVideo> = {
+        cmd: Dty.CmdType.videoCut,
         data: prjInfo
     }
     const response = await IpcApi.trigger_event(req)
@@ -416,10 +416,10 @@ class Util {
     export_cut_video = export_cut_video
     set_video_cur_time = set_video_cur_time
     update_bar_clips = update_bar_clips
-    updateKeyframeSplitInfo(frameInfoReq: DataTypes.FrameInfo): DataTypes.SplitInfo[] {
+    updateKeyframeSplitInfo(frameInfoReq: Dty.FrameInfo): Dty.SplitInfo[] {
         const frameInfo = frameInfoReq.frames
         // 根据i帧的时间信息，生成bar上的分割信息
-        const frameSplitInfo: DataTypes.SplitInfo[] = []
+        const frameSplitInfo: Dty.SplitInfo[] = []
         let lastTime = 0.0
         for (let i = 0; i < frameInfo.length; i++) {
             const frame = frameInfo[i]
@@ -450,11 +450,11 @@ class Util {
 
     formatSecond2Time = formatSecond2Time
 
-    message_notify(_req: DataTypes.MessageReq): void {
+    message_notify(_req: Dty.MessageReq): void {
         Util.addToast(_req.content, _req.type)
     }
 
-    static addToast(message: string, type: DataTypes.MessageShowType = 'info'): void {
+    static addToast(message: string, type: Dty.MessageShowType = 'info'): void {
         const id = Date.now()
         const timestamp = Date.now()
         const toast = { id, message, type, timestamp }
@@ -489,7 +489,7 @@ class Util {
         appStore.historyToasts = []
     }
 
-    private async updateAppInfo(appStartResp: DataTypes.AppStartResp): Promise<void> {
+    private async updateAppInfo(appStartResp: Dty.AppStartResp): Promise<void> {
         appStore.appInfo = appStartResp.appInfo
         if (appStartResp.prj != null) {
             appStore.prj = appStartResp.prj
@@ -500,11 +500,11 @@ class Util {
             console.log('get prj failed')
         }
         // if (prj.dataFolder != null && prj.dataFolder !== '') {
-        //   const req: DataTypes.Req<DataTypes.Req_TraversalFolder> = {
+        //   const req: Dty.Req<Dty.Req_TraversalFolder> = {
         //     cmd: 'traversal_folder',
         //     data: { folder: prj.lastOpenedFolder }
         //   }
-        //   const response: DataTypes.Resp<DataTypes.TraversalFolder> = await IpcApi.trigger_event(req)
+        //   const response: Dty.Resp<Dty.TraversalFolder> = await IpcApi.trigger_event(req)
         //   if (response.code === 0) {
         //     appStore.curOpenedFolder = prj.lastOpenedFolder
         //     util.folder_file_proc(response)
@@ -516,11 +516,11 @@ class Util {
         // }
     }
 
-    async start_app(): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
-        const req: DataTypes.Req = { cmd: DataTypes.CmdType.app_start }
-        const response: DataTypes.Resp<DataTypes.AppStartResp> = await IpcApi.trigger_event(req)
-        if (response.code != DataTypes.RespCode.Success) {
+    async start_app(): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
+        const req: Dty.Req = { cmd: Dty.CmdType.app_start }
+        const response: Dty.Resp<Dty.AppStartResp> = await IpcApi.trigger_event(req)
+        if (response.code != Dty.RespCode.Success) {
             Util.addToast('no prj found', 'warning')
             return resp.err(response.status)
         }
@@ -532,7 +532,7 @@ class Util {
         return resp
     }
 
-    process_heartbeat(resp: DataTypes.Resp<DataTypes.HeartBeat>): void {
+    process_heartbeat(resp: Dty.Resp<Dty.HeartBeat>): void {
         if (resp.code !== 0) {
             console.log('process heartbeat failed', resp)
             return
@@ -541,7 +541,7 @@ class Util {
             console.log('process heartbeat failed', resp)
             return
         }
-        const respData: DataTypes.HeartBeat = resp.data
+        const respData: Dty.HeartBeat = resp.data
         const curTime = respData.time
         let titleStr = curTime + ' '
         titleStr += respData.processing ? runFlgArray[heartbeatCnt++ % runFlgArray.length] : '🧍‍♂️'
@@ -560,10 +560,10 @@ class Util {
         }
     }
 
-    async delete_video(reqInfo: DataTypes.DeleteFileReq): Promise<void> {
+    async delete_video(reqInfo: Dty.DeleteFileReq): Promise<void> {
         util.stop_play()
-        const req: DataTypes.Req<DataTypes.DeleteFileReq> = {
-            cmd: DataTypes.CmdType.videoDel,
+        const req: Dty.Req<Dty.DeleteFileReq> = {
+            cmd: Dty.CmdType.videoDel,
             data: reqInfo
         }
         const response = await IpcApi.trigger_event(req)
@@ -585,7 +585,7 @@ class Util {
         }
     }
 
-    async get_slt_video(video: DataTypes.File | null): Promise<void> {
+    async get_slt_video(video: Dty.File | null): Promise<void> {
         const processSplitInfo = (): void => {
             if (appStore?.curSltVideo == null) {
                 return
@@ -604,7 +604,7 @@ class Util {
             itemInfo.percent = 100
             itemInfo.frameNum = util.calculateCurFrameIdx(duration)
             if (appStore?.curSltVideo?.splitInfo == null) {
-                appStore.curSltVideo.splitInfo = new DataTypes.SqlitInfos()
+                appStore.curSltVideo.splitInfo = new Dty.SqlitInfos()
                 if (appStore?.curSltVideo?.splitInfo != null) {
                     appStore.curSltVideo.splitInfo.splits = []
                 }
@@ -617,13 +617,13 @@ class Util {
         if (video == null) {
             return
         }
-        const req: DataTypes.Req<DataTypes.Req_SltFile> = {
-            cmd: DataTypes.CmdType.sltVideo,
+        const req: Dty.Req<Dty.Req_SltFile> = {
+            cmd: Dty.CmdType.sltVideo,
             data: {
                 filepath: video.path
             }
         }
-        const response: DataTypes.Resp<DataTypes.File> = await IpcApi.trigger_event(req)
+        const response: Dty.Resp<Dty.File> = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
             console.log('slect video failed', response)
         } else {
@@ -631,7 +631,7 @@ class Util {
                 util.addToastInfo(`正在处理...`)
                 return
             }
-            const respData: DataTypes.File | undefined = response.data
+            const respData: Dty.File | undefined = response.data
             if (respData == undefined) {
                 util.addToastErr(`获取视频信息失败: ${response.status}`)
                 console.log('slect video failed', response)
@@ -653,16 +653,14 @@ class Util {
         }
     }
 
-    async create_prj(
-        dataRepo: DataTypes.DataRepo[]
-    ): Promise<DataTypes.Resp<DataTypes.CreatePrjResp>> {
-        const req: DataTypes.Req<DataTypes.CreatePrjReq> = {
-            cmd: DataTypes.CmdType.createPrj,
+    async create_prj(dataRepo: Dty.DataRepo[]): Promise<Dty.Resp<Dty.CreatePrjResp>> {
+        const req: Dty.Req<Dty.CreatePrjReq> = {
+            cmd: Dty.CmdType.createPrj,
             data: {
                 dataRepo: dataRepo
             }
         }
-        const response: DataTypes.Resp<DataTypes.CreatePrjResp> = await IpcApi.trigger_event(req)
+        const response: Dty.Resp<Dty.CreatePrjResp> = await IpcApi.trigger_event(req)
         if (response.code == 0) {
             if (response.data?.prj != null) {
                 appStore.prj = response.data.prj
@@ -671,15 +669,15 @@ class Util {
         return response
     }
 
-    async sync_prj(types: DataTypes.SyncType[]): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
-        const req: DataTypes.Req<DataTypes.SyncPrjReq> = {
-            cmd: DataTypes.CmdType.prjSync,
+    async sync_prj(types: Dty.SyncType[]): Promise<Dty.Resp<Dty.SyncPrjResp>> {
+        const req: Dty.Req<Dty.SyncPrjReq> = {
+            cmd: Dty.CmdType.prjSync,
             data: {
                 type: types,
                 prj: appStore.prj
             }
         }
-        const response: DataTypes.Resp<DataTypes.SyncPrjResp> = await IpcApi.trigger_event(req)
+        const response: Dty.Resp<Dty.SyncPrjResp> = await IpcApi.trigger_event(req)
         if (response.code == 0) {
             if (response.data?.prj != null) {
                 appStore.prj = response.data?.prj
@@ -688,21 +686,19 @@ class Util {
         return response
     }
 
-    async files_get(
-        reqParam: DataTypes.FilesReq | null
-    ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        const req: DataTypes.Req<DataTypes.FilesReq> = {
-            cmd: DataTypes.CmdType.filesGet,
-            data: reqParam == null ? new DataTypes.FilesReq() : reqParam
+    async files_get(reqParam: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
+        const req: Dty.Req<Dty.FilesReq> = {
+            cmd: Dty.CmdType.filesGet,
+            data: reqParam == null ? new Dty.FilesReq() : reqParam
         }
         if (!req.data) {
-            const resp = new DataTypes.Resp<DataTypes.FilesResp>()
-            resp.code = DataTypes.RespCode.Error
+            const resp = new Dty.Resp<Dty.FilesResp>()
+            resp.code = Dty.RespCode.Error
             return resp
         }
         req.data.page = appStore.fileSearchPage
         req.data.pageSize = appStore.fileSearchPageSize
-        const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
+        const response: Dty.Resp<Dty.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
             util.addToastErr(`获取文件列表失败: ${response.status}`)
             return response
@@ -718,14 +714,12 @@ class Util {
         return response
     }
 
-    async tags_get(
-        reqParam: DataTypes.TagsReq | null
-    ): Promise<DataTypes.Resp<DataTypes.TagsResp>> {
-        const req: DataTypes.Req<DataTypes.TagsReq> = {
-            cmd: DataTypes.CmdType.tags_get,
-            data: reqParam == null ? new DataTypes.TagsReq() : reqParam
+    async tags_get(reqParam: Dty.TagsReq | null): Promise<Dty.Resp<Dty.TagsResp>> {
+        const req: Dty.Req<Dty.TagsReq> = {
+            cmd: Dty.CmdType.tags_get,
+            data: reqParam == null ? new Dty.TagsReq() : reqParam
         }
-        const response: DataTypes.Resp<DataTypes.TagsResp> = await IpcApi.trigger_event(req)
+        const response: Dty.Resp<Dty.TagsResp> = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
             util.addToastErr(`获取标签列表失败: ${response.status}`)
             return response
@@ -740,14 +734,14 @@ class Util {
     }
 
     async file_tags_set(
-        fileTags: DataTypes.FileTagsReq,
-        param: DataTypes.FileTagsSetParam | null = null
+        fileTags: Dty.FileTagsReq,
+        param: Dty.FileTagsSetParam | null = null
     ): Promise<void> {
-        const req: DataTypes.Req<DataTypes.FileTagsReq> = {
-            cmd: DataTypes.CmdType.fileTagsSet,
+        const req: Dty.Req<Dty.FileTagsReq> = {
+            cmd: Dty.CmdType.fileTagsSet,
             data: fileTags
         }
-        const response: DataTypes.Resp = await IpcApi.trigger_event(req)
+        const response: Dty.Resp = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
             util.addToastErr(`设置标签失败: ${response.status}`)
         } else {
@@ -776,7 +770,7 @@ class Util {
     clearModel: "changeToThumbnail",
     }
     */
-    clear_cur_slt_video_info(req: DataTypes.ClearSltInfoReq | null): void {
+    clear_cur_slt_video_info(req: Dty.ClearSltInfoReq | null): void {
         const clear_videoPlayCtrl = (): void => {
             if (appStore) {
                 appStore.videoPlayCtrl.curSrc = ''
@@ -825,7 +819,7 @@ class Util {
         appStore = store
     }
 
-    process_work_response(workRespose: DataTypes.WorkResp): void {
+    process_work_response(workRespose: Dty.WorkResp): void {
         const cmd = workRespose.cmd
 
         const response = JSON.parse(workRespose.data)
@@ -867,7 +861,7 @@ class Util {
                     console.log('cut video failed', response)
                 } else {
                     util.addToastInfo(`视频裁剪完成:${response.status}`)
-                    const respData: DataTypes.Resp_CutVideo = response.data
+                    const respData: Dty.Resp_CutVideo = response.data
                     if (respData.traversalResp != null) {
                         console.log('update file list', respData.traversalResp)
                         util.folder_file_proc(respData.traversalResp)
@@ -891,7 +885,7 @@ class Util {
                 } else {
                     if (appStore) {
                         if (appStore.curSltVideo == null) {
-                            appStore.curSltVideo = new DataTypes.File()
+                            appStore.curSltVideo = new Dty.File()
                         }
                         appStore.curSltVideo.frameInfo = response.data
                         console.log('get key frame info', appStore.curSltVideo.frameInfo)
@@ -908,9 +902,9 @@ class Util {
         const fileName = parts[parts.length - 1]
         return fileName
     }
-    makeSplitInfo(): DataTypes.SplitInfo {
+    makeSplitInfo(): Dty.SplitInfo {
         // 进度条的分段信息，黄色表示是关键帧
-        const splitInfo: DataTypes.SplitInfo = {
+        const splitInfo: Dty.SplitInfo = {
             startTime: 0,
             endTime: 0,
             duration: 0,
@@ -924,22 +918,22 @@ class Util {
         return splitInfo
     }
 
-    async thumbGet(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        const req: DataTypes.Req<DataTypes.FilesReq> = {
-            cmd: DataTypes.CmdType.search_file
+    async thumbGet(): Promise<Dty.Resp<Dty.FilesResp>> {
+        const req: Dty.Req<Dty.FilesReq> = {
+            cmd: Dty.CmdType.search_file
         }
-        req.data = DataTypes.FilesReq.makeReqStatusNormal(null, null)
-        if (appStore.prj.repoType == DataTypes.RepoType.Trash) {
-            req.data = DataTypes.FilesReq.makeReqStatusDel(null)
+        req.data = Dty.FilesReq.makeReqStatusNormal(null, null)
+        if (appStore.prj.repoType == Dty.RepoType.Trash) {
+            req.data = Dty.FilesReq.makeReqStatusDel(null)
         }
         if (!req.data) {
-            const resp = new DataTypes.Resp<DataTypes.FilesResp>()
-            resp.code = DataTypes.RespCode.Error
+            const resp = new Dty.Resp<Dty.FilesResp>()
+            resp.code = Dty.RespCode.Error
             return resp
         }
         req.data.page = appStore.fileSearchPage
         req.data.pageSize = appStore.fileSearchPageSize
-        const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
+        const response: Dty.Resp<Dty.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
             util.addToastErr(`search file failed: ${response.status}`)
             console.log(`search file failed: ${response.status}`)
@@ -950,18 +944,18 @@ class Util {
         appStore.thumbTotalNum = response.data?.total || 0
         if (appStore.thumbList.length == 0) {
             util.addToastInfo(
-                `没有文件，当前模式:${appStore.prj.repoType == DataTypes.RepoType.Trash ? '回收站' : '正常'}`
+                `没有文件，当前模式:${appStore.prj.repoType == Dty.RepoType.Trash ? '回收站' : '正常'}`
             )
         }
         return response
     }
 
-    async search_tag(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        const req: DataTypes.Req<DataTypes.FilesReq> = {
-            cmd: DataTypes.CmdType.tagsSearch
+    async search_tag(): Promise<Dty.Resp<Dty.FilesResp>> {
+        const req: Dty.Req<Dty.FilesReq> = {
+            cmd: Dty.CmdType.tagsSearch
         }
-        req.data = DataTypes.FilesReq.makeReqStatusNormal(null, null)
-        const response: DataTypes.Resp<DataTypes.FilesResp> = await IpcApi.trigger_event(req)
+        req.data = Dty.FilesReq.makeReqStatusNormal(null, null)
+        const response: Dty.Resp<Dty.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code != 0) {
             util.addToastErr(`search file failed: ${response.status}`)
             console.log(`search file failed: ${response.status}`)

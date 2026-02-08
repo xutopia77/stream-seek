@@ -1,5 +1,5 @@
 import logger from './Logger'
-import * as DataTypes from '../../bridge/dataTypedef'
+import * as Dty from '../../bridge/dataTypedef'
 import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
 
@@ -17,9 +17,9 @@ class AppDb {
     private tbl_tags = 'tags'
     private tbl_fileTag = 'fileTags'
 
-    public async initDb(dbFolderPath: string): Promise<DataTypes.Resp> {
-        if (dbFolderPath === '') return new DataTypes.Resp().err('dbFolderPath is empty')
-        const resp = new DataTypes.Resp()
+    public async initDb(dbFolderPath: string): Promise<Dty.Resp> {
+        if (dbFolderPath === '') return new Dty.Resp().err('dbFolderPath is empty')
+        const resp = new Dty.Resp()
         try {
             // 检查文件夹是否存在，不存在则创建
             await import('fs/promises').then((fs) => fs.mkdir(dbFolderPath, { recursive: true }))
@@ -115,12 +115,12 @@ class AppDb {
         }
     }
 
-    async file_insert(file: DataTypes.FileModel): Promise<DataTypes.Resp<DataTypes.DbInsertResp>> {
-        const resp = new DataTypes.Resp<DataTypes.DbInsertResp>()
-        resp.data = new DataTypes.DbInsertResp()
+    async file_insert(file: Dty.FileModel): Promise<Dty.Resp<Dty.DbInsertResp>> {
+        const resp = new Dty.Resp<Dty.DbInsertResp>()
+        resp.data = new Dty.DbInsertResp()
         try {
             if (!this.db) throw new Error('Database not initialized')
-            file.infoHash = DataTypes.FileModel.makeInfoHash(file.repo, file.path)
+            file.infoHash = Dty.FileModel.makeInfoHash(file.repo, file.path)
             let sqlCmd = `INSERT INTO ${this.tbl_files} `
             const sqlParams: unknown[] = []
             const fields: string[] = []
@@ -226,8 +226,8 @@ class AppDb {
     }
 
     // 删除视频信息
-    async file_delete(video: Pick<DataTypes.FileModel, 'id'>): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
+    async file_delete(video: Pick<Dty.FileModel, 'id'>): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             const result = await this.db.run(`DELETE FROM ${this.tbl_files} WHERE id = ?`, [
@@ -248,8 +248,8 @@ class AppDb {
     }
 
     // 修改视频信息
-    async fileUpdate(fInfo: DataTypes.File): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
+    async fileUpdate(fInfo: Dty.File): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             if (!fInfo.id) {
@@ -319,16 +319,16 @@ class AppDb {
                 updateFields.push('description =?')
                 sqlParams.push(fInfo.description)
             }
-            let infoHash = DataTypes.FileModel.makeInfoHash(fInfo.repo, fInfo.path)
+            let infoHash = Dty.FileModel.makeInfoHash(fInfo.repo, fInfo.path)
             const curTimeStr = new Date().toLocaleString()
-            if (fInfo.status == DataTypes.FileStatus.Deleted) {
+            if (fInfo.status == Dty.Fstatus.Deleted) {
                 updateFields.push('deleted_at =?')
                 sqlParams.push(curTimeStr)
-                infoHash = DataTypes.FileModel.makeInfoHashDel(fInfo.repo, fInfo.path)
-            } else if (fInfo.status == DataTypes.FileStatus.Destroy) {
+                infoHash = Dty.FileModel.makeInfoHashDel(fInfo.repo, fInfo.path)
+            } else if (fInfo.status == Dty.Fstatus.Destroy) {
                 updateFields.push('deleted_at =?')
                 sqlParams.push(curTimeStr)
-                infoHash = DataTypes.FileModel.makeInfoHashDestroy(fInfo.repo, fInfo.path)
+                infoHash = Dty.FileModel.makeInfoHashDestroy(fInfo.repo, fInfo.path)
             } else {
                 updateFields.push('updated_at =?')
                 // 获取当前时间，这种形式 2025-07-18 15:14:41
@@ -359,10 +359,7 @@ class AppDb {
         return resp
     }
 
-    private make_file_search_param(
-        tblName: string,
-        req: DataTypes.FilesReq | null
-    ): FileSearchParam {
+    private make_file_search_param(tblName: string, req: Dty.FilesReq | null): FileSearchParam {
         let query = `SELECT * FROM ${tblName}`
         let countQuery = `SELECT COUNT(*) as total FROM ${tblName}` // 用于统计总记录数
         const params: unknown[] = []
@@ -467,8 +464,8 @@ class AppDb {
         }
     }
 
-    async filesCount(req: DataTypes.FilesReq | null): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        const resp = new DataTypes.Resp<DataTypes.FilesResp>()
+    async filesCount(req: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
+        const resp = new Dty.Resp<Dty.FilesResp>()
         try {
             const searchParam = this.make_file_search_param(this.tbl_files, req)
             const countQuery = searchParam.countQuery
@@ -478,7 +475,7 @@ class AppDb {
             const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
             const total = countResult?.total || 0
 
-            resp.data = new DataTypes.FilesResp()
+            resp.data = new Dty.FilesResp()
             resp.data.total = total
             resp.success('success')
         } catch (error) {
@@ -491,10 +488,8 @@ class AppDb {
     }
 
     // 非必要，不要使用此函数
-    async filesSearch(
-        req: DataTypes.FilesReq | null
-    ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        const resp = new DataTypes.Resp<DataTypes.FilesResp>()
+    async filesSearch(req: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
+        const resp = new Dty.Resp<Dty.FilesResp>()
         try {
             const searchParam = this.make_file_search_param(this.tbl_files, req)
             const query = searchParam.query
@@ -508,14 +503,14 @@ class AppDb {
             const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
             const total = countResult?.total || 0
 
-            const fileModels = await this.db.all<DataTypes.FileModel[]>(query, params)
-            resp.data = new DataTypes.FilesResp()
+            const fileModels = await this.db.all<Dty.FileModel[]>(query, params)
+            resp.data = new Dty.FilesResp()
             resp.data.total = 0
             for (const fileModel of fileModels) {
                 if (fileModel.id == undefined) {
                     continue
                 }
-                const fileInfo: DataTypes.File = new DataTypes.File()
+                const fileInfo: Dty.File = new Dty.File()
                 fileInfo.id = fileModel.id == undefined ? 0 : fileModel.id
                 fileInfo.name = fileModel.name
                 fileInfo.path = fileModel.path
@@ -545,10 +540,8 @@ class AppDb {
         return resp
     }
 
-    async fileViewSearch(
-        req: DataTypes.FilesReq | null
-    ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
-        const resp = new DataTypes.Resp<DataTypes.FilesResp>()
+    async fileViewSearch(req: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
+        const resp = new Dty.Resp<Dty.FilesResp>()
         try {
             if (!this.db) throw new Error('Database not initialized')
 
@@ -563,9 +556,9 @@ class AppDb {
             const total = countResult?.total || 0
 
             // 执行主查询
-            const fileViewModels = await this.db.all<DataTypes.FileViewModel[]>(query, params)
+            const fileViewModels = await this.db.all<Dty.FileViewModel[]>(query, params)
             // 按文件 ID 分组标签信息
-            const fileMap = new Map<number, DataTypes.File>()
+            const fileMap = new Map<number, Dty.File>()
             for (const fileViewModel of fileViewModels) {
                 if (fileViewModel.id === undefined) {
                     continue
@@ -573,7 +566,7 @@ class AppDb {
 
                 let fileInfo = fileMap.get(fileViewModel.id)
                 if (!fileInfo) {
-                    fileInfo = new DataTypes.File()
+                    fileInfo = new Dty.File()
                     fileInfo.id = fileViewModel.id
                     fileInfo.name = fileViewModel.name
                     fileInfo.path = fileViewModel.path
@@ -605,7 +598,7 @@ class AppDb {
                     fileViewModel.tagName.length > 0 &&
                     fileViewModel.tagName != ''
                 ) {
-                    const tag: DataTypes.Tag = {
+                    const tag: Dty.Tag = {
                         id: -1,
                         name: fileViewModel.tagName,
                         color: fileViewModel.tagColor || ''
@@ -614,7 +607,7 @@ class AppDb {
                 }
             }
 
-            resp.data = new DataTypes.FilesResp()
+            resp.data = new Dty.FilesResp()
             resp.data.total = total
             resp.data.files = Array.from(fileMap.values())
             resp.success('success')
@@ -626,9 +619,9 @@ class AppDb {
         }
         return resp
     }
-    async tag_insert(tag: DataTypes.Tag): Promise<DataTypes.Resp<DataTypes.DbInsertResp>> {
-        const resp = new DataTypes.Resp<DataTypes.DbInsertResp>()
-        resp.data = new DataTypes.DbInsertResp()
+    async tag_insert(tag: Dty.Tag): Promise<Dty.Resp<Dty.DbInsertResp>> {
+        const resp = new Dty.Resp<Dty.DbInsertResp>()
+        resp.data = new Dty.DbInsertResp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             let sqlCmd = `INSERT INTO ${this.tbl_tags} `
@@ -662,8 +655,8 @@ class AppDb {
         return resp
     }
 
-    async tag_delete(tag: Pick<DataTypes.Tag, 'id'>): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
+    async tag_delete(tag: Pick<Dty.Tag, 'id'>): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             const result = await this.db.run(`DELETE FROM ${this.tbl_tags} WHERE id =?`, [tag.id])
@@ -680,8 +673,8 @@ class AppDb {
         }
         return resp
     }
-    async tag_update(tag: DataTypes.Tag): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
+    async tag_update(tag: Dty.Tag): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             if (!tag.id) {
@@ -717,8 +710,8 @@ class AppDb {
         return resp
     }
 
-    async tag_search(req: DataTypes.TagsReq | null): Promise<DataTypes.Resp<DataTypes.TagsResp>> {
-        const resp = new DataTypes.Resp<DataTypes.TagsResp>()
+    async tag_search(req: Dty.TagsReq | null): Promise<Dty.Resp<Dty.TagsResp>> {
+        const resp = new Dty.Resp<Dty.TagsResp>()
         try {
             let query = `SELECT * FROM ${this.tbl_tags}`
             const params: unknown[] = []
@@ -745,14 +738,14 @@ class AppDb {
                 }
             }
             if (!this.db) throw new Error('Database not initialized')
-            const tagModels = await this.db.all<DataTypes.TagModel[]>(query, params)
-            resp.data = new DataTypes.TagsResp()
+            const tagModels = await this.db.all<Dty.TagModel[]>(query, params)
+            resp.data = new Dty.TagsResp()
             resp.data.total = 0
             for (const tagModel of tagModels) {
                 if (tagModel.id == undefined) {
                     continue
                 }
-                const tagInfo: DataTypes.Tag = new DataTypes.Tag()
+                const tagInfo: Dty.Tag = new Dty.Tag()
                 tagInfo.id = tagModel.id == undefined ? 0 : tagModel.id
                 tagInfo.name = tagModel.name
                 tagInfo.color = tagModel.color
@@ -767,9 +760,9 @@ class AppDb {
         }
         return resp
     }
-    async file_tag_insert(req: DataTypes.FileTag): Promise<DataTypes.Resp<DataTypes.DbInsertResp>> {
-        const resp = new DataTypes.Resp<DataTypes.DbInsertResp>()
-        resp.data = new DataTypes.DbInsertResp()
+    async file_tag_insert(req: Dty.FileTag): Promise<Dty.Resp<Dty.DbInsertResp>> {
+        const resp = new Dty.Resp<Dty.DbInsertResp>()
+        resp.data = new Dty.DbInsertResp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             let sqlCmd = `INSERT INTO ${this.tbl_fileTag} `
@@ -809,8 +802,8 @@ class AppDb {
         }
         return resp
     }
-    async file_tag_delete(fileId: number, tagId: number): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
+    async file_tag_delete(fileId: number, tagId: number): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             const result = await this.db.run(
@@ -830,8 +823,8 @@ class AppDb {
         }
         return resp
     }
-    async file_tag_delete_all(fileId: number): Promise<DataTypes.Resp> {
-        const resp = new DataTypes.Resp()
+    async file_tag_delete_all(fileId: number): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
         try {
             if (!this.db) throw new Error('Database not initialized')
             const result = await this.db.run(`DELETE FROM ${this.tbl_fileTag} WHERE fileId =? `, [

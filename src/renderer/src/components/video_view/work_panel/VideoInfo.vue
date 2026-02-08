@@ -29,14 +29,14 @@ import MessageShow from '@renderer/components/util/MessageShow.vue'
 import { ref, computed } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
-import * as DataTypes from '../../../../../bridge/dataTypedef'
+import * as Dty from '../../../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
 // ------------------------------------
 const fileTags = computed(() => {
     if (appStore.curSltVideo == null) return []
     return appStore.curSltVideo.tags
 })
-function btn_removeTag(tag: DataTypes.Tag): void {
+function btn_removeTag(tag: Dty.Tag): void {
     console.log(`remove tag ${tag.name}`)
     // if (appStore.curSltFile?.id == null) return
     // const req: DatType.FilesTagSetReq = {
@@ -48,7 +48,7 @@ function btn_removeTag(tag: DataTypes.Tag): void {
 // ------------------------------------
 const newTag = ref('')
 const btn_addTag = async (): Promise<void> => {
-    const req = new DataTypes.FileTagsReq()
+    const req = new Dty.FileTagsReq()
     let tagName = ''
     if (newTag.value.trim()) {
         tagName = newTag.value.trim()
@@ -58,7 +58,7 @@ const btn_addTag = async (): Promise<void> => {
         return
     }
     for (const item of appStore.curCheckedVideo) {
-        const fileTag: DataTypes.FileTagsReqItem = {
+        const fileTag: Dty.FileTagsReqItem = {
             fileId: item.id,
             tagName: tagName
         }

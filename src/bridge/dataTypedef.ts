@@ -46,7 +46,7 @@ export class FileInfo {
 }
 
 // 定义一个枚举，是数字类型，表示文件的状态
-export enum FileStatus {
+export enum Fstatus {
     Normal = 0, // 正常
     Deleted = 1, // 删除,在回收站中
     Error = 2, // 错误
@@ -57,16 +57,16 @@ export enum FileStatus {
     Destroy = 3 // 销毁
 }
 
-// FileStatus 枚举值的描述映射
+// Fstatus 枚举值的描述映射
 const FileStatusMap: { [key: number]: string } = {
-    [FileStatus.Normal]: 'Normal',
-    [FileStatus.Deleted]: 'Trash',
-    [FileStatus.Error]: 'Error',
-    [FileStatus.Destroy]: 'Destroy'
+    [Fstatus.Normal]: 'Normal',
+    [Fstatus.Deleted]: 'Trash',
+    [Fstatus.Error]: 'Error',
+    [Fstatus.Destroy]: 'Destroy'
 }
 
 // 获取文件状态的描述文本
-export function fileStatusGet(status: FileStatus): string {
+export function fileStatusGet(status: Fstatus): string {
     return FileStatusMap[status] || 'Unknown'
 }
 
@@ -90,7 +90,7 @@ export class File {
     thumbnail: ThumbnailInfo = new ThumbnailInfo() // 以json字符串的形式存储在数据库
     eventInfo: FileEventInfo | null = null // 以json字符串的形式存储在数据库
     type: FileType = FileType.Mp4 // 数据类型
-    status: FileStatus = FileStatus.Normal // 数据状态
+    status: Fstatus = Fstatus.Normal // 数据状态
     repo: string = '' // 数据仓库名称
     description?: string = '' // file description
     tags: Tag[] = []
@@ -159,7 +159,7 @@ export class FileModel {
     thumbnail: string = '' // 以json字符串的形式存储在数据库
     eventInfo: string = '' // 以json字符串的形式存储在数据库
     type: FileType = FileType.Mp4 // 数据类型
-    status: FileStatus = FileStatus.Normal // 数据状态
+    status: Fstatus = Fstatus.Normal // 数据状态
     repo: string = '' // 数据仓库名称
     infoHash?: string = '' // data info hash value, calculate way: repo+path
     description?: string = '' // file description
@@ -193,7 +193,7 @@ export class FileViewModel {
     thumbnail: string = '' // 以json字符串的形式存储在数据库
     eventInfo: string = '' // 以json字符串的形式存储在数据库
     type: FileType = FileType.Mp4 // 数据类型
-    status: FileStatus = FileStatus.Normal // 数据状态
+    status: Fstatus = Fstatus.Normal // 数据状态
     repo: string = '' // 数据仓库名称
     infoHash?: string = '' // data info hash value, calculate way: repo+path
     description?: string = '' // file description
@@ -485,7 +485,7 @@ export class FilesReq {
     pageSize: number | null = null
     path: string | null = null
     repo: string | null = null
-    status: FileStatus[] = []
+    status: Fstatus[] = []
     startTimeSecMin: number | null = null
     startTimeSecMax: number | null = null
     endTimeSecMin: number | null = null
@@ -503,13 +503,13 @@ export class FilesReq {
         const req = new FilesReq()
         req.path = path
         req.repo = repo
-        req.status = [FileStatus.Normal]
+        req.status = [Fstatus.Normal]
         return req
     }
     static makeReqStatusDel(repo: string | null): FilesReq {
         const req = new FilesReq()
         req.repo = repo
-        req.status = [FileStatus.Deleted]
+        req.status = [Fstatus.Deleted]
         return req
     }
 }

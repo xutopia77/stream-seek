@@ -1,7 +1,7 @@
 // import * as path from 'path'
 // import * as fs from 'fs'
 import logger from './Logger'
-import * as DataTypes from '../../bridge/dataTypedef'
+import * as Dty from '../../bridge/dataTypedef'
 import appCfg from './AppCfg'
 
 // 定义工作队列请求类型
@@ -14,7 +14,7 @@ interface WorkQueueRequest {
 class WorkQueue {
     processing = false
     curReq: WorkQueueRequest | null = null
-    resps: DataTypes.WorkResp[] = []
+    resps: Dty.WorkResp[] = []
     status: string = ''
 
     // 判断队列是否忙碌
@@ -24,10 +24,10 @@ class WorkQueue {
 
     statusSet(str: string): void {
         switch (str) {
-            case DataTypes.CmdType.tags_get:
-            case DataTypes.CmdType.filesGet:
-            case DataTypes.CmdType.search_file:
-            case DataTypes.CmdType.app_start:
+            case Dty.CmdType.tags_get:
+            case Dty.CmdType.filesGet:
+            case Dty.CmdType.search_file:
+            case Dty.CmdType.app_start:
                 return
             default:
                 break
@@ -36,8 +36,8 @@ class WorkQueue {
         this.status = str
     }
     // 生成忙碌响应
-    makeBusyResponse = (): DataTypes.Resp => {
-        const resp = new DataTypes.Resp()
+    makeBusyResponse = (): Dty.Resp => {
+        const resp = new Dty.Resp()
         return resp.err(`busy cur cmd is ${this.curReq?.cmd}`)
     }
 
@@ -59,7 +59,7 @@ class WorkQueue {
     }
 
     // 添加响应到队列
-    async addResp(resp: DataTypes.WorkResp): Promise<void> {
+    async addResp(resp: Dty.WorkResp): Promise<void> {
         if (this.curReq !== null) {
             if (resp.cmd !== this.curReq.cmd) {
                 logger.warn('resp cmd not equal to req cmd', resp.cmd, this.curReq.cmd)

@@ -20,16 +20,16 @@ const appStore = useAppStore()
 import { onBeforeMount, onMounted, watch } from 'vue'
 import util from '../utils/util.js'
 import { IpcApi } from '../utils/ipcApi'
-import * as DataTypes from '../../../bridge/dataTypedef'
+import * as Dty from '../../../bridge/dataTypedef'
 import router from '../router/router'
 // 启动一个定时器，周期性trigger_event
 function startTimer(): void {
     setInterval(() => {
-        const req: DataTypes.Req = {
-            cmd: 'heart_beat'
+        const req: Dty.Req = {
+            cmd: Dty.CmdType.heartBeat
         }
-        IpcApi.trigger_event<string, DataTypes.HeartBeat>(req)
-            .then((response: DataTypes.Resp<DataTypes.HeartBeat>) => {
+        IpcApi.trigger_event<string, Dty.HeartBeat>(req)
+            .then((response: Dty.Resp<Dty.HeartBeat>) => {
                 util.process_heartbeat(response)
             })
             .catch((error: Error) => {
@@ -57,12 +57,12 @@ watch(
 
 watch(
     () => appStore.curSltVideo,
-    async (newVal: DataTypes.File | null) => {
+    async (newVal: Dty.File | null) => {
         if (newVal == null) {
             return
         }
         let curSltVideoName =
-            appStore.curSltVideo == null ? '' : DataTypes.File.makeDisplayName(appStore.curSltVideo)
+            appStore.curSltVideo == null ? '' : Dty.File.makeDisplayName(appStore.curSltVideo)
         appStore.homeNavContent = curSltVideoName
         appStore.curSltVideoName4Play =
             appStore.curSltVideo == null ? '' : appStore.curSltVideo.name

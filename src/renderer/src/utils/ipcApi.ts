@@ -10,15 +10,13 @@
 //   }
 // }
 
-import * as DataTypes from '../../../bridge/dataTypedef'
+import * as Dty from '../../../bridge/dataTypedef'
 
 export class IpcApi {
     static cseq: number = 0
     // 为函数添加返回类型注解
-    static async trigger_event<T = string, R = string>(
-        req: DataTypes.Req<T>
-    ): Promise<DataTypes.Resp<R>> {
-        const sendReq: DataTypes.Req<string> = {
+    static async trigger_event<T = string, R = string>(req: Dty.Req<T>): Promise<Dty.Resp<R>> {
+        const sendReq: Dty.Req<string> = {
             ...req,
             data: req.data ? JSON.stringify(req.data) : undefined
         }
@@ -37,7 +35,7 @@ export class IpcApi {
             }
         } catch (error) {
             console.error('err:', error)
-            const resp = new DataTypes.Resp<R>()
+            const resp = new Dty.Resp<R>()
             return resp.err(String(error))
         }
     }

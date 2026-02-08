@@ -31,8 +31,8 @@
             <h3 class="setting-title">仓库模式</h3>
             <div class="mode-selector">
                 <select v-model="repoType" class="xc-select">
-                    <option :value="DataTypes.RepoType.Normal">正常🗄️</option>
-                    <option :value="DataTypes.RepoType.Trash">回收站🗑️</option>
+                    <option :value="Dty.RepoType.Normal">正常🗄️</option>
+                    <option :value="Dty.RepoType.Trash">回收站🗑️</option>
                 </select>
                 <button class="xc-button primary" type="button" @click="btnclk_set_repo_type()">
                     设置仓库模式
@@ -46,12 +46,12 @@
 import { onMounted, ref, watch } from 'vue'
 import '@renderer/assets/common.css'
 // import { IpcApi } from '../../utils/ipcApi'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import * as Dty from '../../../../bridge/dataTypedef'
 import { useAppStore } from '../../stores/AppStore'
 import util from '@renderer/utils/util'
 const appStore = useAppStore()
 
-const dataRepo = ref<DataTypes.DataRepo[]>([
+const dataRepo = ref<Dty.DataRepo[]>([
     {
         name: 'test_data',
         path: 'D:/02_workspace/05_timeCapsule/02_stream_manager/test_data',
@@ -64,7 +64,7 @@ const dataRepo = ref<DataTypes.DataRepo[]>([
 
 watch(
     () => appStore.prj,
-    (prj: DataTypes.Prj) => {
+    (prj: Dty.Prj) => {
         dataRepo.value = prj.dataRepo
     }
 )
@@ -72,17 +72,17 @@ watch(
 const bNeedGenThumbnail = ref<boolean>(false)
 const bNeedClassifyFile = ref<boolean>(true)
 
-async function btnclk_sync_work(types: DataTypes.SyncType[] = []): Promise<void> {
-    let syncTypes: DataTypes.SyncType[] = []
+async function btnclk_sync_work(types: Dty.SyncType[] = []): Promise<void> {
+    let syncTypes: Dty.SyncType[] = []
     if (types != null && types.length > 0) {
         syncTypes = types
     } else {
-        syncTypes = [DataTypes.SyncType.prjInfo]
+        syncTypes = [Dty.SyncType.prjInfo]
         if (bNeedGenThumbnail.value) {
-            syncTypes.push(DataTypes.SyncType.thumbnail)
+            syncTypes.push(Dty.SyncType.thumbnail)
         }
         if (bNeedClassifyFile.value) {
-            syncTypes.push(DataTypes.SyncType.classify)
+            syncTypes.push(Dty.SyncType.classify)
         }
     }
 
@@ -100,10 +100,10 @@ async function btnclk_sync_work(types: DataTypes.SyncType[] = []): Promise<void>
 }
 
 // ------------------------------------------------
-const repoType = ref<DataTypes.RepoType>(DataTypes.RepoType.Normal)
+const repoType = ref<Dty.RepoType>(Dty.RepoType.Normal)
 async function btnclk_set_repo_type(): Promise<void> {
     appStore.prj.repoType = repoType.value
-    await btnclk_sync_work([DataTypes.SyncType.prjInfo])
+    await btnclk_sync_work([Dty.SyncType.prjInfo])
     console.log(`repoType: ${repoType.value}`)
 }
 // ------------------------------------------------

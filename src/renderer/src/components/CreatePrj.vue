@@ -28,11 +28,11 @@ import { ref } from 'vue'
 import '../assets/common.css'
 import { useRouter } from 'vue-router'
 const router = useRouter()
-import * as DataTypes from '../../../bridge/dataTypedef'
+import * as Dty from '../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
 
 // 创建一个ref数组 3个元素
-const dataRepo = ref<DataTypes.DataRepo[]>([
+const dataRepo = ref<Dty.DataRepo[]>([
     {
         name: 'test_data',
         path: 'D:/02_workspace/05_timeCapsule/02_stream_manager/test_data',

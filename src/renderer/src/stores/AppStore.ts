@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia'
 
-import * as DataTypes from '../../../bridge/dataTypedef'
+import * as Dty from '../../../bridge/dataTypedef'
 
 export interface ToastMessage {
     id: number
     message: string
-    type: DataTypes.MessageShowType
+    type: Dty.MessageShowType
     timestamp: number // 添加时间戳
 }
 
 export type AppStore = {
-    appInfo: DataTypes.AppInfo
-    prj: DataTypes.Prj
+    appInfo: Dty.AppInfo
+    prj: Dty.Prj
     serverUrlPrefix: string
 
     // ------ message toast
@@ -33,19 +33,19 @@ export type AppStore = {
     func_nextFrame: (() => void) | null
     func_prevFrame: (() => void) | null
     func_get_ele_video: (() => HTMLVideoElement | null) | null
-    rightPanel: DataTypes.WorkPanel
+    rightPanel: Dty.WorkPanel
     fileSearchPage: number
     fileSearchPageSize: number
     videoTotalNum: number
     thumbTotalNum: number
 
-    thumbList: DataTypes.File[]
-    curSltThumb: DataTypes.File | null
-    videoList: DataTypes.File[]
-    curCheckedVideo: Set<DataTypes.File>
-    curSltVideo: DataTypes.File | null // 在列表中，鼠标选中后，更新
+    thumbList: Dty.File[]
+    curSltThumb: Dty.File | null
+    videoList: Dty.File[]
+    curCheckedVideo: Set<Dty.File>
+    curSltVideo: Dty.File | null // 在列表中，鼠标选中后，更新
     curSltVideoName4Play: string // 当前选中视频的名称，在videoPreview中watch然后，更新播放状态使用，其他地方不要用这个变量
-    // curVideoInfo: DataTypes.File | null // 根据 鼠标选中的视频，从后台获取信息，更新此信息
+    // curVideoInfo: Dty.File | null // 根据 鼠标选中的视频，从后台获取信息，更新此信息
     //   videoSplitInfo: any[]
     bShowKeyFrameInfo: boolean
     barSeekTime: number
@@ -56,15 +56,15 @@ export type AppStore = {
         displayOption: 'single' | 'daily'
     }
     // ------
-    tags: DataTypes.Tag[]
+    tags: Dty.Tag[]
     // ================
     barColorDictionary: ['#FF5733', '#33FF57', '#5733FF', '#FF33E0', '#33E0FF']
 }
 
 export const useAppStore = defineStore('app', {
     state: (): AppStore => ({
-        appInfo: new DataTypes.AppInfo(),
-        prj: new DataTypes.Prj(),
+        appInfo: new Dty.AppInfo(),
+        prj: new Dty.Prj(),
         // utils
         // serverUrlPrefix: "http://localhost:38080",
         serverUrlPrefix: '',
@@ -89,7 +89,7 @@ export const useAppStore = defineStore('app', {
         func_prevFrame: null,
         func_get_ele_video: null,
         // ------
-        rightPanel: DataTypes.WorkPanel.List,
+        rightPanel: Dty.WorkPanel.List,
         fileSearchPage: 1,
         fileSearchPageSize: 10,
         videoTotalNum: 0,
@@ -97,7 +97,7 @@ export const useAppStore = defineStore('app', {
         thumbList: [],
         curSltThumb: null,
         videoList: [],
-        curCheckedVideo: new Set<DataTypes.File>(), // 当前选中的视频列表
+        curCheckedVideo: new Set<Dty.File>(), // 当前选中的视频列表
         curSltVideo: null, // 当前选中的视频
         curSltVideoName4Play: '', // 当前选中视频的名称，在videoPreview中watch然后，更新播放状态使用，其他地方不要用这个变量
         // curVideoInfo: null, // 当前选中的视频信息

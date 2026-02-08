@@ -2,7 +2,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { app } from 'electron'
 import logger from './Logger'
-import * as DataTypes from '../../bridge/dataTypedef'
+import * as Dty from '../../bridge/dataTypedef'
 
 // 初始化应用配置的函数
 async function initApp(appCfg: AppCfg): Promise<void> {
@@ -50,8 +50,8 @@ class AppCfg {
     trashFolder: string = '.trash'
     ffmpegExe: string = ''
     ffprobeExe: string = ''
-    appInfo: DataTypes.AppInfo = new DataTypes.AppInfo()
-    prj: DataTypes.Prj = new DataTypes.Prj()
+    appInfo: Dty.AppInfo = new Dty.AppInfo()
+    prj: Dty.Prj = new Dty.Prj()
 
     folderClassifyNum: number = 10
     appDir: string = ''

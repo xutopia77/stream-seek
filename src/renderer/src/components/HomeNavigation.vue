@@ -94,7 +94,7 @@ const router = useRouter()
 const appStore = useAppStore()
 import { IpcApi } from '../utils/ipcApi'
 import MessageShow from './util/MessageShow'
-import * as DataTypes from '../../../bridge/dataTypedef'
+import * as Dty from '../../../bridge/dataTypedef'
 
 // 控制下拉菜单是否显示
 const isDropdownOpen = ref<{ home: boolean; video: boolean; view: boolean }>({
@@ -117,8 +117,8 @@ let statusInfo = ref<string>('')
 
 function navContentMake(): void {
     statusInfoTitle.value =
-        appStore.prj.repoType == DataTypes.RepoType.Normal ? '仓库文件' : '回收站文件'
-    const repoStr = appStore.prj.repoType == DataTypes.RepoType.Normal ? '🗄️' : '🗑️'
+        appStore.prj.repoType == Dty.RepoType.Normal ? '仓库文件' : '回收站文件'
+    const repoStr = appStore.prj.repoType == Dty.RepoType.Normal ? '🗄️' : '🗑️'
     statusInfo.value = `${repoStr} ${appStore.homeNavContent}`
 }
 
@@ -146,10 +146,10 @@ const btn_createPrj = async (): Promise<void> => {
 }
 
 const btn_openPrj = async (): Promise<void> => {
-    const req: DataTypes.Req = {
-        cmd: DataTypes.CmdType.prjOpen
+    const req: Dty.Req = {
+        cmd: Dty.CmdType.prjOpen
     }
-    const response: DataTypes.Resp = await IpcApi.trigger_event(req)
+    const response: Dty.Resp = await IpcApi.trigger_event(req)
     if (response.code != 0) {
         console.log('打开项目失败')
     } else {
@@ -181,10 +181,10 @@ const btn_viewChange = (mode: string): void => {
             util.viewModelChange('video')
             break
         case 'operate_show':
-            appStore.rightPanel = DataTypes.WorkPanel.Operate
+            appStore.rightPanel = Dty.WorkPanel.Operate
             break
         case 'list_show':
-            appStore.rightPanel = DataTypes.WorkPanel.List
+            appStore.rightPanel = Dty.WorkPanel.List
             break
         case 'bck_home':
             router.push('/')

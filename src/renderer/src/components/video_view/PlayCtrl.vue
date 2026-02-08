@@ -65,21 +65,21 @@
             <button
                 class="xc-button btn-noborder"
                 title="显示文件列表"
-                @click="btnclk_chg_panel(DataTypes.WorkPanel.List)"
+                @click="btnclk_chg_panel(Dty.WorkPanel.List)"
             >
                 🛢️
             </button>
             <button
                 class="xc-button btn-noborder"
                 title="显示文件处理"
-                @click="btnclk_chg_panel(DataTypes.WorkPanel.Operate)"
+                @click="btnclk_chg_panel(Dty.WorkPanel.Operate)"
             >
                 🛠️
             </button>
             <button
                 class="xc-button btn-noborder"
                 title="处理文件标签"
-                @click="btnclk_chg_panel(DataTypes.WorkPanel.VideoInfo)"
+                @click="btnclk_chg_panel(Dty.WorkPanel.VideoInfo)"
             >
                 🏷️
             </button>
@@ -93,20 +93,20 @@ import { useAppStore } from '../../stores/AppStore'
 import '@renderer/assets/common.css'
 import util from '@renderer/utils/util'
 const appStore = useAppStore()
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import * as Dty from '../../../../bridge/dataTypedef'
 
 // 改变播放倍速
 const changePlaybackRate = (): void => {}
 
 let curTime = computed(() => {
     let str = '00:00:00.000'
-    str = DataTypes.Utils.time_2_msec_str(appStore.videoPlayCtrl.curTime)
+    str = Dty.Utils.time_2_msec_str(appStore.videoPlayCtrl.curTime)
     return str
 })
 let videoDuration = computed(() => {
     let str = '00:00:00.000'
     if (appStore.curSltVideo?.mediaInfo != null) {
-        str = DataTypes.Utils.time_2_msec_str(appStore.curSltVideo.mediaInfo.duration)
+        str = Dty.Utils.time_2_msec_str(appStore.curSltVideo.mediaInfo.duration)
     }
     return str
 })
@@ -182,7 +182,7 @@ watch(
 // ==================================== 文件等级设置
 const fileLevel = ref(0)
 async function btnclk_set_file_level(): Promise<void> {
-    const req = new DataTypes.FileTagsReq()
+    const req = new Dty.FileTagsReq()
     const levelVal = fileLevel.value + 1
     if (levelVal < 1 || levelVal > 5) {
         util.addToastErr(`等级只能是1-5`)
@@ -190,7 +190,7 @@ async function btnclk_set_file_level(): Promise<void> {
     }
     let tagName = `sys_score${levelVal}`
     for (const item of appStore.curCheckedVideo) {
-        const fileTag: DataTypes.FileTagsReqItem = {
+        const fileTag: Dty.FileTagsReqItem = {
             fileId: item.id,
             tagName: tagName
         }
@@ -250,7 +250,7 @@ function changeFile(flag: string): void {
     }
 }
 
-function btnclk_chg_panel(model: DataTypes.WorkPanel): void {
+function btnclk_chg_panel(model: Dty.WorkPanel): void {
     appStore.rightPanel = model
 }
 
@@ -269,9 +269,9 @@ function btnclk_delSltVideos(): void {
         return
     }
 
-    const req: DataTypes.DeleteFileReq = new DataTypes.DeleteFileReq()
+    const req: Dty.DeleteFileReq = new Dty.DeleteFileReq()
     for (const item of curCheckedVideo) {
-        const fInfo = new DataTypes.File()
+        const fInfo = new Dty.File()
         fInfo.path = item.path
         fInfo.repo = item.repo
         req.files.push(fInfo)
@@ -280,7 +280,7 @@ function btnclk_delSltVideos(): void {
         util.addToastInfo('没有选择的文件')
         return
     }
-    if (appStore.prj.repoType == DataTypes.RepoType.Normal) {
+    if (appStore.prj.repoType == Dty.RepoType.Normal) {
         req.type = 'del'
     } else {
         req.type = 'destroy'

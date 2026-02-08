@@ -33,10 +33,9 @@
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
-import { IpcApi } from '../../utils/ipcApi'
+// import { IpcApi } from '../../utils/ipcApi'
 import { useAppStore } from '../../stores/AppStore'
-import MessageShow from '../util/MessageShow'
-import * as DataTypes from '../../../../bridge/dataTypedef'
+// import * as Dty from '../../../../bridge/dataTypedef'
 const appStore = useAppStore()
 
 // 明确 ref 变量的类型
@@ -61,25 +60,6 @@ const displayOption = computed<string>({
 
 // 定义 handleQuery 函数的返回值类型
 const handleQuery = async (): Promise<void> => {
-    const req: DataTypes.Req<DataTypes.Req_TraversalFolder> = {
-        cmd: 'query_video',
-        data: {
-            type: 'search',
-            startTime: `${startDate.value} ${startTime.value}`,
-            endTime: `${endDate.value} ${endTime.value}`
-        }
-    }
-    const response: DataTypes.Resp<DataTypes.TraversalFolder> = await IpcApi.trigger_event(req)
-    if (response.code != 0) {
-        console.log(response)
-        MessageShow.error(`查询失败:${response.status}`)
-    } else {
-        if (response.bOver == false) {
-            MessageShow.info(`后台执行中...`)
-        } else {
-            MessageShow.success(`查询成功`)
-        }
-    }
 }
 </script>
 

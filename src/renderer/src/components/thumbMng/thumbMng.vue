@@ -5,7 +5,7 @@
                 <ThumbView></ThumbView>
             </div>
             <div class="work-panel">
-                <ThumbList v-if="rightPanel === DataTypes.WorkPanel.List" />
+                <ThumbList v-if="rightPanel === Dty.WorkPanel.List" />
             </div>
         </div>
         <div class="control-container">
@@ -23,7 +23,7 @@ import { onMounted, computed } from 'vue'
 import util from '@renderer/utils/util'
 import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
-import * as DataTypes from '../../../../bridge/dataTypedef'
+import * as Dty from '../../../../bridge/dataTypedef'
 
 let rightPanel = computed(() => appStore.rightPanel)
 
