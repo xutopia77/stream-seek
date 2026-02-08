@@ -467,8 +467,31 @@ class AppDb {
         }
     }
 
+    async filesCount(req: DataTypes.FilesReq | null): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
+        const resp = new DataTypes.Resp<DataTypes.FilesResp>()
+        try {
+            const searchParam = this.make_file_search_param(this.tbl_files, req)
+            const countQuery = searchParam.countQuery
+            const countParams: unknown[] = searchParam.countParams
+            if (!this.db) throw new Error('Database not initialized')
+            // 执行统计总记录数的查询
+            const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
+            const total = countResult?.total || 0
+
+            resp.data = new DataTypes.FilesResp()
+            resp.data.total = total
+            resp.success('success')
+        } catch (error) {
+            logger.error(`Error fetching ${this.tbl_files}:`, error)
+            resp.err(
+                `Error fetching ${this.tbl_files}: ${error instanceof Error ? error.message : String(error)}`
+            )
+        }
+        return resp
+    }
+
     // 非必要，不要使用此函数
-    async file_search(
+    async filesSearch(
         req: DataTypes.FilesReq | null
     ): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
         const resp = new DataTypes.Resp<DataTypes.FilesResp>()

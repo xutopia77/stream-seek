@@ -57,6 +57,19 @@ export enum FileStatus {
     Destroy = 3 // 销毁
 }
 
+// FileStatus 枚举值的描述映射
+const FileStatusMap: { [key: number]: string } = {
+    [FileStatus.Normal]: 'Normal',
+    [FileStatus.Deleted]: 'Trash',
+    [FileStatus.Error]: 'Error',
+    [FileStatus.Destroy]: 'Destroy'
+}
+
+// 获取文件状态的描述文本
+export function fileStatusGet(status: FileStatus): string {
+    return FileStatusMap[status] || 'Unknown'
+}
+
 export enum FileType {
     Mp4 = 0,
     Image = 1,
@@ -343,6 +356,12 @@ export class DataRepo {
         }
         return null
     }
+}
+
+export class TrasStatus {
+    folderNum: number = 0
+    fileNum: number = 0
+    fileErrNum:number = 0
 }
 
 export enum ThumbStrategy {

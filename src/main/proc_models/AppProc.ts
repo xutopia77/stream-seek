@@ -28,30 +28,44 @@ class TraversalFolder {
     type: string | null = null // search时才遍历子文件夹
     repo: DataTypes.DataRepo = new DataTypes.DataRepo()
     bSort: boolean = false
-    fileCount: number = 0
+    status: DataTypes.TrasStatus = new DataTypes.TrasStatus()
 
     async proc_one_file(fPath: string, fName: string, stats: fs.Stats): Promise<DataTypes.Resp> {
-        this.fileCount++
+        const resp: DataTypes.Resp = new DataTypes.Resp()
+
+        this.status.fileNum++
         const now = Date.now()
         if ((now % 10) * 1000 === 0) {
-            logger.info(`traversal file count: ${this.fileCount}`)
+            logger.info(`traversal file count: ${this.status.fileNum}`)
         }
-        workQueue.statusSet(`traversal file count: ${this.fileCount}`)
-        const resp: DataTypes.Resp = new DataTypes.Resp()
+        workQueue.statusSet(`traversal file count: ${this.status.fileNum}`)
         const fileTimeInfo = DataTypes.FileTools.parse_filename_mi(fName)
         if (fileTimeInfo == null) {
-            logger.warn(`traversal skip: ${fPath}`)
-            return resp.err(`traversal skip: ${fPath}`)
+            this.status.fileErrNum++
+            return resp.err(logger.warn(`traversal skip: ${fPath}`))
         }
+        // 1， check file if in db
         const searchReq = DataTypes.FilesReq.makeReqStatusNormal(fPath, this.repo.name)
-        const respSearch = await appDb.file_search(searchReq)
+        const respSearch = await appDb.filesSearch(searchReq)
         if (respSearch.code == 0) {
             if (respSearch.data?.files.length != null && respSearch.data.files.length > 0) {
                 // logger.info(`file already exists: ${fPath}`)
+                const fInfo = respSearch.data?.files[0]
+                // check file status [todo] check other status
+                if (fInfo?.status != DataTypes.FileStatus.Normal) {
+                    const statusStr = DataTypes.fileStatusGet(fInfo.status)
+                    fInfo.status = DataTypes.FileStatus.Normal
+                    const upResp = await appDb.fileUpdate(fInfo)
+                    if (upResp.code != DataTypes.RespCode.Success) {
+                        logger.error(`update file status err ${fInfo.path}, status:${statusStr}`)
+                        this.status.fileErrNum++
+                    }
+                }
                 return resp.success(`file already exists: ${fPath}`)
             }
         }
 
+        // 2, insert file in db
         const respMediaInfo = await mediaProc.getVideoInfo(fPath)
         const fileModel: DataTypes.FileModel = {
             name: fName,
@@ -70,16 +84,19 @@ class TraversalFolder {
             repo: this.repo.name
         }
         const respInsert = await appDb.file_insert(fileModel)
-        logger.info(`insert id:${respInsert.data?.id} ${respInsert.status} ${fPath}`)
+        logger.info(`file insert id:${respInsert.data?.id} ${respInsert.status} ${fPath}`)
+        if (respInsert.code != DataTypes.RespCode.Success) {
+            this.status.fileErrNum++
+            return resp.err(`file insert err ${respInsert.status}`)
+        }
         return resp
     }
 
-    // 递归遍历文件夹
     private async traversal_folder(): Promise<DataTypes.Resp> {
         const resp = new DataTypes.Resp()
         const folderPath = this.repo.path
-        if (!folderPath) {
-            return resp.err('folder is null')
+        if (!folderPath || !fs.existsSync(folderPath)) {
+            return resp.err('folder not exist')
         }
         try {
             const stack: string[] = [folderPath]
@@ -92,7 +109,7 @@ class TraversalFolder {
                         try {
                             const stats = await fs.promises.stat(filePath)
                             if (stats.isDirectory()) {
-                                // 判断目录的名称，如果目录的名称是trash，则跳过
+                                // todo 如果目录的名称是trash，也进行扫描，要更新数据库的状态
                                 if (file === '.trash') {
                                     // logger.log(`traversal skip: ${filePath}`)
                                     continue
@@ -121,12 +138,166 @@ class TraversalFolder {
         }
     }
 
-    // 启动文件夹遍历，并且把文件夹中的数据插入到数据库中
+    private async checkDb(): Promise<DataTypes.Resp> {
+        const resp = new DataTypes.Resp()
+        if (!appDb.db) {
+            return resp.err(logger.error(`db is null`))
+        }
+
+        const respCount: DataTypes.Resp<DataTypes.FilesResp> = await appDb.filesCount(null)
+        if (respCount.code != 0 || respCount.data?.total == null || respCount.data?.total == 0) {
+            return resp.err(
+                logger.error(
+                    `files count err total=${respCount.data?.total}, status=${respCount.status}`
+                )
+            )
+        }
+
+        const totalFiles = respCount.data?.total
+        const batchSize = 100
+        let processedCount = 0
+
+        logger.info(`Starting to check database with ${totalFiles} files`)
+        while (processedCount < totalFiles) {
+            let chkStatus = ''
+            const fSearchReq = new DataTypes.FilesReq()
+            fSearchReq.page = Math.floor(processedCount / batchSize) + 1
+            fSearchReq.pageSize = batchSize
+
+            const searchResult = await appDb.filesSearch(fSearchReq)
+            if (!searchResult.isSuccess()) {
+                chkStatus = `Failed to fetch files page ${fSearchReq.page}`
+                return resp.err(logger.error(chkStatus))
+            }
+
+            if (!searchResult.data || !searchResult.data.files) {
+                logger.warn(`No data returned for page ${fSearchReq.page}`)
+                break
+            }
+            for (const fInfo of searchResult.data.files) {
+                if (!fs.existsSync(fInfo.path)) {
+                    if (fInfo.status != DataTypes.FileStatus.Destroy) {
+                        fInfo.status = DataTypes.FileStatus.Destroy
+                        const upResp = await appDb.fileUpdate(fInfo)
+                        chkStatus += `status destroy update ${upResp.status}; `
+                        if (!upResp.isSuccess()) {
+                            logger.info(`file check ${chkStatus}`)
+                            continue
+                        }
+                    }
+                } else {
+                    if (fInfo.status != DataTypes.FileStatus.Normal) {
+                        fInfo.status = DataTypes.FileStatus.Normal
+                        const upResp = await appDb.fileUpdate(fInfo)
+                        chkStatus += `status normal update ${upResp.status}; `
+                        if (!upResp.isSuccess()) {
+                            logger.info(`file check ${chkStatus}`)
+                            continue
+                        }
+                    }
+                }
+                const repo = DataTypes.DataRepo.getRepoByPath(fInfo.repo, appCfg.prj.dataRepo)
+                if (repo != null) {
+                    {
+                        const thumbDbFilePath = Util.thumbFileDbPathGet(
+                            repo,
+                            fInfo.name,
+                            DataTypes.ThumbType.Frame
+                        )
+                        const trashThumbDbPath = Util.thumbTrashFileDbPathGet(
+                            repo,
+                            fInfo.name,
+                            DataTypes.ThumbType.Frame
+                        )
+                        try {
+                            if (fInfo.status == DataTypes.FileStatus.Normal) {
+                                if (!fs.existsSync(thumbDbFilePath)) {
+                                    if (fs.existsSync(trashThumbDbPath)) {
+                                        fs.promises.rename(trashThumbDbPath, thumbDbFilePath)
+                                    }
+                                }
+                            } else if (fInfo.status == DataTypes.FileStatus.Deleted) {
+                                if (!fs.existsSync(trashThumbDbPath)) {
+                                    if (fs.existsSync(thumbDbFilePath)) {
+                                        fs.promises.rename(thumbDbFilePath, trashThumbDbPath)
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            chkStatus += `move thumb file err; `
+                            logger.error(`move thumb file err`, err)
+                        }
+                    }
+                    {
+                        const thumbDbFilePath = Util.thumbFileDbPathGet(
+                            repo,
+                            fInfo.name,
+                            DataTypes.ThumbType.Thumb
+                        )
+                        const trashThumbDbPath = Util.thumbTrashFileDbPathGet(
+                            repo,
+                            fInfo.name,
+                            DataTypes.ThumbType.Thumb
+                        )
+                        try {
+                            if (fInfo.status == DataTypes.FileStatus.Normal) {
+                                if (!fs.existsSync(thumbDbFilePath)) {
+                                    if (fs.existsSync(trashThumbDbPath)) {
+                                        fs.promises.rename(trashThumbDbPath, thumbDbFilePath)
+                                    }
+                                }
+                            } else if (fInfo.status == DataTypes.FileStatus.Deleted) {
+                                if (!fs.existsSync(trashThumbDbPath)) {
+                                    if (fs.existsSync(thumbDbFilePath)) {
+                                        fs.promises.rename(thumbDbFilePath, trashThumbDbPath)
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            chkStatus += `move thumb file err; `
+                            logger.error(`move thumb file err`, err)
+                        }
+                    }
+                }
+                logger.info(
+                    `file check ${processedCount + 1}/${totalFiles}: ${chkStatus == '' ? 'normal' : chkStatus}`
+                )
+                processedCount++
+            }
+        }
+
+        logger.info(`Database check completed. Total files processed: ${processedCount}`)
+        return resp.success('Database check completed')
+    }
+
+    /*
+        1，遍历文件夹。如果文件已经存在，检查文件状态，设置文
+    件状态为正常。如果文件不存在，插入数据库表files。
+        2，数据库表files，检查文件是否存在，不存在标记为destroy；
+        3，遍历缩略图数据库文件，插入到数据库表files（如果表中没有对应项）；
+
+        缩略图更新：
+        1，遍历数据库，查看对应的文件是否有缩略图
+        如果没有，调用ffmpeg生成，更新files表记录；
+        如果有，读取缩略图数据库，跟新files表记录
+
+        缩略图查看时，按照文件获取
+        缩略图删除时，如果这个缩略图数据库文件中已经没有文件了，就把整个缩略图数据库文件删除。
+    */
     async start(): Promise<DataTypes.Resp> {
+        const resp = new DataTypes.Resp()
         if (this.repo.path == '') {
             return new DataTypes.Resp().err('folder is null')
         }
-        return this.traversal_folder()
+        const respTras = await this.traversal_folder()
+        if (!respTras.isSuccess()) {
+            return respTras
+        }
+        const respDb = await this.checkDb()
+        if (!respDb.isSuccess()) {
+            return respDb
+        }
+        return resp
     }
 
     async get_folder_files(): Promise<DataTypes.Resp<DataTypes.FilesResp>> {
@@ -628,8 +799,8 @@ class AppProc {
                 const traversalFolder = new TraversalFolder()
                 traversalFolder.type = null
                 traversalFolder.repo = repo
-                await traversalFolder.start()
-                logger.info(`traversal ${repo.path} success`)
+                const resp = await traversalFolder.start()
+                logger.info(`traversal ${repo.path} ${resp.status}`)
             }
 
             // 2, start search file from db
@@ -1311,10 +1482,7 @@ class AppProc {
         return respDel
     }
 
-    cmdRespMake<T>(
-        cmdResp: DataTypes.Resp<T>,
-        bDoClear: boolean = true
-    ): DataTypes.Resp<string> {
+    cmdRespMake<T>(cmdResp: DataTypes.Resp<T>, bDoClear: boolean = true): DataTypes.Resp<string> {
         const resp = new DataTypes.Resp<string>()
         for (const key in cmdResp) {
             if (key == 'data') {
