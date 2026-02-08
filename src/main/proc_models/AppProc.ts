@@ -306,16 +306,9 @@ class TraversalFolder {
     /*
         1，遍历文件夹。如果文件已经存在，检查文件状态，设置文
     件状态为正常。如果文件不存在，插入数据库表files。
-        2，数据库表files，检查文件是否存在，不存在标记为destroy；
-        3，遍历缩略图数据库文件，插入到数据库表files（如果表中没有对应项）；
-
-        缩略图更新：
-        1，遍历数据库，查看对应的文件是否有缩略图
-        如果没有，调用ffmpeg生成，更新files表记录；
-        如果有，读取缩略图数据库，跟新files表记录
-
-        缩略图查看时，按照文件获取
-        缩略图删除时，如果这个缩略图数据库文件中已经没有文件了，就把整个缩略图数据库文件删除。
+        2，数据库表files，检查文件是否存在，不存在标记为destroy。
+        3，遍历缩略图数据库文件，插入到数据库表files（如果表中没有
+    对应项），但文件状态设置为destroy。todo
     */
     async start(): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
@@ -412,10 +405,9 @@ async function startHttpSrv(port: number): Promise<void> {
     // 增加一个get处理，前端传入文件的路径，然后从数据库中读取出对应的缩略图图片
     // 请求示例 "http://localhost:58080/thumb_get?video=12345&thumb=1740797520"
     app.get('/thumb_get', async (req, res) => {
+        const videoId = req.query.video
+        const timestamp = req.query.thumb
         try {
-            const videoId = req.query.video
-            const timestamp = req.query.thumb
-
             if (videoId == null || timestamp == null) {
                 logger.error(
                     `Invalid request: missing video or thumb parameter videoId=${videoId},timestamp=${timestamp}`
@@ -464,7 +456,10 @@ async function startHttpSrv(port: number): Promise<void> {
             res.setHeader('Content-Type', 'image/jpeg')
             res.send(imageData)
         } catch (error) {
-            console.error('Error handling thumb_get request:', error)
+            console.error(
+                `Error handling thumb_get request:filename=${videoId},thum=${timestamp}`,
+                error
+            )
             res.status(500).send('Internal server error')
         }
     })
@@ -1207,12 +1202,124 @@ class AppProc {
     }
 
     /**
+     *      删除方式均是'destroy'，会同时删除 thumb和frame
+     */
+    async thumbsDel(req: Dty.Req<Dty.DeleteFileReq>): Promise<Dty.Resp<Dty.DeleteFileResp>> {
+        const resp = new Dty.Resp<Dty.DeleteFileResp>()
+        if (!req.data?.files || req.data.files.length === 0) {
+            return logStatusRespReturn(resp.err('file is null'))
+        }
+
+        workQueue.statusSet(logger.info(`delete thumb start`))
+
+        if (req.data.type == 'destroy') {
+            for (const item of req.data.files) {
+                const searchReq = Dty.FilesReq.makeReqStatusNormal(item.path, item.repo)
+                searchReq.status = []
+                const searchResp = await appDb.fileViewSearch(searchReq)
+                if (searchResp.code !== 0 || searchResp.data?.files.length === 0) {
+                    workQueue.statusSet(
+                        logger.error(
+                            `thumb del err: ${item.repo} ${item.path}, ${searchResp.status}`
+                        )
+                    )
+                    continue
+                }
+
+                for (const fInfo of searchResp.data?.files || []) {
+                    const filepath = fInfo.path
+                    const fName = fInfo.name
+                    let attempts = 0
+                    const maxAttempts = 3 // 最大尝试次数
+                    async function attemptRename(): Promise<void> {
+                        try {
+                            fInfo.status = Dty.Fstatus.Nothing
+                            const respUp = await appDb.fileUpdate(fInfo)
+                            if (respUp.code != 0) {
+                                workQueue.statusSet(
+                                    logger.error(`file update error: ${respUp.status} ${filepath}`)
+                                )
+                                throw respUp.status
+                            } else {
+                                {
+                                    const thumbTrashDbPath = Util.thumbTrashDbPathGet(
+                                        fName,
+                                        Dty.ThumbType.Thumb
+                                    )
+                                    const thumbDbPath = Util.thumbDbPathGet(
+                                        fName,
+                                        Dty.ThumbType.Thumb
+                                    )
+                                    if (fs.existsSync(thumbTrashDbPath)) {
+                                        fs.unlinkSync(thumbTrashDbPath)
+                                        logger.info(`thumb file rm ${thumbTrashDbPath}`)
+                                    }
+                                    if (fs.existsSync(thumbDbPath)) {
+                                        fs.unlinkSync(thumbDbPath)
+                                        logger.info(`thumb file rm ${thumbDbPath}`)
+                                    }
+                                }
+                                {
+                                    const thumbTrashDbPath = Util.thumbTrashDbPathGet(
+                                        fName,
+                                        Dty.ThumbType.Frame
+                                    )
+                                    const thumbDbPath = Util.thumbDbPathGet(
+                                        fName,
+                                        Dty.ThumbType.Frame
+                                    )
+                                    if (fs.existsSync(thumbTrashDbPath)) {
+                                        fs.unlinkSync(thumbTrashDbPath)
+                                        logger.info(`frame file rm ${thumbTrashDbPath}`)
+                                    }
+                                    if (fs.existsSync(thumbDbPath)) {
+                                        fs.unlinkSync(thumbDbPath)
+                                        logger.info(`frame file rm ${thumbDbPath}`)
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            attempts++
+                            if (attempts < maxAttempts) {
+                                workQueue.statusSet(
+                                    logger.error(
+                                        `thumb rm attempt ${attempts} failed, retrying in 1 second...`,
+                                        err
+                                    )
+                                )
+                                await new Promise((resolve) => setTimeout(resolve, 1000))
+                                await attemptRename()
+                            } else {
+                                workQueue.statusSet(
+                                    logger.error('thumb rm err after multiple attempts:', err)
+                                )
+                                throw err
+                            }
+                        }
+                    }
+                    try {
+                        await attemptRename()
+                    } catch (err) {
+                        return resp.err(`rm original video err ${err}`)
+                    }
+                }
+            }
+        } else {
+            resp.err(logger.error(`thumb rm not support type ${req.data.type}`))
+        }
+
+        workQueue.statusSet(logger.info(`thumb rm over`))
+        resp.data = {}
+        return resp
+    }
+
+    /**
      *      如果删除方式是 'del'， 就把文件移动到回收站，同时把缩略图也移动到回收站（不依赖于bDelThumb），
      *  确保文件不会被误删
      *      如果删除方式是 'destroy'， 就把文件彻底删除，但是缩略图会根据bDelThumb决定，如
      * 果bDelThumb为true，就连同缩略图也彻底删除，如果bDelThumb为false，缩略图会保留。
      */
-    async delete_video(req: Dty.Req<Dty.DeleteFileReq>): Promise<Dty.Resp<Dty.DeleteFileResp>> {
+    async filesDel(req: Dty.Req<Dty.DeleteFileReq>): Promise<Dty.Resp<Dty.DeleteFileResp>> {
         const resp = new Dty.Resp<Dty.DeleteFileResp>()
         if (!req.data?.files || req.data.files.length === 0) {
             return logStatusRespReturn(resp.err('file is null'))
@@ -1231,84 +1338,77 @@ class AppProc {
                 const searchReq = Dty.FilesReq.makeReqStatusNormal(item.path, item.repo)
                 searchReq.status = []
                 const searchResp = await appDb.fileViewSearch(searchReq)
-                if (searchResp.code !== 0) {
+                if (searchResp.code !== 0 || searchResp.data?.files.length === 0) {
                     workQueue.statusSet(
-                        logger.error(
-                            `search file ${item.repo} ${item.path} err: ${searchResp.status}`
-                        )
-                    )
-                    continue
-                }
-                if (searchResp.data?.files.length === 0) {
-                    workQueue.statusSet(
-                        logger.error(`delete file ${item.repo} ${item.path} not found`)
+                        logger.error(`file rm err: ${item.repo} ${item.path} ${searchResp.status}`)
                     )
                     continue
                 }
 
                 for (const fInfo of searchResp.data?.files || []) {
                     const filepath = fInfo.path
-                    const filename = fInfo.name
+                    const fName = fInfo.name
                     // 回收站文件名称
-                    const distFilename = path.join(trashFolderPath, filename)
+                    const distFilename = path.join(trashFolderPath, fName)
                     let attempts = 0
                     const maxAttempts = 3 // 最大尝试次数
                     async function attemptRename(): Promise<void> {
                         try {
                             if (fs.existsSync(distFilename)) {
                                 fs.unlinkSync(distFilename)
-                                logger.info(`rm file ${distFilename}`)
+                                logger.info(`file rm ${distFilename}`)
                             }
                             if (fs.existsSync(filepath)) {
                                 fInfo.path = distFilename
                                 fs.unlinkSync(filepath)
-                                logger.info(`rm file and update ${filepath}`)
+                                logger.info(`file rm and update ${filepath}`)
                             }
                             fInfo.status = Dty.Fstatus.Destroy
+                            if (req.data?.bDelThumb) {
+                                fInfo.status = Dty.Fstatus.Nothing
+                            }
                             const respUp = await appDb.fileUpdate(fInfo)
                             if (respUp.code != 0) {
                                 workQueue.statusSet(
-                                    logger.error(
-                                        `update file status error: ${respUp.status} ${filepath}`
-                                    )
+                                    logger.error(`file rm update err: ${respUp.status} ${filepath}`)
                                 )
                             } else {
                                 workQueue.statusSet(`file rm success: ${distFilename}`)
                                 if (req.data?.bDelThumb) {
                                     {
                                         const thumbTrashDbPath = Util.thumbTrashDbPathGet(
-                                            filename,
+                                            fName,
                                             Dty.ThumbType.Thumb
                                         )
                                         const thumbDbPath = Util.thumbDbPathGet(
-                                            filename,
+                                            fName,
                                             Dty.ThumbType.Thumb
                                         )
                                         if (fs.existsSync(thumbTrashDbPath)) {
                                             fs.unlinkSync(thumbTrashDbPath)
-                                            logger.info(`thumb file rm ${thumbTrashDbPath}`)
+                                            logger.info(`thumb rm ${thumbTrashDbPath}`)
                                         }
                                         if (fs.existsSync(thumbDbPath)) {
                                             fs.unlinkSync(thumbDbPath)
-                                            logger.info(`thumb file rm ${thumbDbPath}`)
+                                            logger.info(`thumb rm ${thumbDbPath}`)
                                         }
                                     }
                                     {
                                         const thumbTrashDbPath = Util.thumbTrashDbPathGet(
-                                            filename,
+                                            fName,
                                             Dty.ThumbType.Frame
                                         )
                                         const thumbDbPath = Util.thumbDbPathGet(
-                                            filename,
+                                            fName,
                                             Dty.ThumbType.Frame
                                         )
                                         if (fs.existsSync(thumbTrashDbPath)) {
                                             fs.unlinkSync(thumbTrashDbPath)
-                                            logger.info(`rm frame file ${thumbTrashDbPath}`)
+                                            logger.info(`frame rm ${thumbTrashDbPath}`)
                                         }
                                         if (fs.existsSync(thumbDbPath)) {
                                             fs.unlinkSync(thumbDbPath)
-                                            logger.info(`rm frame file ${thumbDbPath}`)
+                                            logger.info(`frame rm ${thumbDbPath}`)
                                         }
                                     }
                                 }
@@ -1318,7 +1418,7 @@ class AppProc {
                             if (attempts < maxAttempts) {
                                 workQueue.statusSet(
                                     logger.error(
-                                        `rm original video attempt ${attempts} failed, retrying in 1 second...`,
+                                        `file rm err attempt ${attempts} failed, retrying in 1 second...`,
                                         err
                                     )
                                 )
@@ -1326,10 +1426,7 @@ class AppProc {
                                 await attemptRename()
                             } else {
                                 workQueue.statusSet(
-                                    logger.error(
-                                        'rm original video err after multiple attempts:',
-                                        err
-                                    )
+                                    logger.error('file rm err after multiple attempts:', err)
                                 )
                                 throw err
                             }
@@ -1338,7 +1435,7 @@ class AppProc {
                     try {
                         await attemptRename()
                     } catch (err) {
-                        return resp.err(`rm original video err ${err}`)
+                        return resp.err(`file rm err ${err}`)
                     }
                 }
             }
@@ -1448,7 +1545,7 @@ class AppProc {
                     try {
                         await attemptRename()
                     } catch (err) {
-                        return resp.err(`move original video err ${err}`)
+                        return resp.err(`file move err ${err}`)
                     }
                 }
             }
@@ -1462,7 +1559,7 @@ class AppProc {
     async handle_delete_file(
         req: Dty.Req<Dty.DeleteFileReq>
     ): Promise<Dty.Resp<Dty.DeleteFileResp>> {
-        const respDel = await this.delete_video(req)
+        const respDel = await this.filesDel(req)
         return respDel
     }
 
@@ -1641,6 +1738,11 @@ class AppProc {
                 const cmdReq = convertCmdRequest<Dty.DeleteFileReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.files.length}`)
                 return this.cmdRespMake(await this.handle_delete_file(cmdReq))
+            }
+            case Dty.CmdType.thumbDel: {
+                const cmdReq = convertCmdRequest<Dty.DeleteFileReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.files.length}`)
+                return this.cmdRespMake(await this.thumbsDel(cmdReq))
             }
             case Dty.CmdType.sltVideo: {
                 const cmdReq = convertCmdRequest<Dty.Req_SltFile>(req)

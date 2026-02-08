@@ -100,8 +100,7 @@ class AppDb {
                 await db.exec(createTableQuery)
             }
             appDb.db = db
-            logger.info('Database initialized successfully')
-            return resp.success('Database initialized successfully')
+            return resp.success(logger.info('Database initialized success'))
         } catch (error) {
             logger.error('Error initializing database:', error)
             return resp.err(
@@ -120,7 +119,7 @@ class AppDb {
         resp.data = new Dty.DbInsertResp()
         try {
             if (!this.db) throw new Error('Database not initialized')
-            file.infoHash = Dty.FileModel.makeInfoHash(file.repo, file.path)
+            file.infoHash = Dty.FileModel.makeInfoHash(file.repo, file.path, file.status)
             let sqlCmd = `INSERT INTO ${this.tbl_files} `
             const sqlParams: unknown[] = []
             const fields: string[] = []
@@ -319,16 +318,16 @@ class AppDb {
                 updateFields.push('description =?')
                 sqlParams.push(fInfo.description)
             }
-            let infoHash = Dty.FileModel.makeInfoHash(fInfo.repo, fInfo.path)
+            let infoHash = Dty.FileModel.makeInfoHash(fInfo.repo, fInfo.path, fInfo.status)
             const curTimeStr = new Date().toLocaleString()
             if (fInfo.status == Dty.Fstatus.Deleted) {
                 updateFields.push('deleted_at =?')
                 sqlParams.push(curTimeStr)
-                infoHash = Dty.FileModel.makeInfoHashDel(fInfo.repo, fInfo.path)
-            } else if (fInfo.status == Dty.Fstatus.Destroy) {
+                infoHash = Dty.FileModel.makeInfoHash(fInfo.repo, fInfo.path, fInfo.status)
+            } else if (fInfo.status == Dty.Fstatus.Destroy || fInfo.status == Dty.Fstatus.Nothing) {
                 updateFields.push('deleted_at =?')
                 sqlParams.push(curTimeStr)
-                infoHash = Dty.FileModel.makeInfoHashDestroy(fInfo.repo, fInfo.path)
+                infoHash = Dty.FileModel.makeInfoHash(fInfo.repo, fInfo.path, fInfo.status)
             } else {
                 updateFields.push('updated_at =?')
                 // 获取当前时间，这种形式 2025-07-18 15:14:41
@@ -547,7 +546,7 @@ class AppDb {
             const countQuery = searchParam.countQuery
             const params: unknown[] = searchParam.params
             const countParams: unknown[] = searchParam.countParams
-            // logger.info(`search query:${query}`)
+            logger.info(`search query:${query}`, params)
             // 执行统计总记录数的查询
             const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
             const total = countResult?.total || 0

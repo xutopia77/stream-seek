@@ -41,6 +41,7 @@ export type AppStore = {
 
     thumbList: Dty.File[]
     curSltThumb: Dty.File | null
+    curChkThumb: Set<Dty.File>
     videoList: Dty.File[]
     curCheckedVideo: Set<Dty.File>
     curSltVideo: Dty.File | null // 在列表中，鼠标选中后，更新
@@ -96,6 +97,7 @@ export const useAppStore = defineStore('app', {
         thumbTotalNum: 0,
         thumbList: [],
         curSltThumb: null,
+        curChkThumb: new Set<Dty.File>(), // 当前选中的缩略图文件列表
         videoList: [],
         curCheckedVideo: new Set<Dty.File>(), // 当前选中的视频列表
         curSltVideo: null, // 当前选中的视频

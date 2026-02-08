@@ -566,7 +566,31 @@ class Util {
         }
     }
 
-    async delete_video(reqInfo: Dty.DeleteFileReq): Promise<void> {
+    async thumbsDel(reqInfo: Dty.DeleteFileReq): Promise<void> {
+        const req: Dty.Req<Dty.DeleteFileReq> = {
+            cmd: Dty.CmdType.thumbDel,
+            data: reqInfo
+        }
+        const response = await IpcApi.trigger_event(req)
+        if (response.code === 1001) {
+            return
+        }
+        const delStr = reqInfo.type == 'destroy' ? '彻底删除' : '移到回收站'
+        if (response.code !== 0) {
+            util.addToastErr(`${delStr} 失败: ${response.status}`)
+        } else {
+            if (response.bOver === false) {
+                util.addToastInfo(`${delStr} 正在处理...`)
+            } else {
+                const searchReq = new Dty.FilesReq()
+                searchReq.status.push(Dty.Fstatus.Destroy)
+                await this.thumbsGet(searchReq)
+                util.addToastInfo(`${delStr} 成功`)
+            }
+        }
+    }
+
+    async filesDel(reqInfo: Dty.DeleteFileReq): Promise<void> {
         util.stop_play()
         const req: Dty.Req<Dty.DeleteFileReq> = {
             cmd: Dty.CmdType.videoDel,
@@ -698,9 +722,9 @@ class Util {
         return response
     }
 
-    async thumbGet(reqParam: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
+    async thumbsGet(reqParam: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
         const req: Dty.Req<Dty.FilesReq> = {
-            cmd: Dty.CmdType.filesGet,
+            cmd: Dty.CmdType.thumbGet,
             data: reqParam == null ? new Dty.FilesReq() : reqParam
         }
         if (!req.data) {

@@ -5,12 +5,12 @@
             <li
                 v-for="(video, index) in videoList"
                 :key="index"
-                :class="{ selected: video === appStore.curSltVideo }"
+                :class="{ selected: video === appStore.curSltThumb }"
             >
                 <label class="vscode-checkbox">
                     <input
                         type="checkbox"
-                        :checked="appStore.curCheckedVideo.has(video)"
+                        :checked="appStore.curChkThumb.has(video)"
                         @change="
                             toggleVideoSelection(
                                 video,
@@ -78,16 +78,16 @@ const toggleVideoSelection = (video: Dty.File, isChecked: boolean, currentIndex:
         for (let i = start; i <= end; i++) {
             const item = videoList.value[i]
             if (isChecked) {
-                appStore.curCheckedVideo.add(item)
+                appStore.curChkThumb.add(item)
             } else {
-                appStore.curCheckedVideo.delete(item)
+                appStore.curChkThumb.delete(item)
             }
         }
     } else {
         if (isChecked) {
-            appStore.curCheckedVideo.add(video)
+            appStore.curChkThumb.add(video)
         } else {
-            appStore.curCheckedVideo.delete(video)
+            appStore.curChkThumb.delete(video)
         }
     }
     lastSelectedIndex.value = currentIndex

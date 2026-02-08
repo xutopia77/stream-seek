@@ -11,6 +11,7 @@ export enum CmdType {
     sltVideo = 'slt_video',
     videoCut = 'cut_video',
     thumbGet = 'thumbGet',
+    thumbDel = 'thumbDel',
     prjOpen = 'open_prj',
     prjSync = 'sync_prj',
     videoDel = 'delete_video'
@@ -54,7 +55,8 @@ export enum Fstatus {
      * 数据库中存在，但是文件夹中不存在
      * 记录不正确，例如是删除的文件记录，但是在文件夹中仍然存在
      */
-    Destroy = 3 // 销毁
+    Destroy = 3, // 销毁
+    Nothing = 4 // 文件也不存在，文件对应的缩略图也不存在
 }
 
 // Fstatus 枚举值的描述映射
@@ -166,16 +168,20 @@ export class FileModel {
     created_at?: string = '' // create time, add when insert
     updated_at?: string = '' // update time, add when update
     deleted_at?: string = '' // delete time, add when delete
-    static makeInfoHash(repo: string, fPath: string): string {
-        return `${repo}+${fPath}`
-    }
-    static makeInfoHashDel(repo: string, fPath: string): string {
-        const currentTime = Date.now()
-        return `${repo}+${fPath}+del+${currentTime}`
-    }
-    static makeInfoHashDestroy(repo: string, fPath: string): string {
-        const currentTime = Date.now()
-        return `${repo}+${fPath}+destroy+${currentTime}`
+    static makeInfoHash(repo: string, fPath: string, fStatus: Fstatus): string {
+        switch (fStatus) {
+            case Fstatus.Normal:
+                return `${repo}+${fPath}`
+            case Fstatus.Deleted:
+            case Fstatus.Destroy:
+            case Fstatus.Error:
+            case Fstatus.Nothing: {
+                const currentTime = Date.now()
+                return `${repo}+${fPath}+${fStatus}+${currentTime}`
+            }
+            default:
+                return `${repo}+${fPath}`
+        }
     }
 }
 
@@ -361,7 +367,7 @@ export class DataRepo {
 export class TrasStatus {
     folderNum: number = 0
     fileNum: number = 0
-    fileErrNum:number = 0
+    fileErrNum: number = 0
 }
 
 export enum ThumbStrategy {

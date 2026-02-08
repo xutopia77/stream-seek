@@ -10,14 +10,34 @@
 </template>
 
 <script setup lang="ts">
-// import { useAppStore } from '../../stores/AppStore'
+import { useAppStore } from '../../stores/AppStore'
+const appStore = useAppStore()
 import '@renderer/assets/common.css'
-// import util from '@renderer/utils/util'
-// const appStore = useAppStore()
-// import * as Dty from '../../../../bridge/dataTypedef'
+import util from '@renderer/utils/util'
+import * as Dty from '../../../../bridge/dataTypedef'
 
 function btn_thumbDel(): void {
-    console.log('asdf')
+    const curChkThumb = appStore.curChkThumb
+    if (curChkThumb == null) {
+        util.addToastInfo('没有选择的文件')
+        return
+    }
+
+    const req: Dty.DeleteFileReq = new Dty.DeleteFileReq()
+    for (const item of curChkThumb) {
+        const fInfo = new Dty.File()
+        fInfo.path = item.path
+        fInfo.repo = item.repo
+        req.files.push(fInfo)
+    }
+    if (req.files.length == 0) {
+        util.addToastInfo('没有选择的文件')
+        return
+    }
+    req.type = 'destroy'
+    console.log('delete file req', req)
+    util.thumbsDel(req)
+    appStore.curChkThumb.clear()
 }
 </script>
 

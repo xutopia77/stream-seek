@@ -59,7 +59,13 @@
             </button>
             <select v-model="delType" class="xc-select" title="删除方式" @change="changeDelType">
                 <option value="delVideo" title="移动到回收站">🗑</option>
-                <option value="delVideoAndThumb" title="移动到回收站，同时删除缩略图">🗑+</option>
+                <option
+                    value="delVideoAndThumb"
+                    title="移动到回收站，同时删除缩略图"
+                    :disabled="!(appStore.prj.repoType == Dty.RepoType.Trash)"
+                >
+                    🗑+
+                </option>
             </select>
 
             <button
@@ -288,7 +294,7 @@ function btnclk_delSltVideos(): void {
     req.bDelThumb = false
     if (delType.value == 'delVideoAndThumb') req.bDelThumb = true
     console.log('delete file req', req)
-    util.delete_video(req)
+    util.filesDel(req)
     appStore.curCheckedVideo.clear()
 }
 </script>
