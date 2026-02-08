@@ -31,7 +31,7 @@ export class IpcHandlers {
             // console.log(`Arguments: ${args}`);
         }
         if (req.cmd == 'heart_beat') {
-            return appProc.make_cmd_response(await appProc.handle_heartbeat(), false)
+            return appProc.cmdRespMake(await appProc.handle_heartbeat(), false)
         }
         if (workQueue.isBusy()) {
             logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${workQueue.curReq?.cmd}`)

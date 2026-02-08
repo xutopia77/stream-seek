@@ -827,7 +827,7 @@ class AppProc {
 
     生成缩略图
     */
-    async handle_sync_work(
+    async handle_prjSync(
         req: DataTypes.Req<DataTypes.SyncPrjReq>
     ): Promise<DataTypes.Resp<DataTypes.SyncPrjResp>> {
         const resp = new DataTypes.Resp<DataTypes.SyncPrjResp>()
@@ -869,9 +869,7 @@ class AppProc {
                     return logStatusRespReturn(resp.err(`save prj info error ${saveResp.status}`))
                 }
                 resp.data.prj = prjInfo
-                workQueue.statusSet(
-                    logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`)
-                )
+                workQueue.statusSet(logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`))
             }
 
             if (bNeedClassifyFile) {
@@ -1074,12 +1072,23 @@ class AppProc {
                     const maxAttempts = 3 // 最大尝试次数
                     async function attemptRename(): Promise<void> {
                         try {
+                            const repo = DataTypes.DataRepo.getRepoByPath(
+                                fInfo.repo,
+                                appCfg.prj.dataRepo
+                            )
+                            if (repo == null) {
+                                logger.error(`delete file err, repo null`)
+                                return
+                            }
+
                             if (fs.existsSync(distFilename)) {
                                 fs.unlinkSync(distFilename)
+                                logger.info(`rm file ${distFilename}`)
                             }
                             if (fs.existsSync(filepath)) {
                                 fInfo.path = distFilename
                                 fs.unlinkSync(filepath)
+                                logger.info(`rm file and update ${filepath}`)
                             }
                             fInfo.status = DataTypes.FileStatus.Destroy
                             const respUp = await appDb.fileUpdate(fInfo)
@@ -1090,9 +1099,49 @@ class AppProc {
                                     )
                                 )
                             } else {
-                                workQueue.statusSet(
-                                    logger.log(`rm original video: ${distFilename}`)
-                                )
+                                workQueue.statusSet(`rm original video success: ${distFilename}`)
+                                if (req.data?.bDelThumb) {
+                                    {
+                                        const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
+                                            repo,
+                                            filename,
+                                            DataTypes.ThumbType.Thumb
+                                        )
+                                        const thumbFileDbPath = Util.thumbFileDbPathGet(
+                                            repo,
+                                            filename,
+                                            DataTypes.ThumbType.Thumb
+                                        )
+                                        if (fs.existsSync(thumbTrashFileDbPath)) {
+                                            fs.unlinkSync(thumbTrashFileDbPath)
+                                            logger.info(`rm thumb file ${thumbTrashFileDbPath}`)
+                                        }
+                                        if (fs.existsSync(thumbFileDbPath)) {
+                                            fs.unlinkSync(thumbFileDbPath)
+                                            logger.info(`rm thumb file ${thumbFileDbPath}`)
+                                        }
+                                    }
+                                    {
+                                        const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
+                                            repo,
+                                            filename,
+                                            DataTypes.ThumbType.Frame
+                                        )
+                                        const thumbFileDbPath = Util.thumbFileDbPathGet(
+                                            repo,
+                                            filename,
+                                            DataTypes.ThumbType.Frame
+                                        )
+                                        if (fs.existsSync(thumbTrashFileDbPath)) {
+                                            fs.unlinkSync(thumbTrashFileDbPath)
+                                            logger.info(`rm frame file ${thumbTrashFileDbPath}`)
+                                        }
+                                        if (fs.existsSync(thumbFileDbPath)) {
+                                            fs.unlinkSync(thumbFileDbPath)
+                                            logger.info(`rm frame file ${thumbFileDbPath}`)
+                                        }
+                                    }
+                                }
                             }
                         } catch (err) {
                             attempts++
@@ -1167,7 +1216,9 @@ class AppProc {
                             if (repo == null) {
                                 return
                             }
-                            await fs.promises.rename(filepath, distFilename)
+                            if (fs.existsSync(filepath)) {
+                                await fs.promises.rename(filepath, distFilename)
+                            }
                             fInfo.status = DataTypes.FileStatus.Deleted
                             const respUp = await appDb.fileUpdate(fInfo)
                             if (respUp.code != 0) {
@@ -1177,25 +1228,45 @@ class AppProc {
                                     )
                                 )
                             } else {
-                                const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
-                                    repo,
-                                    filename,
-                                    DataTypes.ThumbType.Thumb
-                                )
-                                const thumbFileDbPath = Util.thumbFileDbPathGet(
-                                    repo,
-                                    filename,
-                                    DataTypes.ThumbType.Thumb
-                                )
-                                if (!fs.existsSync(Util.thumbTrashPathGet(thumbPath))) {
-                                    fs.mkdirSync(Util.thumbTrashPathGet(thumbPath))
-                                }
-                                await fs.promises.rename(thumbFileDbPath, thumbTrashFileDbPath)
                                 workQueue.statusSet(
-                                    logger.log(
+                                    logger.info(
                                         `delete original video: ${filepath}, move to ${distFilename}`
                                     )
                                 )
+                                {
+                                    const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
+                                        repo,
+                                        filename,
+                                        DataTypes.ThumbType.Thumb
+                                    )
+                                    const thumbFileDbPath = Util.thumbFileDbPathGet(
+                                        repo,
+                                        filename,
+                                        DataTypes.ThumbType.Thumb
+                                    )
+                                    if (!fs.existsSync(Util.thumbTrashPathGet(thumbPath))) {
+                                        fs.mkdirSync(Util.thumbTrashPathGet(thumbPath))
+                                    }
+                                    await fs.promises.rename(thumbFileDbPath, thumbTrashFileDbPath)
+                                    logger.info(`thumb file: ${filepath}, move to ${distFilename}`)
+                                }
+                                {
+                                    const thumbTrashFileDbPath = Util.thumbTrashFileDbPathGet(
+                                        repo,
+                                        filename,
+                                        DataTypes.ThumbType.Frame
+                                    )
+                                    const thumbFileDbPath = Util.thumbFileDbPathGet(
+                                        repo,
+                                        filename,
+                                        DataTypes.ThumbType.Frame
+                                    )
+                                    if (!fs.existsSync(Util.thumbTrashPathGet(thumbPath))) {
+                                        fs.mkdirSync(Util.thumbTrashPathGet(thumbPath))
+                                    }
+                                    await fs.promises.rename(thumbFileDbPath, thumbTrashFileDbPath)
+                                    logger.info(`frame file: ${filepath}, move to ${distFilename}`)
+                                }
                             }
                         } catch (err) {
                             attempts++
@@ -1240,7 +1311,7 @@ class AppProc {
         return respDel
     }
 
-    make_cmd_response<T>(
+    cmdRespMake<T>(
         cmdResp: DataTypes.Resp<T>,
         bDoClear: boolean = true
     ): DataTypes.Resp<string> {
@@ -1377,84 +1448,84 @@ class AppProc {
         switch (cmd) {
             case DataTypes.CmdType.app_start:
                 logger.info(`cmd:${cmd}:${cseq}`)
-                return this.make_cmd_response(await this.handle_app_start())
+                return this.cmdRespMake(await this.handle_app_start())
             case DataTypes.CmdType.get_key_frame_info: {
                 const cmdReq = convertCmdRequest<DataTypes.Req_FrameInfo>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
-                return this.make_cmd_response(await this.handle_get_key_frame_info(cmdReq))
+                return this.cmdRespMake(await this.handle_get_key_frame_info(cmdReq))
             }
             case 'create_prj': {
                 const cmdReq = convertCmdRequest<DataTypes.CreatePrjReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-                return this.make_cmd_response(await this.handle_create_prj(cmdReq, mainWin!))
+                return this.cmdRespMake(await this.handle_create_prj(cmdReq, mainWin!))
             }
             case DataTypes.CmdType.prjOpen: {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-                return this.make_cmd_response(await this.handle_open_prj(mainWin!))
+                return this.cmdRespMake(await this.handle_open_prj(mainWin!))
             }
             case DataTypes.CmdType.search_file: {
                 logger.info(`cmd:${cmd}:${cseq}`)
                 const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
-                return this.make_cmd_response(await this.handle_search_file(cmdReq))
+                return this.cmdRespMake(await this.handle_search_file(cmdReq))
             }
             case DataTypes.CmdType.thumbGet: {
                 logger.info(`cmd:${cmd}:${cseq}`)
                 const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
-                return this.make_cmd_response(await this.handle_search_file(cmdReq))
+                return this.cmdRespMake(await this.handle_search_file(cmdReq))
             }
             // case 'traversal_folder': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
-            //     return make_cmd_response(await traversal_folder(cmdReq))
+            //     return cmdRespMake(await traversal_folder(cmdReq))
             // }
             // case 'slt_video_event': {
             //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-            //     return make_cmd_response(await handle_video_event_detect())
+            //     return cmdRespMake(await handle_video_event_detect())
             // }
             // case 'cut_video': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_CutVideo>(req)
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
-            //     return make_cmd_response(await recordsProc.start_cut_video(cmdReq))
+            //     return cmdRespMake(await recordsProc.start_cut_video(cmdReq))
             // }
             case DataTypes.CmdType.videoDel: {
                 const cmdReq = convertCmdRequest<DataTypes.DeleteFileReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, length=${cmdReq.data?.files.length}`)
-                return this.make_cmd_response(await this.handle_delete_file(cmdReq))
+                return this.cmdRespMake(await this.handle_delete_file(cmdReq))
             }
             case DataTypes.CmdType.sltVideo: {
                 const cmdReq = convertCmdRequest<DataTypes.Req_SltFile>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
-                return this.make_cmd_response(await this.handle_select_video(cmdReq))
+                return this.cmdRespMake(await this.handle_select_video(cmdReq))
             }
             // case 'query_video': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_TraversalFolder>(req)
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq}`)
-            //     return make_cmd_response(await handle_query_video(cmdReq))
+            //     return cmdRespMake(await handle_query_video(cmdReq))
             // }
             case DataTypes.CmdType.prjSync: {
                 const cmdReq = convertCmdRequest<DataTypes.SyncPrjReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.type}`)
-                return this.make_cmd_response(await this.handle_sync_work(cmdReq))
+                return this.cmdRespMake(await this.handle_prjSync(cmdReq))
             }
             // case 'sync_trash': {
             //     const cmdReq = convertCmdRequest<DataTypes.Req_SyncTrash>(req)
             //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
-            //     return make_cmd_response(await recordsProc.start_sync_trash(cmdReq))
+            //     return cmdRespMake(await recordsProc.start_sync_trash(cmdReq))
             // }
             case DataTypes.CmdType.fileTagsSet: {
                 const cmdReq = convertCmdRequest<DataTypes.FileTagsReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, fileTags len:${cmdReq.data?.fileTags.length}`)
-                return this.make_cmd_response(await this.handle_file_tags_set(cmdReq))
+                return this.cmdRespMake(await this.handle_file_tags_set(cmdReq))
             }
             case DataTypes.CmdType.tags_get: {
                 const cmdReq = convertCmdRequest<DataTypes.TagsReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}`)
-                return this.make_cmd_response(await this.handle_tags_get(cmdReq))
+                return this.cmdRespMake(await this.handle_tags_get(cmdReq))
             }
             case DataTypes.CmdType.filesGet: {
                 const cmdReq = convertCmdRequest<DataTypes.FilesReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}`)
-                return this.make_cmd_response(await this.handle_files_get(cmdReq))
+                return this.cmdRespMake(await this.handle_files_get(cmdReq))
             }
             default: {
                 console.log(`Unknown event: ${cmd}:${cseq}`)
