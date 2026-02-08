@@ -305,13 +305,9 @@ class RecordsProc {
         resp.data = []
         const filepath = fileInfo.path
         const filename = fileInfo.name
-        const repo = Dty.DataRepo.getRepoByPath(fileInfo.repo, appCfg.prj.dataRepo)
-        if (repo == null) {
-            return resp.err('repo is null')
-        }
-        const thumbDbFilePath = Util.thumbDbPathGet(repo, filename, genType)
-        const thumbPath = Util.thumbPathGet(repo, genType)
-        const trashThumbDbPath = Util.thumbTrashDbPathGet(repo, fileInfo.name, genType)
+        const thumbDbFilePath = Util.thumbDbPathGet(filename, genType)
+        const thumbPath = Util.thumbPathGet(genType)
+        const trashThumbDbPath = Util.thumbTrashDbPathGet(fileInfo.name, genType)
         if (thumbPath === '') {
             return resp.err('thumbnail dir is empty')
         }

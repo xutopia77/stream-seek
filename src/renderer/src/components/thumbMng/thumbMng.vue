@@ -28,7 +28,11 @@ import * as Dty from '../../../../bridge/dataTypedef'
 let rightPanel = computed(() => appStore.rightPanel)
 
 onMounted(() => {
-    util.thumbGet()
+    let searchReq = new Dty.FilesReq()
+    const fStatus =
+        appStore.prj.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
+    searchReq.status.push(fStatus)
+    util.thumbGet(searchReq)
 })
 </script>
 
