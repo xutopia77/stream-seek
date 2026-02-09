@@ -25,7 +25,7 @@
 import { ref } from 'vue'
 // import { useAppStore } from '../stores/AppStore'
 // const appStore = useAppStore()
-import '../assets/common.css'
+import '@renderer/assets/common.css'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 import * as Dty from '../../../bridge/dataTypedef'

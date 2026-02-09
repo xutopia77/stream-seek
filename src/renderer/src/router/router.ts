@@ -3,6 +3,7 @@ import Admin from '../components/Admin.vue'
 import CreatePrj from '../components/CreatePrj.vue'
 import VideoPreview from '../components/VideoPreview.vue'
 import thumbMng from '@renderer/components/thumbMng/thumbMng.vue'
+import TinyFileDb from '@renderer/components/tinyFileDb/tinyFileDb.vue'
 
 // 定义路由配置数组，使用 RouteRecordRaw 类型进行类型注解
 const routes: RouteRecordRaw[] = [
@@ -44,6 +45,12 @@ const routes: RouteRecordRaw[] = [
     {
         path: '/thumb_mng',
         component: thumbMng
+        // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
+        // children: adminRouter.options.routes // 嵌套子路由
+    },
+    {
+        path: '/tiny_file_db',
+        component: TinyFileDb
         // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
         // children: adminRouter.options.routes // 嵌套子路由
     }

@@ -12,6 +12,9 @@
         <router-link to="/thumb_mng" class="no-underline-link">
             <button class="xc-button">缩略图管理</button>
         </router-link>
+        <router-link to="/tiny_file_db" class="no-underline-link">
+            <button class="xc-button">小文件整理</button>
+        </router-link>
     </div>
 </template>
 

@@ -13,6 +13,7 @@ export type AppStore = {
     appInfo: Dty.AppInfo
     prj: Dty.Prj
     serverUrlPrefix: string
+    curWorks: Dty.WorkResp[]
 
     // ------ message toast
     bPageResentMsg: boolean // 打开界面 最近消息
@@ -69,6 +70,7 @@ export const useAppStore = defineStore('app', {
         // utils
         // serverUrlPrefix: "http://localhost:38080",
         serverUrlPrefix: '',
+        curWorks: [],
 
         // ------ message toast
         bPageResentMsg: false,

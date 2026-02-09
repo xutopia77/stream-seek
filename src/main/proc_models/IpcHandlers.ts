@@ -35,7 +35,7 @@ export class IpcHandlers {
             return workQueue.makeBusyResponse()
         }
         workQueue.addTask(req)
-        const resp = await appProc.start_process_cmd(req, this.mainWindow)
+        const resp = await appProc.handle_cmd(req, this.mainWindow)
         if (resp.bOver == true || resp.bOver == undefined) {
             workQueue.curReq = null
         }

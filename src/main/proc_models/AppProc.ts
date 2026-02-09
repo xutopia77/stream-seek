@@ -1612,6 +1612,20 @@ class AppProc {
         return resp
     }
 
+    async handle_tiny2Db(req: Dty.Req<Dty.Tiny2DbReq>): Promise<Dty.Resp> {
+        const resp: Dty.Resp = new Dty.Resp()
+        const tinyFileDbPath = req.data?.tinyFileDbPath || ''
+        const tinyFilePath = req.data?.tinyFilePath || ''
+        if (!fs.existsSync(tinyFileDbPath)) {
+            return resp.err(`path not exist:${tinyFileDbPath}`)
+        }
+        if (!fs.existsSync(tinyFilePath)) {
+            return resp.err(`path not exist:${tinyFilePath}`)
+        }
+
+        return resp
+    }
+
     async handle_create_prj(
         req: Dty.Req<Dty.CreatePrjReq>,
         mainWindow: Electron.BrowserWindow
@@ -1678,10 +1692,7 @@ class AppProc {
         }
     }
 
-    async start_process_cmd(
-        req: Dty.Req,
-        mainWin: Electron.BrowserWindow | null
-    ): Promise<Dty.Resp> {
+    async handle_cmd(req: Dty.Req, mainWin: Electron.BrowserWindow | null): Promise<Dty.Resp> {
         function convertCmdRequest<T>(req: Dty.Req): Dty.Req<T> {
             const cmdReq: Dty.Req<T> = {
                 cmd: req.cmd,
@@ -1715,16 +1726,16 @@ class AppProc {
                 const cmdReq = convertCmdRequest<Dty.FilesReq>(req)
                 return this.cmdRespMake(await this.handle_search_file(cmdReq))
             }
+            case Dty.CmdType.tinyFileDbStart: {
+                logger.info(`cmd:${cmd}:${cseq}`)
+                const cmdReq = convertCmdRequest<Dty.Tiny2DbReq>(req)
+                return this.cmdRespMake(await this.handle_tiny2Db(cmdReq))
+            }
             case Dty.CmdType.thumbGet: {
                 logger.info(`cmd:${cmd}:${cseq}`)
                 const cmdReq = convertCmdRequest<Dty.FilesReq>(req)
                 return this.cmdRespMake(await this.handle_search_file(cmdReq))
             }
-            // case 'traversal_folder': {
-            //     const cmdReq = convertCmdRequest<Dty.Req_TraversalFolder>(req)
-            //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.folder}`)
-            //     return cmdRespMake(await traversal_folder(cmdReq))
-            // }
             // case 'slt_video_event': {
             //     logger.info(`cmd:${cmd}:${cseq}, ${req}`)
             //     return cmdRespMake(await handle_video_event_detect())
@@ -1749,11 +1760,6 @@ class AppProc {
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
                 return this.cmdRespMake(await this.handle_select_video(cmdReq))
             }
-            // case 'query_video': {
-            //     const cmdReq = convertCmdRequest<Dty.Req_TraversalFolder>(req)
-            //     logger.info(`cmd:${cmd}:${cseq}, ${cmdReq}`)
-            //     return cmdRespMake(await handle_query_video(cmdReq))
-            // }
             case Dty.CmdType.prjSync: {
                 const cmdReq = convertCmdRequest<Dty.SyncPrjReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.type}`)

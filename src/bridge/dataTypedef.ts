@@ -14,7 +14,10 @@ export enum CmdType {
     thumbDel = 'thumbDel',
     prjOpen = 'open_prj',
     prjSync = 'sync_prj',
-    videoDel = 'delete_video'
+    videoDel = 'delete_video',
+
+    tinyFileDbStart = 'tinyFileDbStart',
+    tinyFileDbStop = 'tinyFileDbStop'
 }
 
 export class AppInfo {
@@ -393,8 +396,13 @@ export class Prj {
     repoType: RepoType = RepoType.Normal
 }
 
+export class Tiny2DbReq {
+    tinyFilePath: string = ''
+    tinyFileDbPath: string = ''
+}
+
 export interface WorkResp {
-    cmd: string
+    cmd: CmdType
     data: string
 }
 

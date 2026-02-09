@@ -505,21 +505,6 @@ class Util {
         } else {
             console.log('get prj failed')
         }
-        // if (prj.dataFolder != null && prj.dataFolder !== '') {
-        //   const req: Dty.Req<Dty.Req_TraversalFolder> = {
-        //     cmd: 'traversal_folder',
-        //     data: { folder: prj.lastOpenedFolder }
-        //   }
-        //   const response: Dty.Resp<Dty.TraversalFolder> = await IpcApi.trigger_event(req)
-        //   if (response.code === 0) {
-        //     appStore.curOpenedFolder = prj.lastOpenedFolder
-        //     util.folder_file_proc(response)
-        //   } else {
-        //     util.addToastErr(`遍历文件夹失败`)
-        //   }
-        // } else {
-        //   console.log('lastOpenedFolder is null')
-        // }
     }
 
     async start_app(): Promise<Dty.Resp> {
@@ -539,11 +524,7 @@ class Util {
     }
 
     process_heartbeat(resp: Dty.Resp<Dty.HeartBeat>): void {
-        if (resp.code !== 0) {
-            console.log('process heartbeat failed', resp)
-            return
-        }
-        if (resp.data === undefined) {
+        if (!resp.isSuccess() || resp.data === undefined) {
             console.log('process heartbeat failed', resp)
             return
         }
@@ -557,12 +538,15 @@ class Util {
         }
         // console.log('process heartbeat', appStore.documentTitle)
         if (respData.workRespose != null) {
+            appStore.curWorks = respData.workRespose
             if (respData.workRespose.length > 0) {
                 // console.log('process heartbeat', respData.workRespose)
             }
             for (const item of respData.workRespose) {
                 util.process_work_response(item)
             }
+        } else {
+            appStore.curWorks = []
         }
     }
 
@@ -903,7 +887,7 @@ class Util {
 
         // console.log('process_work_response', cmd, response)
         switch (cmd) {
-            case 'open_folder':
+            case Dty.CmdType.prjOpen:
                 console.log('open folder', response)
                 util.folder_file_proc(response)
                 if (response.code !== 0) {
@@ -912,21 +896,7 @@ class Util {
                     util.addToastInfo(`打开文件夹成功: ${response.status}`)
                 }
                 break
-            case 'traversal_folder':
-                {
-                    console.log('traversal folder', response)
-                    util.folder_file_proc(response)
-                    if (response.code !== 0) {
-                        util.addToastErr(`更新文件夹: ${response.status}`)
-                    }
-                }
-                break
-            case 'query_video':
-                if (appStore) {
-                    // appStore.queryInfo = response.data
-                }
-                break
-            case 'cut_video':
+            case Dty.CmdType.videoCut:
                 if (response.code !== 0) {
                     util.addToastErr(`视频裁剪失败: ${response.status}`)
                     console.log('cut video failed', response)
@@ -939,7 +909,7 @@ class Util {
                     }
                 }
                 break
-            case 'delete_video':
+            case Dty.CmdType.videoDel:
                 {
                     if (response.code !== 0) {
                         util.addToastErr(`删除失败: ${response.status}`)
@@ -956,7 +926,7 @@ class Util {
                     }
                 }
                 break
-            case 'get_key_frame_info':
+            case Dty.CmdType.get_key_frame_info:
                 if (response.code !== 0) {
                     util.addToastErr(`获取关键帧信息失败: ${response.status}`)
                 } else {
