@@ -30,6 +30,9 @@ export class IpcHandlers {
         if (req.cmd == 'heart_beat') {
             return appProc.cmdRespMake(await appProc.handle_heartbeat(), false)
         }
+        if (req.cmd == Dty.CmdType.tinyFileDbStop) {
+            appProc.handle_tiny2DbStop()
+        }
         if (workQueue.isBusy()) {
             logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${workQueue.curReq?.cmd}`)
             return workQueue.makeBusyResponse()

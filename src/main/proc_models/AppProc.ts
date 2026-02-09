@@ -465,6 +465,8 @@ async function startHttpSrv(port: number): Promise<void> {
     })
 }
 
+let bTiny2DbStop = false
+
 class AppProc {
     // constructor() {}
     saveAppCfg(): void {
@@ -1612,18 +1614,139 @@ class AppProc {
         return resp
     }
 
+    handle_tiny2DbStop(): void {
+        bTiny2DbStop = true
+    }
+
     async handle_tiny2Db(req: Dty.Req<Dty.Tiny2DbReq>): Promise<Dty.Resp> {
+        bTiny2DbStop = false
+        let totalNum = 0
+        let curIdx = 0
+        async function procOneDir(thumbDir, thumbDbFilePath: string): Promise<void> {
+            let bExist = true
+            try {
+                await fs.promises.access(thumbDbFilePath, fs.constants.F_OK)
+            } catch (error) {
+                if (!error) logger.error(error)
+                bExist = false
+            }
+            if (bExist) {
+                logger.info(`proc:${++curIdx}/${totalNum} thumb db exist ${thumbDbFilePath}`)
+                return
+            }
+
+            const thumbDb: Database = await open({
+                filename: thumbDbFilePath,
+                driver: sqlite3.Database
+            })
+            await thumbDb.exec(Util.thumbDbCreateSqlGet())
+            await thumbDb.exec(Util.thumbDbCreateSqlInfoGet())
+            // 开始事务以提高批量插入性能
+            await thumbDb.run('BEGIN TRANSACTION')
+
+            try {
+                // 遍历 tmpThumbDir 目录下的所有文件，并把缩略图文件批量插入到thumbDb数据库
+                const files = await fs.promises.readdir(thumbDir)
+
+                // 使用预编译语句提高插入效率
+                const stmt = await thumbDb.prepare(
+                    'INSERT INTO files (filename, raw, type, desc) VALUES (?, ?, ?, ?)'
+                )
+
+                // 控制并发数以避免内存占用过高，同时提高机械硬盘的顺序读取效率
+                const batchSize = 10
+                for (let i = 0; i < files.length; i += batchSize) {
+                    const batch = files.slice(i, i + batchSize)
+
+                    // 并行读取一批文件的内容
+                    const filePromises = batch.map(async (file) => {
+                        const filePath = path.join(thumbDir, file)
+                        const fileStat = await fs.promises.stat(filePath)
+                        if (fileStat.isFile()) {
+                            const imageData = await fs.promises.readFile(filePath)
+                            return [file, imageData]
+                        }
+                        return null
+                    })
+
+                    const results = await Promise.all(filePromises)
+
+                    // 批量插入数据库
+                    for (const result of results) {
+                        if (result !== null) {
+                            const [filename, imageData] = result
+                            await stmt.run(filename, imageData, 1, '')
+                        }
+                    }
+                }
+
+                await stmt.finalize()
+                await thumbDb.run('COMMIT')
+                logger.info(`proc:${++curIdx}/${totalNum} thumb db success ${thumbDbFilePath}`)
+            } catch (error) {
+                await thumbDb.run('ROLLBACK')
+                throw error
+            } finally {
+                await thumbDb.close()
+            }
+        }
+
         const resp: Dty.Resp = new Dty.Resp()
         const tinyFileDbPath = req.data?.tinyFileDbPath || ''
         const tinyFilePath = req.data?.tinyFilePath || ''
-        if (!fs.existsSync(tinyFileDbPath)) {
-            return resp.err(`path not exist:${tinyFileDbPath}`)
-        }
-        if (!fs.existsSync(tinyFilePath)) {
-            return resp.err(`path not exist:${tinyFilePath}`)
+
+        // 检查路径参数是否为空
+        if (!tinyFileDbPath || !tinyFilePath) {
+            return resp.err('err param is null')
         }
 
-        return resp
+        // 检查源文件夹是否存在
+        if (!fs.existsSync(tinyFilePath)) {
+            return resp.err(`err thumb path not exist: ${tinyFilePath}`)
+        }
+
+        // 检查源路径是否为文件夹
+        const stats = fs.statSync(tinyFilePath)
+        if (!stats.isDirectory()) {
+            return resp.err(`err thumb not path: ${tinyFilePath}`)
+        }
+
+        logger.info(`start ${tinyFilePath} to ${tinyFileDbPath}`)
+
+        try {
+            // 遍历 tinyFilePath 的第一级目录
+            const items = fs.readdirSync(tinyFilePath)
+            totalNum = items.length
+            for (const item of items) {
+                if (bTiny2DbStop) {
+                    logger.info('process tiny 2 db stop')
+                    break
+                }
+                const itemPath = path.join(tinyFilePath, item)
+                const itemStat = fs.statSync(itemPath)
+
+                if (itemStat.isFile()) {
+                    // logger.info(`找到文件: ${itemPath}`)
+                    // 这里可以处理文件
+                } else if (itemStat.isDirectory()) {
+                    let thumbDbFilePath = Util.thumbDbPathGet(
+                        `${item}.mp4`,
+                        Dty.ThumbType.FnameThumb
+                    )
+                    thumbDbFilePath = path.join(tinyFileDbPath, thumbDbFilePath)
+                    // logger.info(`find dir: ${itemPath} thumbPath: ${thumbDbFilePath}`)
+                    // 这里可以处理子文件夹
+                    await procOneDir(itemPath, thumbDbFilePath)
+                }
+            }
+
+            logger.info(`process over ${tinyFilePath} total ${items.length}`)
+        } catch (error) {
+            logger.error(`process err: ${error}`)
+            return resp.err(`err: ${error}`)
+        }
+
+        return resp.success('tiny process over')
     }
 
     async handle_create_prj(

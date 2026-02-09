@@ -1,6 +1,7 @@
 import * as path from 'path'
 import * as Dty from '../../bridge/dataTypedef'
 import appCfg from './AppCfg'
+
 class Util {
     static defaultVersionGet(): string {
         return '2.2.0'
@@ -26,6 +27,9 @@ class Util {
         const repo = appCfg.prj.dataRepo[0]
         if (type == Dty.ThumbType.Frame) {
             return path.join(repo.framePath, `${filename}.db`)
+        }
+        if (type == Dty.ThumbType.FnameThumb) {
+            return `${filename}_thumbnail.db`
         }
         return path.join(repo.thumbnailPath, `${filename}_thumbnail.db`)
     }

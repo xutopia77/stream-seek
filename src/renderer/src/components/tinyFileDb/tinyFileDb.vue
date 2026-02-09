@@ -43,8 +43,8 @@ import * as Dty from '../../../../bridge/dataTypedef'
 import { IpcApi } from '@renderer/utils/ipcApi'
 import util from '@renderer/utils/util'
 
-const tinyFilePath = ref('')
-const tinyFileDbPath = ref('')
+const tinyFilePath = ref('D:/02_workspace/05_timeCapsule/02_stream_manager/test_thumb/thumb')
+const tinyFileDbPath = ref('D:/02_workspace/05_timeCapsule/02_stream_manager/test_thumb/thumb_db')
 
 async function btnclk_Tiny2DbSop(): Promise<void> {
     console.log(tinyFilePath.value)

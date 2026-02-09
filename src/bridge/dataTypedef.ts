@@ -380,7 +380,8 @@ export enum ThumbStrategy {
 
 export enum ThumbType {
     Thumb = 'thumb',
-    Frame = 'frame'
+    Frame = 'frame',
+    FnameThumb = 'fNameThumb'
 }
 
 // 项目配置，存储在项目json文件中
