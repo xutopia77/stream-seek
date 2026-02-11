@@ -13,7 +13,10 @@ export enum CmdType {
     thumbGet = 'thumbGet',
     thumbDel = 'thumbDel',
     prjOpen = 'open_prj',
+
     prjSync = 'sync_prj',
+    SyncStop = 'syncStop',
+
     videoDel = 'delete_video',
 
     tinyFileDbStart = 'tinyFileDbStart',

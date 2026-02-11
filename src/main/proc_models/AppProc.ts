@@ -466,6 +466,7 @@ async function startHttpSrv(port: number): Promise<void> {
 }
 
 let bTiny2DbStop = false
+let bSyncPrjStop = false
 
 class AppProc {
     // constructor() {}
@@ -748,6 +749,10 @@ class AppProc {
         logger.log('start gen thumbnail total=', searchRe.data?.total)
         let count = 0
         for (const fileInfo of searchRe.data?.files ?? []) {
+            if (bSyncPrjStop) {
+                logger.log(` sync prj stop`)
+                break
+            }
             count++
             {
                 const startTime = Date.now()
@@ -1019,7 +1024,7 @@ class AppProc {
             return resp.err('req.data is null')
         }
         resp.data = new Dty.SyncPrjResp()
-
+        bSyncPrjStop = false
         {
             let bNeedSavePrjInfo = false
             let bNeedGenThumb = false
@@ -1816,6 +1821,20 @@ class AppProc {
     }
 
     async handle_cmd(req: Dty.Req, mainWin: Electron.BrowserWindow | null): Promise<Dty.Resp> {
+        if (req.cmd != Dty.CmdType.heartBeat) {
+            // console.log(`Arguments: ${args}`);
+        }
+        if (req.cmd == Dty.CmdType.heartBeat) {
+            return this.cmdRespMake(await this.handle_heartbeat(), false)
+        }
+        if (req.cmd == Dty.CmdType.tinyFileDbStop) {
+            this.handle_tiny2DbStop()
+        }
+        if (workQueue.isBusy()) {
+            logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${workQueue.curReq?.cmd}`)
+            return workQueue.makeBusyResponse()
+        }
+        workQueue.addTask(req)
         function convertCmdRequest<T>(req: Dty.Req): Dty.Req<T> {
             const cmdReq: Dty.Req<T> = {
                 cmd: req.cmd,

@@ -25,6 +25,7 @@
             <button class="xc-button primary" type="button" @click="btnclk_sync_work()">
                 同步项目
             </button>
+            <button class="xc-button" type="button" @click="btnclk_syncStop()">停止同步</button>
         </div>
 
         <div class="setting-card">
@@ -45,7 +46,7 @@
 <script lang="ts" setup>
 import { onMounted, ref, watch } from 'vue'
 import '@renderer/assets/common.css'
-// import { IpcApi } from '../../utils/ipcApi'
+import { IpcApi } from '../../utils/ipcApi'
 import * as Dty from '../../../../bridge/dataTypedef'
 import { useAppStore } from '../../stores/AppStore'
 import util from '@renderer/utils/util'
@@ -71,6 +72,19 @@ watch(
 
 const bNeedGenThumbnail = ref<boolean>(false)
 const bNeedClassifyFile = ref<boolean>(true)
+
+async function btnclk_syncStop(): Promise<void> {
+    const req: Dty.Req = {
+        cmd: Dty.CmdType.prjSync
+    }
+    const response: Dty.Resp = await IpcApi.trigger_event(req)
+    if (response.isSuccess()) {
+        util.addToastInfo(`触发停止同步成功`)
+    } else {
+        util.addToastErr(`触发停止同步失败 ${response.status}`)
+    }
+    return
+}
 
 async function btnclk_sync_work(types: Dty.SyncType[] = []): Promise<void> {
     let syncTypes: Dty.SyncType[] = []

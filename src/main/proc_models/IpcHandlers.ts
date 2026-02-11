@@ -2,7 +2,7 @@
 // import * as fs from 'fs'
 import { IpcMainInvokeEvent } from 'electron'
 // import appCfg from './AppCfg.js'
-import logger from './Logger'
+// import logger from './Logger'
 import appProc from './AppProc'
 // import recordsProc from './RecordsProcess.js'
 // import { Util } from './Utils.js'
@@ -24,20 +24,6 @@ export class IpcHandlers {
         }
         // console.log(`Handling event----: ${event}`)
         const req: Dty.Req<string> = JSON.parse(args[0])
-        if (req.cmd != 'heart_beat') {
-            // console.log(`Arguments: ${args}`);
-        }
-        if (req.cmd == 'heart_beat') {
-            return appProc.cmdRespMake(await appProc.handle_heartbeat(), false)
-        }
-        if (req.cmd == Dty.CmdType.tinyFileDbStop) {
-            appProc.handle_tiny2DbStop()
-        }
-        if (workQueue.isBusy()) {
-            logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${workQueue.curReq?.cmd}`)
-            return workQueue.makeBusyResponse()
-        }
-        workQueue.addTask(req)
         const resp = await appProc.handle_cmd(req, this.mainWindow)
         if (resp.bOver == true || resp.bOver == undefined) {
             workQueue.curReq = null
