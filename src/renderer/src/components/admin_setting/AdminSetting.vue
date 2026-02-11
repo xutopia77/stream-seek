@@ -75,10 +75,10 @@ const bNeedClassifyFile = ref<boolean>(true)
 
 async function btnclk_syncStop(): Promise<void> {
     const req: Dty.Req = {
-        cmd: Dty.CmdType.prjSync
+        cmd: Dty.CmdType.SyncStop
     }
     const response: Dty.Resp = await IpcApi.trigger_event(req)
-    if (response.isSuccess()) {
+    if (response.code == Dty.RespCode.Success) {
         util.addToastInfo(`触发停止同步成功`)
     } else {
         util.addToastErr(`触发停止同步失败 ${response.status}`)

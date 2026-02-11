@@ -38,7 +38,7 @@ class Thumbnail {
 
 // http://localhost:58080/thumb_get?video=00_20250301111454_20250301112302.mp4&thumb=20250301112134.jpg
 function thumbUrlMake(thumb: Thumbnail): string {
-    return `http://localhost:58080/thumb_get?video=${appStore.curSltThumb?.name}&thumb=${thumb.path}`
+    return `http://localhost:${Dty.httpSrvPort}/thumb_get?video=${appStore.curSltThumb?.name}&thumb=${thumb.path}`
 }
 
 let thumbnailImages = ref<Thumbnail[]>([])

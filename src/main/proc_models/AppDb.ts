@@ -546,7 +546,7 @@ class AppDb {
             const countQuery = searchParam.countQuery
             const params: unknown[] = searchParam.params
             const countParams: unknown[] = searchParam.countParams
-            logger.info(`search query:${query}`, params)
+            // logger.info(`search query:${query}`, params)
             // 执行统计总记录数的查询
             const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
             const total = countResult?.total || 0

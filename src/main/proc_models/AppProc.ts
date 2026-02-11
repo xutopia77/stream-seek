@@ -150,6 +150,10 @@ class TraversalFolder {
                 try {
                     const currentFiles = await fs.promises.readdir(currentPath)
                     for (const file of currentFiles) {
+                        if (bSyncPrjStop) {
+                            logger.info(`prj sync stop cur in traversal folder`)
+                            return resp
+                        }
                         const filePath = path.join(currentPath, file)
                         try {
                             const stats = await fs.promises.stat(filePath)
@@ -204,6 +208,10 @@ class TraversalFolder {
 
         logger.info(`Starting to check database with ${totalFiles} files`)
         while (processedCount < totalFiles) {
+            if (bSyncPrjStop) {
+                logger.info(`prj sync stop cur in check db`)
+                break
+            }
             const fSearchReq = new Dty.FilesReq()
             fSearchReq.page = Math.floor(processedCount / batchSize) + 1
             fSearchReq.pageSize = batchSize
@@ -292,9 +300,11 @@ class TraversalFolder {
                         }
                     }
                 }
-                logger.info(
-                    `file check ${processedCount + 1}/${totalFiles}: ${chkStatus == '' ? 'success' : chkStatus}`
-                )
+                if (processedCount % 10 == 0) {
+                    logger.info(
+                        `file check ${processedCount + 1}/${totalFiles}: ${chkStatus == '' ? 'success' : chkStatus}`
+                    )
+                }
                 processedCount++
             }
         }
@@ -402,7 +412,6 @@ async function startHttpSrv(port: number): Promise<void> {
         logger.error(`Server is running on port ${port}`)
     })
 
-    // 增加一个get处理，前端传入文件的路径，然后从数据库中读取出对应的缩略图图片
     // 请求示例 "http://localhost:58080/thumb_get?video=12345&thumb=1740797520"
     app.get('/thumb_get', async (req, res) => {
         const videoId = req.query.video
@@ -482,7 +491,7 @@ class AppProc {
 
     async initApp(): Promise<void> {
         await appCfg.initCfg()
-        await startHttpSrv(58080)
+        await startHttpSrv(Dty.httpSrvPort)
     }
 
     async quiteApp(): Promise<void> {
@@ -750,7 +759,7 @@ class AppProc {
         let count = 0
         for (const fileInfo of searchRe.data?.files ?? []) {
             if (bSyncPrjStop) {
-                logger.log(` sync prj stop`)
+                logger.log(`prj sync stop cur in gen thumbnail`)
                 break
             }
             count++
@@ -834,13 +843,17 @@ class AppProc {
                 searchReq.orderBy = 'startTimeSec'
                 searchReq.status = []
                 const searchResp = await appDb.fileViewSearch(searchReq)
-                if (searchResp.code !== 0) {
+                if (searchResp.code !== Dty.RespCode.Success) {
                     logger.error(`search file error: ${searchResp.status}`)
                     continue
                 }
                 // 3, Check whether the files in the database exist in the folder. If not, mark them as destroyed
                 const fileList = searchResp.data?.files ?? []
                 for (const fInfo of fileList) {
+                    if (bSyncPrjStop) {
+                        logger.info(`prj sync stop cur in classift file`)
+                        break
+                    }
                     if (!fs.existsSync(fInfo.path)) {
                         if (fInfo.status == Dty.Fstatus.Normal) {
                             workQueue.statusSet(
@@ -1821,6 +1834,8 @@ class AppProc {
     }
 
     async handle_cmd(req: Dty.Req, mainWin: Electron.BrowserWindow | null): Promise<Dty.Resp> {
+        const cmd = req.cmd
+        const cseq = req.cseq
         if (req.cmd != Dty.CmdType.heartBeat) {
             // console.log(`Arguments: ${args}`);
         }
@@ -1829,6 +1844,12 @@ class AppProc {
         }
         if (req.cmd == Dty.CmdType.tinyFileDbStop) {
             this.handle_tiny2DbStop()
+            return this.cmdRespMake(new Dty.Resp())
+        }
+        if (req.cmd == Dty.CmdType.SyncStop) {
+            bSyncPrjStop = true
+            logger.info(`cmd:${req.cmd}:${cseq}`)
+            return this.cmdRespMake(new Dty.Resp())
         }
         if (workQueue.isBusy()) {
             logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${workQueue.curReq?.cmd}`)
@@ -1843,8 +1864,7 @@ class AppProc {
             }
             return cmdReq
         }
-        const cmd = req.cmd
-        const cseq = req.cseq
+
         switch (cmd) {
             case Dty.CmdType.app_start:
                 logger.info(`cmd:${cmd}:${cseq}`)
