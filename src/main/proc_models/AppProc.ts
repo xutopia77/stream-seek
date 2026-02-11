@@ -493,7 +493,9 @@ class AppProc {
         await appCfg.initCfg()
         await startHttpSrv(Dty.httpSrvPort)
     }
-
+    mainWinSet(mainWin: Electron.BrowserWindow | null): void {
+        Util.mainWinSet(mainWin)
+    }
     async quiteApp(): Promise<void> {
         this.saveAppCfg()
     }
@@ -1100,7 +1102,8 @@ class AppProc {
         }
 
         workQueue.statusSet('sync work success')
-        workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+        const workResp: Dty.WorkResp = { cmd: req.cmd, data: JSON.stringify(resp) }
+        Util.notifyRender(JSON.stringify(workResp))
         return resp
     }
 
@@ -1617,14 +1620,16 @@ class AppProc {
         mediaProc
             .get_frame_info(filePath)
             .then((resp: Dty.Resp<Dty.FrameInfo>) => {
-                workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+                Util.notifyRender(JSON.stringify({ cmd: req.cmd, data: JSON.stringify(resp) }))
             })
             .catch((error: unknown) => {
                 logger.error('get frame info err:', error)
-                workQueue.addResp({
-                    cmd: req.cmd,
-                    data: JSON.stringify({ code: 1, status: error })
-                })
+                Util.notifyRender(
+                    JSON.stringify({
+                        cmd: req.cmd,
+                        data: JSON.stringify({ code: Dty.RespCode.Error, status: error })
+                    })
+                )
             })
         resp.code = 0
         resp.status = 'success'
@@ -1836,6 +1841,7 @@ class AppProc {
     async handle_cmd(req: Dty.Req, mainWin: Electron.BrowserWindow | null): Promise<Dty.Resp> {
         const cmd = req.cmd
         const cseq = req.cseq
+        Util.notifyRender('123456575')
         if (req.cmd != Dty.CmdType.heartBeat) {
             // console.log(`Arguments: ${args}`);
         }
@@ -1959,266 +1965,3 @@ class AppProc {
 const appProc = new AppProc()
 export default appProc
 export { TraversalFolder }
-
-// function make_file_prj_path(filename: string): string {
-//     let filePath = `${filename}_prj.json`
-//     filePath = path.join(appCfg.file_prj_dir, filePath)
-//     return filePath
-// }
-
-// async function handle_open_folder(
-//     mainWindow: Electron.BrowserWindow,
-//     req: Dty.Req
-// ): Promise<Dty.Resp<Dty.TraversalFolder>> {
-//     let openType: string | null = null
-//     if (req.data != null) {
-//         openType = 'search'
-//     }
-
-//     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-//         properties: ['openDirectory']
-//         // modal: true
-//     })
-//     if (!canceled) {
-//         const folderPath = filePaths[0]
-//         if (openType != 'search') {
-//             // 查询文件夹的不用保存到工程文件
-//             appCfg.prj.dataFolder = folderPath
-//         }
-//         logger.info('handle open folder', folderPath)
-//         const traversalFolder = new TraversalFolder()
-//         traversalFolder.type = openType
-//         traversalFolder.bSort = true
-//         traversalFolder.folder = folderPath
-//         traversalFolder
-//             .start()
-//             .then((resp: Dty.Resp<Dty.TraversalFolder>) => {
-//                 const workResp: Dty.WorkResp = {
-//                     cmd: req.cmd,
-//                     data: JSON.stringify(resp)
-//                 }
-//                 workQueue.addResp(workResp)
-//             })
-//             .catch((error: unknown) => {
-//                 workQueue.addResp({
-//                     cmd: req.cmd,
-//                     data: JSON.stringify({ code: 1, status: error })
-//                 })
-//                 logger.error('open folder err:', error)
-//             })
-//         const resp = new Dty.Resp<Dty.TraversalFolder>()
-//         resp.success('success').data = { folder: folderPath }
-//         resp.bOver = false
-//         logger.info('handle open folder', resp.status)
-//         return resp
-//     }
-//     return new Dty.Resp<Dty.TraversalFolder>().err('canceled')
-// }
-
-// async function handle_query_video(
-//     req: Dty.Req<Dty.Req_TraversalFolder>
-// ): Promise<Dty.Resp<Dty.TraversalFolder>> {
-//     if (req.data == null) {
-//         return new Dty.Resp<Dty.TraversalFolder>().err('req.data is null')
-//     }
-//     const traversalFolder = new TraversalFolder()
-//     traversalFolder.type = null
-//     traversalFolder.folder = req.data?.folder
-//     traversalFolder
-//         .start()
-//         .then((resp: Dty.Resp<Dty.TraversalFolder>) => {
-//             if (resp.data?.files != null) {
-//                 logger.info('traversal folder:', resp.status, resp.data.files?.length)
-//                 recordsProc
-//                     .start_file_classify(req, resp.data.files)
-//                     .then((resp: Dty.Resp) => {
-//                         logger.info('handle_query_video after classify:', resp)
-//                         workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-//                     })
-//                     .catch((error: unknown) => {
-//                         logger.error('open folder err:', error)
-//                         workQueue.addResp({
-//                             cmd: req.cmd,
-//                             data: JSON.stringify({ code: 1, status: error })
-//                         })
-//                     })
-//             } else {
-//                 logger.info('traversal folder:', resp.status)
-//                 workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-//             }
-//         })
-//         .catch((error: unknown) => {
-//             logger.error('open folder err:', error)
-//             workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
-//         })
-//     const resp = new Dty.Resp<Dty.TraversalFolder>()
-//     resp.success('success').bOver = false
-//     return resp
-// }
-
-// async function handle_clean_work(
-//     req: Dty.Req<Dty.Req_ClearWork>
-// ): Promise<Dty.Resp> {
-//     const resp = new Dty.Resp()
-//     if (req.data?.files == null) {
-//         console.log('clean all work')
-//         const thumbnailDir = appCfg.thumbnail_dir
-//         if (fs.existsSync(thumbnailDir)) {
-//             for (const file of fs.readdirSync(thumbnailDir)) {
-//                 const filePath = path.join(thumbnailDir, file)
-//                 await fs.promises.rm(filePath, { recursive: true })
-//             }
-//         }
-//         const filePrjDir = appCfg.file_prj_dir
-//         if (fs.existsSync(filePrjDir)) {
-//             for (const file of fs.readdirSync(filePrjDir)) {
-//                 const filePath = path.join(filePrjDir, file)
-//                 await fs.promises.rm(filePath, { recursive: true })
-//             }
-//         }
-//         return resp.success('success')
-//     }
-
-//     for (const item of req.data.files) {
-//         const filename = item.title
-//         const filePrjPath = make_file_prj_path(filename)
-//         if (fs.existsSync(filePrjPath)) {
-//             await fs.promises.rm(filePrjPath)
-//         }
-//         const thumbnailDir = path.join(appCfg.thumbnail_dir, filename)
-//         if (fs.existsSync(thumbnailDir)) {
-//             await fs.promises.rm(thumbnailDir, { recursive: true })
-//         }
-//     }
-//     return resp.success('success')
-// }
-
-// async function handle_video_event_detect(): Promise<Dty.Resp<Dty.FileEventInfo[][]>> {
-//     const resp = new Dty.Resp<Dty.FileEventInfo[][]>()
-
-//     const filePath =
-//         'D:/02_workspace/05_timeCapsule/02_stream_manager/stream_manager/src/main/proc_models/contour_records.json'
-//     let data = ''
-//     try {
-//         data = fs.readFileSync(filePath, {
-//             encoding: 'utf-8'
-//         })
-//     } catch (error: unknown) {
-//         console.error('读取文件时出错:', error)
-//         resp.code = 1
-//         resp.status = String(error)
-//         return resp
-//     }
-//     try {
-//         const jsonData = JSON.parse(data)
-//         resp.data = jsonData
-//         return resp
-//     } catch (error: unknown) {
-//         resp.code = 1
-//         resp.status = String(error)
-//         return resp
-//     }
-// }
-
-// function getFilenameFromPath(filePath: string): string {
-//     // 检查参数是否为字符串类型
-//     if (typeof filePath !== 'string') {
-//         throw new Error('filepath must be a string')
-//     }
-//     // 去除路径前后的空白字符
-//     filePath = filePath.trim()
-//     // 如果路径为空字符串，直接返回空字符串
-//     if (filePath === '') {
-//         return ''
-//     }
-//     // 使用正则表达式按照反斜杠或正斜杠分割路径
-//     const parts = filePath.split(/[\\/]/)
-//     // 返回数组的最后一个元素，即文件名
-//     return parts[parts.length - 1]
-// }
-
-// async function handle_select_video(
-//     req: Dty.Req<Dty.Req_SltFile>
-// ): Promise<Dty.Resp<Dty.File>> {
-//     const resp = new Dty.Resp<Dty.File>()
-//     resp.data = new Dty.File()
-//     if (req.data == null) {
-//         return resp.err('req.data is null')
-//     }
-//     if (resp.data == undefined) {
-//         return resp.err('resp.data is null')
-//     }
-//     const video_path = req.data?.filepath
-//     if (video_path == null) {
-//         return resp.err('filepath is null')
-//     }
-//     // 先读取文件的项目信息
-//     {
-//         const filename = getFilenameFromPath(video_path)
-//         const filePrjPath = make_file_prj_path(filename)
-//         if (fs.existsSync(filePrjPath)) {
-//             // 读取文件
-//             let data = ''
-//             try {
-//                 data = fs.readFileSync(filePrjPath, {
-//                     encoding: 'utf-8'
-//                 })
-//                 const jsonData = JSON.parse(data)
-//                 resp.data = jsonData.fileInfo
-//                 // 读取成功了直接返回
-//                 logger.info('handle_select_video read file prj success')
-//                 return resp
-//             } catch (error: unknown) {
-//                 console.error('not find video split info:', filePrjPath, error)
-//             }
-//         }
-//     }
-
-//     // get media info
-//     {
-//         const mediaInfo = await mediaProc.getVideoInfo(video_path)
-//         respData.mediaInfo = mediaInfo
-//     }
-//     {
-//         const thubResp = await appProc.query_images(video_path)
-//         // logger.info('handle_select_video', thubResp);
-//         if (thubResp.code == 0) {
-//             respData.thumbnail = thubResp.data?.files
-//         }
-//     }
-//     return resp
-// }
-
-// async function handle_save_prj(
-//     req: Dty.Req<Dty.Req_CutVideo>
-// ): Promise<Dty.Resp> {
-//     const resp = new Dty.Resp()
-//     if (req.data == null) {
-//         return resp.err('req.data is null')
-//     }
-//     const filePath = make_file_prj_path(req.data.filename)
-//     const data = JSON.stringify(req.data)
-//     try {
-//         fs.writeFileSync(filePath, data)
-//         return resp.success('success')
-//     } catch (error: unknown) {
-//         return resp.err(String(error))
-//     }
-// }
-
-/*
-async function traversal_folder(
-    req: Dty.Req<Dty.Req_TraversalFolder>
-): Promise<Dty.Resp<Dty.TraversalFolder>> {
-    const folderpath = req.data?.folder
-    if (folderpath == null) {
-        const resp = new Dty.Resp<Dty.TraversalFolder>()
-        return resp.err('folderpath is null')
-    }
-    const traversalFolder = new TraversalFolder()
-    traversalFolder.folder = folderpath
-    traversalFolder.bSort = true
-    return await traversalFolder.start()
-}
-
-*/

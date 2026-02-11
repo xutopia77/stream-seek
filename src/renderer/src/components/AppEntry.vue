@@ -81,6 +81,10 @@ onBeforeMount(async () => {
 onMounted(() => {
     router.push('/')
 })
+
+window.electronAPI.onSystemNotify((data) => {
+    util.processMsgNotify(data)
+})
 </script>
 
 <style scoped>

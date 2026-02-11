@@ -57,21 +57,6 @@ class WorkQueue {
         }
         this.curReq = req
     }
-
-    // 添加响应到队列
-    async addResp(resp: Dty.WorkResp): Promise<void> {
-        if (this.curReq !== null) {
-            if (resp.cmd !== this.curReq.cmd) {
-                logger.warn('resp cmd not equal to req cmd', resp.cmd, this.curReq.cmd)
-            }
-        }
-        while (this.processing) {
-            await new Promise((resolve) => setTimeout(resolve, 10))
-        }
-        this.processing = true
-        this.resps.push(resp)
-        this.processing = false
-    }
 }
 
 const workQueue = new WorkQueue()

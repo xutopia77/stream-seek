@@ -524,7 +524,7 @@ class Util {
     }
 
     process_heartbeat(resp: Dty.Resp<Dty.HeartBeat>): void {
-        if (!resp.isSuccess() || resp.data === undefined) {
+        if (resp.code != Dty.RespCode.Success || resp.data === undefined) {
             console.log('process heartbeat failed', resp)
             return
         }
@@ -548,6 +548,16 @@ class Util {
         } else {
             appStore.curWorks = []
         }
+    }
+
+    processMsgNotify(data: string): void {
+        // console.log('收到主进程通知：', data)
+        // alert(`系统通知：${data.message}`)
+        if (data == null) {
+            return
+        }
+        const workResp: Dty.WorkResp = JSON.parse(data)
+        util.process_work_response(workResp)
     }
 
     async thumbsDel(reqInfo: Dty.DeleteFileReq): Promise<void> {
@@ -876,7 +886,10 @@ class Util {
 
     process_work_response(workRespose: Dty.WorkResp): void {
         const cmd = workRespose.cmd
-
+        if (workRespose.data == null) {
+            console.log(`workRespose.data null, ${workRespose}`)
+            return
+        }
         const response = JSON.parse(workRespose.data)
         // const showCtx = `命令:${cmd} 执行结果: ${response.status}`
         // if (response.code !== 0) {
@@ -887,6 +900,12 @@ class Util {
 
         // console.log('process_work_response', cmd, response)
         switch (cmd) {
+            case Dty.CmdType.prjSync:
+                {
+                    const resp: Dty.Resp<Dty.TraversalFolder> = response
+                    util.addToastInfo(`同步项目：${resp.status}`)
+                }
+                break
             case Dty.CmdType.prjOpen:
                 console.log('open folder', response)
                 util.folder_file_proc(response)

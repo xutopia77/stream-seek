@@ -23,7 +23,7 @@ export enum CmdType {
     tinyFileDbStop = 'tinyFileDbStop'
 }
 
-export const httpSrvPort: number = 58081
+export const httpSrvPort: number = 58080
 
 export class AppInfo {
     prjFile: string = '' // 项目文件的路径，没有项目时，为空

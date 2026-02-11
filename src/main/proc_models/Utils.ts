@@ -2,6 +2,8 @@ import * as path from 'path'
 import * as Dty from '../../bridge/dataTypedef'
 import appCfg from './AppCfg'
 
+let mainWindow: Electron.BrowserWindow | null = null
+
 class Util {
     static defaultVersionGet(): string {
         return '2.2.0'
@@ -76,6 +78,17 @@ class Util {
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `
+    }
+
+    static notifyRender(msg: string): void {
+        if (!mainWindow) {
+            console.log('main window err', mainWindow)
+            return
+        }
+        mainWindow.webContents.send('msg-notify', msg)
+    }
+    static mainWinSet(mainWin: Electron.BrowserWindow | null): void {
+        mainWindow = mainWin
     }
 }
 
