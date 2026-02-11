@@ -542,9 +542,6 @@ class Util {
             if (respData.workRespose.length > 0) {
                 // console.log('process heartbeat', respData.workRespose)
             }
-            for (const item of respData.workRespose) {
-                util.process_work_response(item)
-            }
         } else {
             appStore.curWorks = []
         }
@@ -553,11 +550,7 @@ class Util {
     processMsgNotify(data: string): void {
         // console.log('收到主进程通知：', data)
         // alert(`系统通知：${data.message}`)
-        if (data == null) {
-            return
-        }
-        const workResp: Dty.WorkResp = JSON.parse(data)
-        util.process_work_response(workResp)
+        util.process_work_response(data)
     }
 
     async thumbsDel(reqInfo: Dty.DeleteFileReq): Promise<void> {
@@ -884,13 +877,7 @@ class Util {
         appStore = store
     }
 
-    process_work_response(workRespose: Dty.WorkResp): void {
-        const cmd = workRespose.cmd
-        if (workRespose.data == null) {
-            console.log(`workRespose.data null, ${workRespose}`)
-            return
-        }
-        const response = JSON.parse(workRespose.data)
+    process_work_response(data: string): void {
         // const showCtx = `命令:${cmd} 执行结果: ${response.status}`
         // if (response.code !== 0) {
         //   util.addToastErr(showCtx)
@@ -899,37 +886,54 @@ class Util {
         // }
 
         // console.log('process_work_response', cmd, response)
+        const datCmd: Dty.WorkResp = JSON.parse(data)
+        const cmd = datCmd.cmd
         switch (cmd) {
             case Dty.CmdType.prjSync:
                 {
-                    const resp: Dty.Resp<Dty.TraversalFolder> = response
-                    util.addToastInfo(`同步项目：${resp.status}`)
+                    const workRespose: Dty.WorkResp<Dty.Resp<Dty.TraversalFolder>> =
+                        JSON.parse(data)
+                    util.addToastInfo(`同步项目：${workRespose.data.status}`)
                 }
                 break
             case Dty.CmdType.prjOpen:
-                console.log('open folder', response)
-                util.folder_file_proc(response)
-                if (response.code !== 0) {
-                    util.addToastErr(`打开文件夹失败: ${response.status}`)
-                } else {
-                    util.addToastInfo(`打开文件夹成功: ${response.status}`)
-                }
-                break
-            case Dty.CmdType.videoCut:
-                if (response.code !== 0) {
-                    util.addToastErr(`视频裁剪失败: ${response.status}`)
-                    console.log('cut video failed', response)
-                } else {
-                    util.addToastInfo(`视频裁剪完成:${response.status}`)
-                    const respData: Dty.Resp_CutVideo = response.data
-                    if (respData.traversalResp != null) {
-                        console.log('update file list', respData.traversalResp)
-                        util.folder_file_proc(respData.traversalResp)
+                {
+                    const workRespose: Dty.WorkResp<Dty.Resp<Dty.TraversalFolder>> =
+                        JSON.parse(data)
+                    const response = workRespose.data
+                    util.folder_file_proc(response)
+                    if (response.code !== 0) {
+                        util.addToastErr(`打开文件夹失败: ${response.status}`)
+                    } else {
+                        util.addToastInfo(`打开文件夹成功: ${response.status}`)
                     }
                 }
+
+                break
+            case Dty.CmdType.videoCut:
+                {
+                    const workRespose: Dty.WorkResp<Dty.Resp<Dty.Resp_CutVideo>> = JSON.parse(data)
+                    const response = workRespose.data
+                    if (response.code !== 0) {
+                        util.addToastErr(`视频裁剪失败: ${response.status}`)
+                        console.log('cut video failed', response)
+                    } else {
+                        util.addToastInfo(`视频裁剪完成:${response.status}`)
+                        if (response.data != null) {
+                            const respData: Dty.Resp_CutVideo = response.data
+                            if (respData.traversalResp != null) {
+                                console.log('update file list', respData.traversalResp)
+                                util.folder_file_proc(respData.traversalResp)
+                            }
+                        }
+                    }
+                }
+
                 break
             case Dty.CmdType.videoDel:
                 {
+                    const workRespose: Dty.WorkResp<Dty.Resp> = JSON.parse(data)
+                    const response = workRespose.data
                     if (response.code !== 0) {
                         util.addToastErr(`删除失败: ${response.status}`)
                         console.log('cut video failed', response)
@@ -946,18 +950,25 @@ class Util {
                 }
                 break
             case Dty.CmdType.get_key_frame_info:
-                if (response.code !== 0) {
-                    util.addToastErr(`获取关键帧信息失败: ${response.status}`)
-                } else {
-                    if (appStore) {
-                        if (appStore.curSltVideo == null) {
-                            appStore.curSltVideo = new Dty.File()
+                {
+                    const workRespose: Dty.WorkResp<Dty.Resp<Dty.FrameInfo>> = JSON.parse(data)
+                    const response = workRespose.data
+                    if (response.code !== 0) {
+                        util.addToastErr(`获取关键帧信息失败: ${response.status}`)
+                    } else {
+                        if (appStore) {
+                            if (appStore.curSltVideo == null) {
+                                appStore.curSltVideo = new Dty.File()
+                            }
+                            if (null != response.data) {
+                                appStore.curSltVideo.frameInfo = response.data
+                                console.log('get key frame info', appStore.curSltVideo.frameInfo)
+                                util.addToastInfo(`获取关键帧信息完成:${response.status}`)
+                            }
                         }
-                        appStore.curSltVideo.frameInfo = response.data
-                        console.log('get key frame info', appStore.curSltVideo.frameInfo)
-                        util.addToastInfo(`获取关键帧信息完成:${response.status}`)
                     }
                 }
+
                 break
         }
     }
