@@ -407,9 +407,9 @@ export class Tiny2DbReq {
     tinyFileDbPath: string = ''
 }
 
-export interface WorkResp {
+export interface WorkResp<T = string> {
     cmd: CmdType
-    data: string
+    data: T
 }
 
 export class HeartBeat {
@@ -609,7 +609,7 @@ export class Resp<T = string> {
         this.status = desc
         return this
     }
-    success(desc: string): Resp<T> {
+    success(desc: string = 'success'): Resp<T> {
         this.code = RespCode.Success
         this.status = desc
         return this

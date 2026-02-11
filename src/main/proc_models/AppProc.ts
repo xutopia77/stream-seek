@@ -1102,7 +1102,7 @@ class AppProc {
         }
 
         workQueue.statusSet('sync work success')
-        const workResp: Dty.WorkResp = { cmd: req.cmd, data: JSON.stringify(resp) }
+        const workResp: Dty.WorkResp<Dty.Resp<Dty.SyncPrjResp>> = { cmd: req.cmd, data: resp }
         Util.notifyRender(JSON.stringify(workResp))
         return resp
     }
@@ -1620,19 +1620,19 @@ class AppProc {
         mediaProc
             .get_frame_info(filePath)
             .then((resp: Dty.Resp<Dty.FrameInfo>) => {
-                Util.notifyRender(JSON.stringify({ cmd: req.cmd, data: JSON.stringify(resp) }))
+                Util.notifyRender(JSON.stringify({ cmd: req.cmd, data: resp }))
             })
             .catch((error: unknown) => {
                 logger.error('get frame info err:', error)
+                resp.err(error as string)
                 Util.notifyRender(
                     JSON.stringify({
                         cmd: req.cmd,
-                        data: JSON.stringify({ code: Dty.RespCode.Error, status: error })
+                        data: resp
                     })
                 )
             })
-        resp.code = 0
-        resp.status = 'success'
+        resp.success()
         resp.bOver = false
         return resp
     }
@@ -1841,7 +1841,6 @@ class AppProc {
     async handle_cmd(req: Dty.Req, mainWin: Electron.BrowserWindow | null): Promise<Dty.Resp> {
         const cmd = req.cmd
         const cseq = req.cseq
-        Util.notifyRender('123456575')
         if (req.cmd != Dty.CmdType.heartBeat) {
             // console.log(`Arguments: ${args}`);
         }
