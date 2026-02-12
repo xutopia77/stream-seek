@@ -35,6 +35,45 @@
 缩略图查看时，按照文件获取
 缩略图删除时，如果这个缩略图数据库文件中已经没有文件了，就把整个缩略图数据库文件删除。
 
+### 数据库存储
+- files 
+  文件数据库表格结构
+
+| 字段名        | 类型        | 约束/说明                                   |
+|---------------|-------------|---------------------------------------------|
+| id            | INTEGER     | 主键，自增（PRIMARY KEY AUTOINCREMENT）      |
+| name          | TEXT        | 非空（NOT NULL），文件名称                  |
+| path          | TEXT        | 非空（NOT NULL），文件绝对路径                  |
+| startTimeSec  | INTEGER     | 非空（NOT NULL），开始时间（秒）            |
+| endTimeSec    | INTEGER     | 非空（NOT NULL），结束时间（秒）            |
+| duration      | INTEGER     | 非空（NOT NULL），文件时长（秒）            |
+| size          | INTEGER     | 非空（NOT NULL），文件大小（字节）          |
+| mediaInfo     | TEXT        | 可选，媒体信息（如编码、分辨率等）          |
+| splitInfo     | TEXT        | 可选，分片信息                              |
+| frameInfo     | TEXT        | 可选，帧信息                                |
+| thumbnail     | TEXT        | 可选， 存储的是缩略图的文件名称数组，存储在缩略图数据库文件中 |
+| eventInfo     | TEXT        | 可选，事件相关信息，暂时没有用                          |
+| type          | INTEGER     | 非空（NOT NULL），文件类型（自定义枚举）    |
+| status        | INTEGER     | 非空（NOT NULL），文件状态（自定义枚举）    |
+| repo          | TEXT        | 非空（NOT NULL），所属仓库，暂时不用了，目前只支持一个仓库       |
+| infoHash      | TEXT        | 非空（NOT NULL）、唯一（UNIQUE），文件哈希值，暂时不用，因为文件的绝对路径已经可以表示唯一了|
+| description   | TEXT        | 可选，文件描述                              |
+| created_at    | DATETIME    | 默认值为当前时间戳（CURRENT_TIMESTAMP）     |
+| updated_at    | DATETIME    | 可选，更新时间戳                            |
+| deleted_at    | DATETIME    | 可选，软删除时间戳（逻辑删除）              |
+
+- tags
+  文件标签表，目前只支持文件等级标签
+
+| 字段名        | 类型        | 约束/说明                                   |
+|---------------|-------------|---------------------------------------------|
+| id            | INTEGER     | 主键，自增（PRIMARY KEY AUTOINCREMENT）      |
+| name          | TEXT        | 非空（NOT NULL）、唯一（UNIQUE），标签名称  |
+| color         | TEXT        | 可选，标签颜色（如十六进制值 #FF0000）      |
+| created_at    | DATETIME    | 默认值为当前时间戳（CURRENT_TIMESTAMP）     |
+| updated_at    | DATETIME    | 可选，标签更新时间戳                        |
+| deleted_at    | DATETIME    | 可选，软删除时间戳（非空表示逻辑删除）      |
+
 ## 创建工程
 
 # 打包
@@ -55,40 +94,20 @@ npm run build:win
 - 文件等级使用☆, ☆越多，表示文件越重要。
 
 ## 2.2.1 2026年2月7日15:01:10
-- 缩略图文件放到数据库中
+- fix bugs。
 - 监听本地的58080端口，用于缩略图服务
+- 缩略图文件放到数据库中
 - 缩略图数据库中两个表 infos和files，infos存放对应文件的mediaInfo，files存放缩略图文件
 - thumbnail文件夹下存放的是缩略图文件，默认分辨率是640*480。
 - frame文件夹下存放的是视频抽帧文件，分辨率是视频分辨率。
-- fix bugs。
 - 优化文件/缩略图删除功能。在删除文件时，可以选择是否删除缩略图（只有在回收站模式下有效）。
 - 新增缩略图管理功能，可以删除缩略图文件。
 - 文件遍历的同时，也遍历数据库，修整数据库的文件信息记录。
+- 异步操作的结果，由后端主动通知给前端，不再使用前端定时心跳拉取的方式。
+
+- 文件遍历时，与数据库中任何状态的数据都进行检查，然后再根据情况更新数据库中的记录信息
 
 # 代码
-
-函数模型如下
-```ts
-
-interface Req<T = string> {
-  cmd: string
-  data?: T
-}
-
-interface Resp<T = string> {
-  code: number
-  status: string
-  bOver?: boolean
-  data?: T
-}
-
-async function trigger_event<T = string, R = string>(req: Dty.Req<T>): Promise<Dty.Resp<R>>
-```
-
-发送时，入参是一个对象Req，返回值是一个Promise对象，Promise对象的resolve值是一个对象Resp
-
-至于Req和Resp中的Data，是一个泛型，具体的类型由调用方决定。
-
 
 ```shell
 

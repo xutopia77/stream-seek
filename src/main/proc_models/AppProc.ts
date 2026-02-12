@@ -79,34 +79,32 @@ class TraversalFolder {
         const resp: Dty.Resp = new Dty.Resp()
 
         this.status.fileNum++
-        const now = Date.now()
-        if ((now % 10) * 1000 === 0) {
-            logger.info(`traversal file count: ${this.status.fileNum}`)
-        }
         workQueue.statusSet(`traversal file count: ${this.status.fileNum}`)
-        const fileTimeInfo = Dty.FileTools.parse_filename_mi(fName)
+        const fileTimeInfo = Dty.FileTools.miFilenameParse(fName)
         if (fileTimeInfo == null) {
             this.status.fileErrNum++
             return resp.err(logger.warn(`traversal skip: ${fPath}`))
         }
         // 1， check file if in db
-        const searchReq = Dty.FilesReq.makeReqStatusNormal(fPath, this.repo.name)
+        const searchReq: Dty.FilesReq = new Dty.FilesReq()
+        searchReq.path = fPath
         const respSearch = await appDb.filesSearch(searchReq)
-        if (respSearch.code == 0) {
+        if (respSearch.isSuccess()) {
             if (respSearch.data?.files.length != null && respSearch.data.files.length > 0) {
-                // logger.info(`file already exists: ${fPath}`)
+                if (respSearch.data.files.length > 1) {
+                    logger.info(
+                        `file already exist,but record number=${respSearch.data.files.length},${fPath}`
+                    )
+                }
                 const fInfo = respSearch.data?.files[0]
                 // check file status [todo] check other status
                 if (fInfo?.status != Dty.Fstatus.Normal) {
                     const statusStr = Dty.fileStatusGet(fInfo.status)
-                    fInfo.status = Dty.Fstatus.Normal
-                    const upResp = await appDb.fileUpdate(fInfo)
-                    if (upResp.code != Dty.RespCode.Success) {
-                        logger.error(`update file status err ${fInfo.path}, status:${statusStr}`)
-                        this.status.fileErrNum++
-                    }
+                    const delResp = await appDb.fileDeleteById(fInfo.id)
+                    logger.info(`file status=${statusStr},${delResp.status}`)
+                } else {
+                    return resp.success(`file already exists: ${fPath}`)
                 }
-                return resp.success(`file already exists: ${fPath}`)
             }
         }
 
@@ -129,7 +127,9 @@ class TraversalFolder {
             repo: this.repo.name
         }
         const respInsert = await appDb.file_insert(fileModel)
-        logger.info(`file insert id:${respInsert.data?.id} ${respInsert.status} ${fPath}`)
+        logger.info(
+            `file insert num=${this.status.fileNum}, id:${respInsert.data?.id} ${respInsert.status} ${fPath}`
+        )
         if (respInsert.code != Dty.RespCode.Success) {
             this.status.fileErrNum++
             return resp.err(`file insert err ${respInsert.status}`)
@@ -137,7 +137,11 @@ class TraversalFolder {
         return resp
     }
 
-    private async traversal_folder(): Promise<Dty.Resp> {
+    /*
+        1，遍历文件夹。文件插入数据库，如果文件已经存在，检查文件状态，如果文件状态正常，则跳过，不插入数据库，如果文
+    件状态不正常，先删除文件记录，再插入数据库，虽然文件的缩略图文件可能还存在，但是后面再生成就是了。
+    */
+    async folderTraversal(): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
         const folderPath = this.repo.path
         if (!folderPath || !fs.existsSync(folderPath)) {
@@ -187,7 +191,12 @@ class TraversalFolder {
         }
     }
 
-    private async checkDb(): Promise<Dty.Resp> {
+    /*
+        1, 数据库表files，检查文件是否存在，不存在标记为destroy。 todo ， 如果缩略图也不存在，设置为nothing
+        2，遍历缩略图数据库文件，插入到数据库表files（如果表中没有
+    对应项），但文件状态设置为destroy。todo
+    */
+    async checkDb(): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
         if (!appDb.db) {
             return resp.err(logger.error(`db is null`))
@@ -227,6 +236,7 @@ class TraversalFolder {
             }
             for (const fInfo of searchResult.data.files) {
                 let chkStatus = ''
+                // file not exist,set file status destroy
                 if (!fs.existsSync(fInfo.path)) {
                     if (fInfo.status != Dty.Fstatus.Destroy) {
                         fInfo.status = Dty.Fstatus.Destroy
@@ -238,6 +248,7 @@ class TraversalFolder {
                         }
                     }
                 } else {
+                    // file exist, set status normal
                     if (fInfo.status != Dty.Fstatus.Normal) {
                         fInfo.status = Dty.Fstatus.Normal
                         const upResp = await appDb.fileUpdate(fInfo)
@@ -249,6 +260,7 @@ class TraversalFolder {
                     }
                 }
                 {
+                    // if file is normal, remove frame db file to normal folder if frame db file in trash
                     {
                         const thumbDbFilePath = Util.thumbDbPathGet(fInfo.name, Dty.ThumbType.Frame)
                         const trashThumbDbPath = Util.thumbTrashDbPathGet(
@@ -274,6 +286,7 @@ class TraversalFolder {
                             logger.error(`move thumb file err`, err)
                         }
                     }
+                    // if file is normal, remove thumbnail db file to normal folder if thumbnail db file in trash
                     {
                         const thumbDbFilePath = Util.thumbDbPathGet(fInfo.name, Dty.ThumbType.Thumb)
                         const trashThumbDbPath = Util.thumbTrashDbPathGet(
@@ -311,29 +324,6 @@ class TraversalFolder {
 
         logger.info(`Database check completed. Total files processed: ${processedCount}`)
         return resp.success('Database check completed')
-    }
-
-    /*
-        1，遍历文件夹。如果文件已经存在，检查文件状态，设置文
-    件状态为正常。如果文件不存在，插入数据库表files。
-        2，数据库表files，检查文件是否存在，不存在标记为destroy。
-        3，遍历缩略图数据库文件，插入到数据库表files（如果表中没有
-    对应项），但文件状态设置为destroy。todo
-    */
-    async start(): Promise<Dty.Resp> {
-        const resp = new Dty.Resp()
-        if (this.repo.path == '') {
-            return new Dty.Resp().err('folder is null')
-        }
-        const respTras = await this.traversal_folder()
-        if (!respTras.isSuccess()) {
-            return respTras
-        }
-        const respDb = await this.checkDb()
-        if (!respDb.isSuccess()) {
-            return respDb
-        }
-        return resp
     }
 
     async get_folder_files(): Promise<Dty.Resp<Dty.FilesResp>> {
@@ -595,7 +585,7 @@ class AppProc {
         return await appDb.fileViewSearch(req.data == null ? null : req.data)
     }
 
-    async save_prj_info(prjInfo: Dty.Prj): Promise<Dty.Resp> {
+    async prjInfoSave(prjInfo: Dty.Prj): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
         if (prjInfo == null) {
             return resp.err('prj is null')
@@ -673,7 +663,7 @@ class AppProc {
             }
         }
         // 5, write prj info to file
-        const saveResp = await this.save_prj_info(prjInfo)
+        const saveResp = await this.prjInfoSave(prjInfo)
         if (saveResp.code != 0) {
             return resp.err('save prj info error ' + saveResp.status)
         }
@@ -753,7 +743,7 @@ class AppProc {
 
     async start_gen_thumbnail(): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
-        const searchRe = await appDb.fileViewSearch(Dty.FilesReq.makeReqStatusNormal(null, null))
+        const searchRe = await appDb.filesSearch(Dty.FilesReq.makeReqStatusNormal(null, null))
         if (searchRe.code !== 0) {
             return resp.err('search file error')
         }
@@ -765,6 +755,7 @@ class AppProc {
                 break
             }
             count++
+            // get thumbnail
             {
                 const startTime = Date.now()
                 const respThumb = await recordsProc.gen_thumbnail(fileInfo, Dty.ThumbType.Thumb)
@@ -791,6 +782,7 @@ class AppProc {
                     await appDb.fileUpdate(fileInfo)
                 }
             }
+            // get frame
             {
                 const startTime = Date.now()
                 const respThumb = await recordsProc.gen_thumbnail(fileInfo, Dty.ThumbType.Frame)
@@ -821,100 +813,39 @@ class AppProc {
         return resp
     }
 
-    async start_classify_file(repos: Dty.DataRepo[]): Promise<Dty.Resp> {
+    async classifyFileStart(repos: Dty.DataRepo[]): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
         for (const repo of repos) {
             if (repo.name == '' || repo.path == '') {
                 logger.error(`repo name or path is empty: ${repo.name}, ${repo.path}`)
                 continue
             }
-            // 1, start traversal folder, Automatically insert the files in the folder into the database
+            const traversalFolder = new TraversalFolder()
+            traversalFolder.type = null
+            traversalFolder.repo = repo
+
+            // 1, start traversal folder, Automatically insert the files in the
+            // folder into the database
             {
-                const traversalFolder = new TraversalFolder()
-                traversalFolder.type = null
-                traversalFolder.repo = repo
-                const resp = await traversalFolder.start()
-                logger.info(`traversal ${repo.path} ${resp.status}`)
+                const respTras = await traversalFolder.folderTraversal()
+                if (!respTras.isSuccess()) {
+                    return respTras
+                }
+                logger.info(`traversal ${repo.path} ${respTras.status}`)
             }
 
-            // 2, start search file from db
-            {
-                workQueue.statusSet(logger.info('start classify folder:', repo.path))
-                const searchReq = Dty.FilesReq.makeReqStatusNormal(null, repo.name)
-                searchReq.order = 'asc'
-                searchReq.orderBy = 'startTimeSec'
-                searchReq.status = []
-                const searchResp = await appDb.fileViewSearch(searchReq)
-                if (searchResp.code !== Dty.RespCode.Success) {
-                    logger.error(`search file error: ${searchResp.status}`)
-                    continue
-                }
-                // 3, Check whether the files in the database exist in the folder. If not, mark them as destroyed
-                const fileList = searchResp.data?.files ?? []
-                for (const fInfo of fileList) {
-                    if (bSyncPrjStop) {
-                        logger.info(`prj sync stop cur in classift file`)
-                        break
-                    }
-                    if (!fs.existsSync(fInfo.path)) {
-                        if (fInfo.status == Dty.Fstatus.Normal) {
-                            workQueue.statusSet(
-                                logger.error(`file not exist destroy: ${fInfo.path}`)
-                            )
-                            fInfo.status = Dty.Fstatus.Destroy
-                            await appDb.fileUpdate(fInfo)
-                            continue
-                        }
-                        if (fInfo.status == Dty.Fstatus.Deleted) {
-                            const fTrashPath = recordsProc.file_trash_path_get(fInfo)
-                            if (fTrashPath == '' || !fs.existsSync(fTrashPath)) {
-                                workQueue.statusSet(
-                                    logger.info(`file not exist destroy: ${fInfo.path}`)
-                                )
-                                fInfo.status = Dty.Fstatus.Destroy
-                                await appDb.fileUpdate(fInfo)
-                                continue
-                            } else {
-                                workQueue.statusSet(logger.info(`update file path: ${fTrashPath}`))
-                                fInfo.path = fTrashPath
-                                await appDb.fileUpdate(fInfo)
-                                continue
-                            }
-                        }
-                        if (fInfo.status == Dty.Fstatus.Destroy) {
-                            continue
-                        }
-                    } else {
-                        if (fInfo.status == Dty.Fstatus.Deleted) {
-                            const fTrashPath = recordsProc.file_trash_path_get(fInfo)
-                            const tmp1 = path.posix.normalize(fInfo.path)
-                            const tmp2 = path.posix.normalize(fTrashPath)
-                            if (tmp1 == tmp2) {
-                                continue
-                            }
-                            workQueue.statusSet(
-                                logger.error(`file status ${fInfo.status} err : ${fInfo.path}`)
-                            )
-                            fInfo.status = Dty.Fstatus.Destroy
-                            await appDb.fileUpdate(fInfo)
-                            continue
-                        }
-                    }
-                }
-            }
-            // 4, search file from db again
+            // 2, start classify file
             {
                 const searchReq = Dty.FilesReq.makeReqStatusNormal(null, repo.name)
                 searchReq.order = 'asc'
                 searchReq.orderBy = 'startTimeSec'
-                const searchResp = await appDb.fileViewSearch(searchReq)
+                const searchResp = await appDb.filesSearch(searchReq)
                 if (searchResp.code !== 0) {
                     logger.error(`search file error: ${searchResp.status}`)
                     continue
                 }
                 const fileList = searchResp.data?.files ?? []
-                // 5, start classify file
-                // 5.1, make folder first
+                // 2.1, make folder first
                 let batchSize = appCfg.prj.numEachFolder
                 if (batchSize > 10000 || batchSize < 1) {
                     logger.error(
@@ -930,8 +861,12 @@ class AppProc {
                     }
                 }
                 let fileCnt = 0
-                // 5.2, Classify the files into groups of 10
+                // 2.2, Classify the files into groups of 10
                 for (let i = 0; i < fileList.length; i += batchSize) {
+                    if (bSyncPrjStop) {
+                        logger.info(`prj sync stop cur in classify files`)
+                        return resp
+                    }
                     const batch = fileList.slice(i, i + batchSize)
                     for (const fileInfo of batch) {
                         fileCnt++
@@ -957,19 +892,24 @@ class AppProc {
                     }
                 }
             }
-            // 6, start classify thumbnail trash folder
-            {
+            // 3, start classify thumbnail trash folder
+            const bClassifyTrash = false
+            if (bClassifyTrash) {
                 logger.info(`start classify thumbnail trash folder: ${repo.thumbnailPath}`)
                 // 1, search deleted file
                 const searchReq = Dty.FilesReq.makeReqStatusDel(repo.name)
-                const searchResp = await appDb.fileViewSearch(searchReq)
-                if (searchResp.code !== 0) {
+                const searchResp = await appDb.filesSearch(searchReq)
+                if (!searchResp.isSuccess()) {
                     logger.error(`search del file error: ${searchResp.status}`)
                     continue
                 }
                 const fileList = searchResp.data?.files ?? []
                 let fCnt = 0
                 for (const fInfo of fileList) {
+                    if (bSyncPrjStop) {
+                        logger.info(`prj sync stop cur in classify trash files`)
+                        return resp
+                    }
                     fCnt++
                     // logger.info(`file : ${fInfo.path}`)
                     const searchReq = Dty.FilesReq.makeReqStatusNormal(fInfo.path, fInfo.repo)
@@ -1011,6 +951,14 @@ class AppProc {
                     }
                 }
             }
+
+            // 4，check db
+            {
+                const respDb = await traversalFolder.checkDb()
+                if (!respDb.isSuccess()) {
+                    return respDb
+                }
+            }
         }
         return resp
     }
@@ -1024,12 +972,10 @@ class AppProc {
         把项目json文件路径信息保存到appdata文件夹中。
 
     文件分类：
-        1，首先遍历仓库文件夹，解析文件信息，保存到数据库中。
-        2，修复文件信息，不存在的文件（仓库中和回收站中都不存在
-    的），在数据库中标记为销毁。数据库中标记为删除的文件。
-        3，文件分类，从数据库中搜索文件，按照文件的创建时间，把文件
+        1，首先遍历仓库文件夹，解析文件信息，保存到数据库中。同时修复数据库记录。
+        2，文件分类，从数据库中搜索文件，按照文件的创建时间，把文件
     分散到各个子文件夹中。 数据库中会跟新文件路径信息。
-        4，删除文件的缩略图的移动到缩略图的回收站中。
+        3，删除文件的缩略图的移动到缩略图的回收站中。
 
     生成缩略图
     */
@@ -1062,13 +1008,14 @@ class AppProc {
                 }
             }
 
+            //  save prj info
             if (bNeedSavePrjInfo) {
                 workQueue.statusSet(logger.info(`save prj info start`))
                 const prjInfo = req.data.prj
                 if (prjInfo == null) {
                     return logStatusRespReturn(resp.err('prjInfo is null,err'))
                 }
-                const saveResp = await this.save_prj_info(prjInfo)
+                const saveResp = await this.prjInfoSave(prjInfo)
                 if (saveResp.code !== 0) {
                     return logStatusRespReturn(resp.err(`save prj info error ${saveResp.status}`))
                 }
@@ -1076,9 +1023,10 @@ class AppProc {
                 workQueue.statusSet(logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`))
             }
 
+            // traversal folder , check db
             if (bNeedClassifyFile) {
                 workQueue.statusSet(logger.log('classify file start'))
-                const classifyResp = await this.start_classify_file(req.data.prj.dataRepo)
+                const classifyResp = await this.classifyFileStart(req.data.prj.dataRepo)
                 if (classifyResp.code !== 0) {
                     return logStatusRespReturn(
                         resp.err(`classify file error ${classifyResp.status}`)
@@ -1087,15 +1035,12 @@ class AppProc {
                 workQueue.statusSet(logger.log('classify file ', classifyResp.status))
             }
 
+            // gen thumbnail
             if (bNeedGenThumb) {
                 for (const repo of req.data.prj.dataRepo) {
                     if (repo.name == '' || repo.path == '') {
                         return logStatusRespReturn(resp.err('repo name or path is empty'))
                     }
-                    const traversalFolder = new TraversalFolder()
-                    traversalFolder.type = null
-                    traversalFolder.repo = repo
-                    await traversalFolder.start()
                     await this.start_gen_thumbnail()
                 }
             }
@@ -1142,8 +1087,8 @@ class AppProc {
         }
         // 缩略图安装时间排序
         response.data?.files.sort((a, b) => {
-            const timeA = Dty.FileTools.parse_filename_mi(a.name)?.startTime
-            const timeB = Dty.FileTools.parse_filename_mi(b.name)?.startTime
+            const timeA = Dty.FileTools.miFilenameParse(a.name)?.startTime
+            const timeB = Dty.FileTools.miFilenameParse(b.name)?.startTime
             if (timeA === undefined) {
                 return 0
             }
@@ -1879,7 +1824,7 @@ class AppProc {
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
                 return this.cmdRespMake(await this.handle_get_key_frame_info(cmdReq))
             }
-            case 'create_prj': {
+            case Dty.CmdType.createPrj: {
                 const cmdReq = convertCmdRequest<Dty.CreatePrjReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
                 return this.cmdRespMake(await this.handle_create_prj(cmdReq, mainWin!))

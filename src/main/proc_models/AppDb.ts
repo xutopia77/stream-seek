@@ -841,6 +841,60 @@ class AppDb {
         }
         return resp
     }
+
+    /**
+     * 根据文件ID删除文件记录
+     * @param fileId 文件ID
+     * @param softDelete 是否软删除（仅更新状态为Deleted），默认为false（硬删除）
+     * @returns 删除结果
+     */
+    async fileDeleteById(fileId: number): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
+
+        try {
+            if (!this.db) throw new Error('Database not initialized')
+
+            // 硬删除：删除关联的标签记录，然后删除文件记录
+
+            // // 首先检查文件是否存在
+            // const existingFile = await this.db.get(
+            //     `SELECT id, path FROM ${this.tbl_files} WHERE id = ?`,
+            //     [fileId]
+            // )
+            // if (!existingFile) {
+            //     return resp.err('File not found')
+            // }
+
+            // 开始事务以确保数据一致性
+            await this.db.run('BEGIN TRANSACTION')
+
+            try {
+                // 删除关联的标签记录
+                await this.db.run(`DELETE FROM ${this.tbl_fileTag} WHERE fileId = ?`, [fileId])
+                // 删除文件记录
+                const result = await this.db.run(`DELETE FROM ${this.tbl_files} WHERE id = ?`, [
+                    fileId
+                ])
+                if (result.changes === 0) {
+                    await this.db.run('ROLLBACK')
+                    return resp.err('File not found')
+                }
+                await this.db.run('COMMIT')
+                return resp.success(
+                    `file hard deleted success, ${result.changes} record(s) affected`
+                )
+            } catch (error) {
+                await this.db.run('ROLLBACK')
+                logger.error('Error during file deletion transaction:', error)
+                throw error
+            }
+        } catch (error) {
+            logger.error('Error deleting file by ID:', error)
+            return resp.err(
+                `Error deleting file: ${error instanceof Error ? error.message : String(error)}`
+            )
+        }
+    }
 }
 
 const appDb = new AppDb()

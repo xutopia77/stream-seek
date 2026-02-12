@@ -1,6 +1,6 @@
 {
   "name": "record-manager",
-  "version": "2.2.6",
+  "version": "2.2.7",
   "description": "An Mi camera video process application",
   "main": "./out/main/index.js",
   "author": "example.com",

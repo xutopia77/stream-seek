@@ -29,7 +29,7 @@ import { Util } from './Utils.js'
 //     let lastEndTime: string = ''
 //     for (let i = 0; i < files.length; i++) {
 //         const file = files[i]
-//         const parseRe = Dty.FileTools.parse_filename_mi(file.title)
+//         const parseRe = Dty.FileTools.miFilenameParse(file.title)
 //         if (parseRe == null) {
 //             continue
 //         }
@@ -130,8 +130,8 @@ import { Util } from './Utils.js'
 
 //     // 根据文件名中的时间戳进行排序
 //     const sortFiles = files.slice().sort((a, b) => {
-//         const startTimeA = Dty.FileTools.parse_filename_mi(a.title)?.startTime
-//         const startTimeB = Dty.FileTools.parse_filename_mi(b.title)?.startTime
+//         const startTimeA = Dty.FileTools.miFilenameParse(a.title)?.startTime
+//         const startTimeB = Dty.FileTools.miFilenameParse(b.title)?.startTime
 //         if (startTimeA === undefined) {
 //             return 0
 //         }
@@ -373,7 +373,7 @@ class RecordsProc {
             return resp.err(`mkdir error ${error}`)
         }
         // 3, 获取文件名称中的信息
-        const parseRe = Dty.FileTools.parse_filename_mi(filename)
+        const parseRe = Dty.FileTools.miFilenameParse(filename)
         if (parseRe == null) {
             return resp.err(`parse filename error ${filename}`)
         }

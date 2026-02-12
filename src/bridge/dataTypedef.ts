@@ -111,7 +111,7 @@ export class File {
         let displayName = ''
         {
             // 10_20250301105200_20250301105306.mp4
-            const fileNameInfo = FileTools.parse_filename_mi(f.name)
+            const fileNameInfo = FileTools.miFilenameParse(f.name)
             if (fileNameInfo === null) {
                 return this.name
             }
@@ -656,7 +656,7 @@ export class FileTools {
         return picTimeStr
     }
     // 解析文件名，提取序号、开始时间和结束时间 10_20250301104336_20250301104500.mp4
-    static parse_filename_mi(title: string | null): ParsedFilename | null {
+    static miFilenameParse(title: string | null): ParsedFilename | null {
         if (title == null) {
             return null
         }

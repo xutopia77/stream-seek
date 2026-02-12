@@ -215,7 +215,7 @@ async function getFrameInfo(filepath: string): Promise<Dty.Resp<Dty.FrameInfo>> 
 //         endTimeIn: number
 //     ): string | null {
 //         const filename = path.basename(filepath)
-//         const startTime = Dty.FileTools.parse_filename_mi(filename)?.startTime
+//         const startTime = Dty.FileTools.miFilenameParse(filename)?.startTime
 //         const baseStartTimeSec = Dty.FileTools.parse_timestr_2_seconds(
 //             startTime == null ? '' : startTime
 //         )
