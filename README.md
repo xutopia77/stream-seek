@@ -4,6 +4,11 @@
 
 ## 1.1 软件概述
 
+[官方网站](https://xutopia77.github.io/page/record_manage/)
+
+
+
+
 录像文件管理软件（Record Manager）是一款专为安防监控视频文件管理而设计的桌面应用程序。该软件提供视频快速检索、智能分类管理、标签标注、关键帧提取与存储等核心功能。高度适合管理小米摄像头录像视频。也支持其他摄像头产生的录像文件。
 
 ![1770912390245](doc/image/record_manage_manual/1770912390245.jpg)
@@ -126,11 +131,18 @@
 
 # 7. 技术支持
 
-## 7.1 开源项目
+## 7.1 官方网站
+
+[官方网站](https://xutopia77.github.io/page/record_manage/)
+
+## 7.2 开源项目
+
 项目源码托管于 GitHub：`https://github.com/xutopia77/record_manager.git`
 
-## 7.2 社区支持
+## 7.3 社区支持
 如遇技术问题，请参考项目文档或提交 Issue。
+
+
 
 # 8. 版本信息
 当前版本：2.2.6
