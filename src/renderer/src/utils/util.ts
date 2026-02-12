@@ -693,6 +693,7 @@ class Util {
     }
 
     async sync_prj(types: Dty.SyncType[]): Promise<Dty.Resp<Dty.SyncPrjResp>> {
+        util.addToastInfo(`同步开始`)
         const req: Dty.Req<Dty.SyncPrjReq> = {
             cmd: Dty.CmdType.prjSync,
             data: {
@@ -889,13 +890,6 @@ class Util {
         const datCmd: Dty.WorkResp = JSON.parse(data)
         const cmd = datCmd.cmd
         switch (cmd) {
-            case Dty.CmdType.prjSync:
-                {
-                    const workRespose: Dty.WorkResp<Dty.Resp<Dty.TraversalFolder>> =
-                        JSON.parse(data)
-                    util.addToastInfo(`同步项目：${workRespose.data.status}`)
-                }
-                break
             case Dty.CmdType.prjOpen:
                 {
                     const workRespose: Dty.WorkResp<Dty.Resp<Dty.TraversalFolder>> =

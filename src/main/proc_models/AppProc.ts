@@ -517,7 +517,7 @@ class AppProc {
         const resp = new Dty.Resp()
         resp.success('success')
         let tagResp = await appDb.tag_search(null)
-        if (tagResp.code !== 0) {
+        if (!tagResp.isSuccess()) {
             return logStatusRespReturn(resp.err(`tag search err: ${tagResp.status}`))
         }
         workQueue.statusSet(`start set file tags len= ${req.data?.fileTags.length}`)
@@ -531,13 +531,13 @@ class AppProc {
                     color: '#4A6FA5'
                 }
                 const respInsert = await appDb.tag_insert(tag)
-                if (respInsert.code !== 0) {
+                if (!respInsert.isSuccess()) {
                     logger.error(`insert tag err: ${respInsert.status}`)
                 } else {
                     logger.info(`insert tag success: ${item.tagName}`)
                 }
                 tagResp = await appDb.tag_search(null)
-                if (tagResp.code !== 0) {
+                if (!tagResp.isSuccess()) {
                     return resp.err(`tag search err: ${tagResp.status}`)
                 }
                 tags = tagResp.data?.tags ?? []
@@ -555,12 +555,12 @@ class AppProc {
                 tagId: tagInfo?.id ?? 0
             }
             const respDel = await appDb.file_tag_delete_all(fileTag.fileId)
-            if (respDel.code !== 0) {
+            if (!respDel.isSuccess()) {
                 workQueue.statusSet(logger.error(`delete file tag err: ${respDel.status}`))
                 resp.err('delete file tags error')
             }
             const respUpdate = await appDb.file_tag_insert(fileTag)
-            if (respUpdate.code !== 0) {
+            if (!respUpdate.isSuccess()) {
                 workQueue.statusSet(logger.error(`insert file tag err: ${respUpdate.status}`))
                 resp.err('insert file tags error')
             } else {
@@ -744,7 +744,7 @@ class AppProc {
     async start_gen_thumbnail(): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
         const searchRe = await appDb.filesSearch(Dty.FilesReq.makeReqStatusNormal(null, null))
-        if (searchRe.code !== 0) {
+        if (!searchRe.isSuccess()) {
             return resp.err('search file error')
         }
         logger.log('start gen thumbnail total=', searchRe.data?.total)
@@ -761,7 +761,7 @@ class AppProc {
                 const respThumb = await recordsProc.gen_thumbnail(fileInfo, Dty.ThumbType.Thumb)
                 const endTime = Date.now()
                 const duration = ((endTime - startTime) / 1000).toFixed(3)
-                if (respThumb.code !== 0) {
+                if (!respThumb.isSuccess()) {
                     if (respThumb.code == Dty.RespCode.FileExist) {
                         continue
                     }
@@ -788,7 +788,7 @@ class AppProc {
                 const respThumb = await recordsProc.gen_thumbnail(fileInfo, Dty.ThumbType.Frame)
                 const endTime = Date.now()
                 const duration = ((endTime - startTime) / 1000).toFixed(3)
-                if (respThumb.code !== 0) {
+                if (!respThumb.isSuccess()) {
                     if (respThumb.code == Dty.RespCode.FileExist) {
                         continue
                     }
@@ -840,7 +840,7 @@ class AppProc {
                 searchReq.order = 'asc'
                 searchReq.orderBy = 'startTimeSec'
                 const searchResp = await appDb.filesSearch(searchReq)
-                if (searchResp.code !== 0) {
+                if (!searchResp.isSuccess()) {
                     logger.error(`search file error: ${searchResp.status}`)
                     continue
                 }
@@ -880,7 +880,7 @@ class AppProc {
                         fs.renameSync(fileInfo.path, dstPath)
                         fileInfo.path = dstPath
                         const updateResp = await appDb.fileUpdate(fileInfo)
-                        if (updateResp.code !== 0) {
+                        if (!updateResp.isSuccess()) {
                             logger.error(`update file error: ${updateResp.status}`)
                             continue
                         }
@@ -1016,7 +1016,7 @@ class AppProc {
                     return logStatusRespReturn(resp.err('prjInfo is null,err'))
                 }
                 const saveResp = await this.prjInfoSave(prjInfo)
-                if (saveResp.code !== 0) {
+                if (!saveResp.isSuccess()) {
                     return logStatusRespReturn(resp.err(`save prj info error ${saveResp.status}`))
                 }
                 resp.data.prj = prjInfo
@@ -1027,7 +1027,7 @@ class AppProc {
             if (bNeedClassifyFile) {
                 workQueue.statusSet(logger.log('classify file start'))
                 const classifyResp = await this.classifyFileStart(req.data.prj.dataRepo)
-                if (classifyResp.code !== 0) {
+                if (!classifyResp.isSuccess()) {
                     return logStatusRespReturn(
                         resp.err(`classify file error ${classifyResp.status}`)
                     )
@@ -1082,7 +1082,7 @@ class AppProc {
         traversalFolder.type = 'search'
         traversalFolder.repo.path = file_thubmbnail_dir
         const response = await traversalFolder.get_folder_files()
-        if (response.code !== 0) {
+        if (!response.isSuccess()) {
             return resp.err(`traversal folder error ${response.status}`)
         }
         // 缩略图安装时间排序
@@ -1116,7 +1116,7 @@ class AppProc {
         const searchReq = new Dty.FilesReq()
         searchReq.path = video_path
         const searchRe = await appDb.fileViewSearch(searchReq)
-        if (searchRe.code !== 0) {
+        if (!searchRe.isSuccess()) {
             return resp.err('search file error')
         }
         if (searchRe.data?.files.length === 0) {

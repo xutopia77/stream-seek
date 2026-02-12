@@ -79,9 +79,13 @@ async function btnclk_syncStop(): Promise<void> {
     }
     const response: Dty.Resp = await IpcApi.trigger_event(req)
     if (response.code == Dty.RespCode.Success) {
-        util.addToastInfo(`触发停止同步成功`)
+        if (response.bOver == false) {
+            util.addToastInfo(`停止同步，后台执行中`)
+        } else {
+            util.addToastInfo(`停止同步`)
+        }
     } else {
-        util.addToastErr(`触发停止同步失败 ${response.status}`)
+        util.addToastErr(`停止同步失败 ${response.status}`)
     }
     return
 }
@@ -99,15 +103,14 @@ async function btnclk_sync_work(types: Dty.SyncType[] = []): Promise<void> {
             syncTypes.push(Dty.SyncType.classify)
         }
     }
-
     const response = await util.sync_prj(syncTypes)
-    if (response.code !== 0) {
+    if (response.code !== Dty.RespCode.Success) {
         util.addToastErr(`同步项目失败: ${response.status}`)
     } else {
         if (response.bOver === false) {
             util.addToastInfo('后台执行中...')
         } else {
-            util.addToastInfo('同步项目成功')
+            util.addToastInfo(`同步项目：${response.status}`)
             await util.start_app()
         }
     }

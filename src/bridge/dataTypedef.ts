@@ -595,7 +595,7 @@ export enum RespCode {
 export class Resp<T = string> {
     code: RespCode
     status: string
-    bOver?: boolean
+    bOver?: boolean // 是否执行，结束
     data?: T
 
     constructor() {
