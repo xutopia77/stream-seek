@@ -94,7 +94,7 @@ export const useAppStore = defineStore('app', {
         // ------
         rightPanel: Dty.WorkPanel.List,
         fileSearchPage: 1,
-        fileSearchPageSize: 10,
+        fileSearchPageSize: 100,
         videoTotalNum: 0,
         thumbTotalNum: 0,
         thumbList: [],
