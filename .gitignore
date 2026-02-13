@@ -4,6 +4,4 @@ out
 .DS_Store
 .eslintcache
 *.log*
-src/main/proc_models/contour_records.json
 appData
-doc/image/record_manage_manual/*.png
