@@ -1,7 +1,7 @@
 {
   "name": "record-manager",
-  "version": "3.0.0",
-  "description": "An Mi camera video process application",
+  "version": "3.0.1",
+  "description": "a camera video process application",
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",

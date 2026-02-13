@@ -157,8 +157,8 @@
   },
   "pagination": {
     "pageInfo": "Page {current} of {total} (Total: {count} items)",
-    "jumpTo": "Go to",
-    "itemsPerPage": "Items per page"
+    "jumpTo": "Go",
+    "itemsPerPage": "Page Size"
   },
   "recentMessages": {
     "title": "Recent Messages",

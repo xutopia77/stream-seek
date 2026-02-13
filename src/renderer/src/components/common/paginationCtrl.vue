@@ -3,7 +3,13 @@
     <div class="pagination-controls">
         <div class="pagination-info">
             <span class="xc-text">
-                {{ t('pagination.pageInfo', { current: currentPage, total: totalPages, count: totalNum }) }}
+                {{
+                    t('pagination.pageInfo', {
+                        current: currentPage,
+                        total: totalPages,
+                        count: totalNum
+                    })
+                }}
             </span>
         </div>
 
