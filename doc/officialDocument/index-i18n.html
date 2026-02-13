@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Record Manager - 视频文件智能管理系统</title>
+    <style>
+        :root {
+            --primary-color: #646cff;
+            --secondary-color: #747bff;
+            --background-dark: #121212;
+            --surface-dark: #1e1e1e;
+            --card-dark: #252525;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent-color: #bb86fc;
+            --success-color: #00c853;
+            --warning-color: #ffab00;
+            --danger-color: #cf6679;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header Styles */
+        header {
+            background: var(--surface-dark);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Language Selector */
+        .language-selector {
+            position: relative;
+        }
+
+        .language-toggle {
+            background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .language-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .language-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .language-selector.active .language-dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .language-option {
+            padding: 0.7rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .language-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .language-option.active {
+            background: var(--primary-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 5rem 0;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(100, 108, 255, 0.1), rgba(116, 123, 255, 0.05));
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Features Section */
+        .section {
+            padding: 4rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: var(--text-primary);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: var(--card-dark);
+            padding: 2rem;
+            border-radius: 12px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* System Requirements */
+        .requirements {
+            background: var(--surface-dark);
+            padding: 3rem;
+            border-radius: 12px;
+            margin: 3rem 0;
+        }
+
+        .req-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .req-item {
+            padding: 1.5rem;
+            background: var(--card-dark);
+            border-radius: 8px;
+        }
+
+        .req-title {
+            color: var(--accent-color);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .req-list {
+            list-style: none;
+        }
+
+        .req-list li {
+            padding: 0.3rem 0;
+            color: var(--text-secondary);
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .req-list li::before {
+            content: '▶';
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-size: 0.8rem;
+        }
+
+        /* Screenshots */
+        .screenshots {
+            margin: 4rem 0;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .screenshot-item {
+            background: var(--card-dark);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .screenshot-img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .screenshot-caption {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--surface-dark);
+            padding: 3rem 0 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            nav ul {
+                gap: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <div class="logo-icon">RM</div>
+                <div class="logo-text">Record Manager</div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#features" data-i18n="nav.features">功能特性</a></li>
+                    <li><a href="#requirements" data-i18n="nav.requirements">系统要求</a></li>
+                    <li><a href="#screenshots" data-i18n="nav.screenshots">界面预览</a></li>
+                    <li><a href="#download" data-i18n="nav.download">下载</a></li>
+                </ul>
+            </nav>
+            <div class="language-selector" id="language-selector">
+                <div class="language-toggle" id="language-toggle">
+                    <span id="current-language">中文</span>
+                    <span>▼</span>
+                </div>
+                <div class="language-dropdown">
+                    <div class="language-option active" data-lang="zh-CN">中文</div>
+                    <div class="language-option" data-lang="en-US">English</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1 id="hero-title">视频文件智能管理系统</h1>
+            <p id="hero-description">专为安防监控视频文件管理而设计的桌面应用程序，提供视频快速检索、智能分类管理、标签标注、关键帧提取与存储等核心功能。</p>
+            <div class="cta-buttons">
+                <a href="#download" class="btn btn-primary" id="btn-download">立即下载</a>
+                <a href="#features" class="btn btn-outline" id="btn-learn-more">了解更多</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="section">
+        <div class="container">
+            <h2 class="section-title" id="features-title">核心功能</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">▶</div>
+                    <h3 class="feature-title" id="feature-1-title">多媒体播放控制</h3>
+                    <p class="feature-desc" id="feature-1-desc">支持标准播放、变速播放、帧精确定位、关键帧预览，满足专业视频审查需求。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🗂️</div>
+                    <h3 class="feature-title" id="feature-2-title">文件生命周期管理</h3>
+                    <p class="feature-desc" id="feature-2-desc">视频文件浏览、软删除（回收站机制）、批量操作，实现完整的文件管理流程。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏷️</div>
+                    <h3 class="feature-title" id="feature-3-title">元数据标注系统</h3>
+                    <p class="feature-desc" id="feature-3-desc">基于标签和分级的视频内容分类与标记，支持自定义标签体系。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3 class="feature-title" id="feature-4-title">智能预览生成</h3>
+                    <p class="feature-desc" id="feature-4-desc">自动提取视频关键帧、生成缩略图，优化存储空间利用，提升浏览效率。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✂️</div>
+                    <h3 class="feature-title" id="feature-5-title">视频剪辑功能</h3>
+                    <p class="feature-desc" id="feature-5-desc">支持视频片段裁剪、合并、分割等非线性编辑操作，保留关键内容。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title" id="feature-6-title">批量处理</h3>
+                    <p class="feature-desc" id="feature-6-desc">支持多选视频文件进行批量标注、删除、导出等操作，提升工作效率。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="requirements" class="section">
+        <div class="container">
+            <h2 class="section-title" id="requirements-title">系统要求</h2>
+            <div class="requirements">
+                <div class="req-grid">
+                    <div class="req-item">
+                        <h3 class="req-title" id="req-1-title">操作系统兼容性</h3>
+                        <ul class="req-list">
+                            <li id="req-1-item-1">Microsoft Windows 10 (64位)</li>
+                            <li id="req-1-item-2">Microsoft Windows 11 (64位)</li>
+                        </ul>
+                    </div>
+                    <div class="req-item">
+                        <h3 class="req-title" id="req-2-title">硬件要求</h3>
+                        <ul class="req-list">
+                            <li id="req-2-item-1">CPU：双核处理器，主频2.0GHz以上</li>
+                            <li id="req-2-item-2">内存：4GB RAM（推荐8GB）</li>
+                            <li id="req-2-item-3">存储：充足磁盘空间用于视频文件存储</li>
+                        </ul>
+                    </div>
+                    <div class="req-item">
+                        <h3 class="req-title" id="req-3-title">安装说明</h3>
+                        <ul class="req-list">
+                            <li id="req-3-item-1">绿色免安装部署模式</li>
+                            <li id="req-3-item-2">解压后即可运行</li>
+                            <li id="req-3-item-3">自动创建默认项目配置</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="screenshots" class="screenshots">
+        <div class="container">
+            <h2 class="section-title" id="screenshots-title">界面预览</h2>
+            <div class="screenshot-grid">
+                <div class="screenshot-item">
+                    <img src="1770912390245.jpg" alt="主界面概览" class="screenshot-img">
+                    <div class="screenshot-caption" id="screenshot-caption">主界面概览 - 完整的视频管理控制中心</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="section">
+        <div class="container">
+            <h2 class="section-title" id="download-title">获取软件</h2>
+            <div style="text-align: center; padding: 2rem;">
+                <p id="version-info" style="margin-bottom: 2rem; color: var(--text-secondary); font-size: 1.1rem;">
+                    当前版本：2.2.6 | 发布日期：2026年2月
+                </p>
+                <div class="cta-buttons" style="justify-content: center;">
+                    <a href="https://github.com/xutopia77/record_manager.git" class="btn btn-primary" id="btn-download-windows">下载 Windows 版本</a>
+                    <a href="https://github.com/xutopia77/record_manager.git" class="btn btn-outline" target="_blank" id="btn-github">访问开源项目</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Record Manager</h3>
+                    <p id="footer-description">专业的视频文件智能管理系统，专为安防监控视频文件管理而设计。</p>
+                </div>
+                <div class="footer-section">
+                    <h3 id="footer-quick-links-title">快速链接</h3>
+                    <ul class="footer-links">
+                        <li><a href="#features" data-i18n="nav.features">功能特性</a></li>
+                        <li><a href="#requirements" data-i18n="nav.requirements">系统要求</a></li>
+                        <li><a href="#screenshots" data-i18n="nav.screenshots">界面预览</a></li>
+                        <li><a href="#download" data-i18n="nav.download">下载中心</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 id="footer-support-title">技术支持</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/xutopia77/record_manager.git" target="_blank" id="footer-github">GitHub 项目</a></li>
+                        <li><a href="#" id="footer-docs">文档中心</a></li>
+                        <li><a href="#" id="footer-community">社区支持</a></li>
+                        <li><a href="#" id="footer-feedback">问题反馈</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p id="footer-copyright-1">&copy; 2026 Record Manager. 保留所有权利.</p>
+                <p id="footer-copyright-2">本项目遵循开源协议，欢迎贡献代码.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 国际化文本数据
+        const i18nData = {
+            'zh-CN': {
+                'page-title': 'Record Manager - 视频文件智能管理系统',
+                'nav.features': '功能特性',
+                'nav.requirements': '系统要求',
+                'nav.screenshots': '界面预览',
+                'nav.download': '下载',
+                'hero-title': '视频文件智能管理系统',
+                'hero-description': '专为安防监控视频文件管理而设计的桌面应用程序，提供视频快速检索、智能分类管理、标签标注、关键帧提取与存储等核心功能。',
+                'btn-download': '立即下载',
+                'btn-learn-more': '了解更多',
+                'features-title': '核心功能',
+                'feature-1-title': '多媒体播放控制',
+                'feature-1-desc': '支持标准播放、变速播放、帧精确定位、关键帧预览，满足专业视频审查需求。',
+                'feature-2-title': '文件生命周期管理',
+                'feature-2-desc': '视频文件浏览、软删除（回收站机制）、批量操作，实现完整的文件管理流程。',
+                'feature-3-title': '元数据标注系统',
+                'feature-3-desc': '基于标签和分级的视频内容分类与标记，支持自定义标签体系。',
+                'feature-4-title': '智能预览生成',
+                'feature-4-desc': '自动提取视频关键帧、生成缩略图，优化存储空间利用，提升浏览效率。',
+                'feature-5-title': '视频剪辑功能',
+                'feature-5-desc': '支持视频片段裁剪、合并、分割等非线性编辑操作，保留关键内容。',
+                'feature-6-title': '批量处理',
+                'feature-6-desc': '支持多选视频文件进行批量标注、删除、导出等操作，提升工作效率。',
+                'requirements-title': '系统要求',
+                'req-1-title': '操作系统兼容性',
+                'req-1-item-1': 'Microsoft Windows 10 (64位)',
+                'req-1-item-2': 'Microsoft Windows 11 (64位)',
+                'req-2-title': '硬件要求',
+                'req-2-item-1': 'CPU：双核处理器，主频2.0GHz以上',
+                'req-2-item-2': '内存：4GB RAM（推荐8GB）',
+                'req-2-item-3': '存储：充足磁盘空间用于视频文件存储',
+                'req-3-title': '安装说明',
+                'req-3-item-1': '绿色免安装部署模式',
+                'req-3-item-2': '解压后即可运行',
+                'req-3-item-3': '自动创建默认项目配置',
+                'screenshots-title': '界面预览',
+                'screenshot-caption': '主界面概览 - 完整的视频管理控制中心',
+                'download-title': '获取软件',
+                'version-info': '当前版本：2.2.6 | 发布日期：2026年2月',
+                'btn-download-windows': '下载 Windows 版本',
+                'btn-github': '访问开源项目',
+                'footer-description': '专业的视频文件智能管理系统，专为安防监控视频文件管理而设计。',
+                'footer-quick-links-title': '快速链接',
+                'footer-support-title': '技术支持',
+                'footer-github': 'GitHub 项目',
+                'footer-docs': '文档中心',
+                'footer-community': '社区支持',
+                'footer-feedback': '问题反馈',
+                'footer-copyright-1': '&copy; 2026 Record Manager. 保留所有权利.',
+                'footer-copyright-2': '本项目遵循开源协议，欢迎贡献代码.'
+            },
+            'en-US': {
+                'page-title': 'Record Manager - Intelligent Video File Management System',
+                'nav.features': 'Features',
+                'nav.requirements': 'System Requirements',
+                'nav.screenshots': 'Interface Preview',
+                'nav.download': 'Download',
+                'hero-title': 'Intelligent Video File Management System',
+                'hero-description': 'A desktop application designed for security surveillance video file management, providing core functions such as fast video retrieval, intelligent classification management, tag annotation, keyframe extraction and storage.',
+                'btn-download': 'Download Now',
+                'btn-learn-more': 'Learn More',
+                'features-title': 'Core Features',
+                'feature-1-title': 'Multimedia Playback Control',
+                'feature-1-desc': 'Supports standard playback, variable speed playback, frame-precise positioning, keyframe preview to meet professional video review needs.',
+                'feature-2-title': 'File Lifecycle Management',
+                'feature-2-desc': 'Video file browsing, soft deletion (recycle bin mechanism), batch operations to achieve a complete file management process.',
+                'feature-3-title': 'Metadata Annotation System',
+                'feature-3-desc': 'Video content classification and marking based on tags and levels, supporting custom tag systems.',
+                'feature-4-title': 'Intelligent Preview Generation',
+                'feature-4-desc': 'Automatically extracts video keyframes, generates thumbnails, optimizes storage space utilization, and improves browsing efficiency.',
+                'feature-5-title': 'Video Editing Function',
+                'feature-5-desc': 'Supports non-linear editing operations such as video clip cropping, merging, and splitting to retain key content.',
+                'feature-6-title': 'Batch Processing',
+                'feature-6-desc': 'Supports multi-select video files for batch annotation, deletion, export and other operations to improve work efficiency.',
+                'requirements-title': 'System Requirements',
+                'req-1-title': 'Operating System Compatibility',
+                'req-1-item-1': 'Microsoft Windows 10 (64-bit)',
+                'req-1-item-2': 'Microsoft Windows 11 (64-bit)',
+                'req-2-title': 'Hardware Requirements',
+                'req-2-item-1': 'CPU: Dual-core processor, clock speed 2.0GHz or above',
+                'req-2-item-2': 'Memory: 4GB RAM (8GB recommended)',
+                'req-2-item-3': 'Storage: Sufficient disk space for video file storage',
+                'req-3-title': 'Installation Instructions',
+                'req-3-item-1': 'Green installation-free deployment mode',
+                'req-3-item-2': 'Run directly after decompression',
+                'req-3-item-3': 'Automatically create default project configuration',
+                'screenshots-title': 'Interface Preview',
+                'screenshot-caption': 'Main interface overview - Complete video management control center',
+                'download-title': 'Get Software',
+                'version-info': 'Current version: 2.2.6 | Release date: February 2026',
+                'btn-download-windows': 'Download Windows Version',
+                'btn-github': 'Visit Open Source Project',
+                'footer-description': 'Professional intelligent video file management system, designed for security surveillance video file management.',
+                'footer-quick-links-title': 'Quick Links',
+                'footer-support-title': 'Technical Support',
+                'footer-github': 'GitHub Project',
+                'footer-docs': 'Documentation Center',
+                'footer-community': 'Community Support',
+                'footer-feedback': 'Issue Feedback',
+                'footer-copyright-1': '&copy; 2026 Record Manager. All rights reserved.',
+                'footer-copyright-2': 'This project follows open source agreement, contributions are welcome.'
+            }
+        };
+
+        // 获取当前语言设置，默认为中文
+        let currentLanguage = localStorage.getItem('language') || 'zh-CN';
+
+        // 更新页面语言
+        function updateLanguage(lang) {
+            const translations = i18nData[lang];
+            
+            // 更新页面标题
+            document.getElementById('page-title').textContent = translations['page-title'];
+            document.title = translations['page-title'];
+            
+            // 更新HTML lang属性
+            document.documentElement.lang = lang;
+            
+            // 更新所有带有id的元素
+            Object.keys(translations).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    // 对于版权信息，使用innerHTML以支持HTML实体
+                    if (key.startsWith('footer-copyright')) {
+                        element.innerHTML = translations[key];
+                    } else {
+                        element.textContent = translations[key];
+                    }
+                }
+            });
+            
+            // 更新带有data-i18n属性的元素
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const i18nKey = element.getAttribute('data-i18n');
+                if (i18nKey && translations[i18nKey]) {
+                    element.textContent = translations[i18nKey];
+                }
+            });
+            
+            // 更新语言选择器显示
+            const currentLanguageElement = document.getElementById('current-language');
+            if (currentLanguageElement) {
+                currentLanguageElement.textContent = lang === 'zh-CN' ? '中文' : 'English';
+            }
+            
+            // 更新语言选项的活动状态
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.classList.remove('active');
+                if (option.getAttribute('data-lang') === lang) {
+                    option.classList.add('active');
+                }
+            });
+            
+            // 保存语言设置
+            localStorage.setItem('language', lang);
+        }
+
+        // 初始化语言
+        updateLanguage(currentLanguage);
+
+        // 语言选择器功能
+        const languageSelector = document.getElementById('language-selector');
+        const languageToggle = document.getElementById('language-toggle');
+
+        languageToggle.addEventListener('click', function() {
+            languageSelector.classList.toggle('active');
+        });
+
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', function(event) {
+            if (!languageSelector.contains(event.target)) {
+                languageSelector.classList.remove('active');
+            }
+        });
+
+        // 语言选项点击事件
+        document.querySelectorAll('.language-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const selectedLang = this.getAttribute('data-lang');
+                currentLanguage = selectedLang;
+                updateLanguage(selectedLang);
+                languageSelector.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>
