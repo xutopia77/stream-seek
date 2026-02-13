@@ -37,10 +37,12 @@
 import PaginationCtrl from '@renderer/components/common/paginationCtrl.vue'
 import { computed, onBeforeMount, ref, onMounted, onUnmounted } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import * as Dty from '../../../../bridge/dataTypedef'
 
+const { t } = useI18n()
 const videoList = computed<Dty.File[]>(() => appStore.thumbList)
 
 // 记录上一次选中的索引
@@ -71,7 +73,7 @@ onUnmounted(() => {
 
 // 切换视频的选中状态
 const toggleVideoSelection = (video: Dty.File, isChecked: boolean, currentIndex: number): void => {
-    console.log(`Video ${video.name} is ${isChecked ? 'selected' : 'deselected'}`)
+    console.log(t('thumbFileList.selectionChanged', { name: video.name, status: isChecked ? 'selected' : 'deselected' }))
     if (isShiftPressed.value && lastSelectedIndex.value !== -1) {
         const start = Math.min(lastSelectedIndex.value, currentIndex)
         const end = Math.max(lastSelectedIndex.value, currentIndex)
@@ -124,7 +126,7 @@ const getVideoLevelColorStyle = (video): string => {
 
     // 匹配颜色，无匹配则用默认浅灰色
     const targetColor = levelColorMap[levelName] || '#cccccc'
-    console.log(`levelName: ${levelName}, targetColor: ${targetColor}`)
+    console.log(t('thumbFileList.levelColorMapping', { levelName, targetColor }))
     return `color: ${targetColor};`
 }
 </script>

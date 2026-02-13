@@ -3,7 +3,7 @@
     <div class="pagination-controls">
         <div class="pagination-info">
             <span class="xc-text">
-                第 {{ currentPage }} 页 / 共 {{ totalPages }} 页 (共 {{ totalNum }} 条)
+                {{ t('pagination.pageInfo', { current: currentPage, total: totalPages, count: totalNum }) }}
             </span>
         </div>
 
@@ -17,7 +17,7 @@
             </button>
 
             <div class="page-jump">
-                <span class="xc-text">跳转</span>
+                <span class="xc-text">{{ t('pagination.jumpTo') }}</span>
                 <input
                     v-model.number="jumpPageNum"
                     type="number"
@@ -35,7 +35,7 @@
             >
                 ▶
             </button>
-            <span class="xc-text">每页</span>
+            <span class="xc-text">{{ t('pagination.itemsPerPage') }}</span>
             <div class="page-size-selector">
                 <select v-model="pageSize" class="size-select" @change="handlePageSizeChange">
                     <option :value="10">10</option>
@@ -46,7 +46,6 @@
                     <option :value="1000">1000</option>
                 </select>
             </div>
-            <span class="xc-text"> 条</span>
         </div>
     </div>
 </template>
@@ -54,10 +53,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import * as Dty from '../../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
+
+const { t } = useI18n()
 
 const props = defineProps({
     pageType: {

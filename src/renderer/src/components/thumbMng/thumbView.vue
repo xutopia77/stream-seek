@@ -10,12 +10,15 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import '@renderer/assets/common.css'
 import util from '../../utils/util'
 import * as Dty from '../../../../bridge/dataTypedef'
 // import { IpcApi } from '../../utils/ipcApi'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
+
+const { t } = useI18n()
 
 // 定义缩略图对象的类型
 class Thumbnail {
@@ -50,14 +53,14 @@ function btnclk_card_check(thumb: Thumbnail): void {
     let lastChked = thumb.checked
     for (let i = 0; i < thumbnailImages.value.length; i++) {
         thumbnailImages.value[i].checked = false
-        thumbnailImages.value[i].btnName = '⬜'
+        thumbnailImages.value[i].btnName = t('thumbView.unchecked')
     }
     curCheckImage.value = thumb
     thumb.checked = !lastChked
     if (thumb.checked) {
-        thumb.btnName = '✅'
+        thumb.btnName = t('thumbView.checked')
     } else {
-        thumb.btnName = '⬜'
+        thumb.btnName = t('thumbView.unchecked')
     }
 }
 
@@ -84,7 +87,7 @@ function update_thumbnail_images(thumbnailImages: Thumbnail[]): void {
         return
     }
     if (appStore.curSltThumb.thumbnail?.path == null) {
-        console.log('cur video thumbnail null')
+        console.log(t('thumbView.curVideoThumbnailNull'))
         return
     }
     for (let i = 0; i < appStore.curSltThumb.thumbnail.path.length; i++) {
@@ -93,7 +96,7 @@ function update_thumbnail_images(thumbnailImages: Thumbnail[]): void {
         thumbInfo.path = thumb
         thumbInfo.indexTime = Dty.FileTools.parse_timestr_2_seconds(thumb)
         thumbInfo.name = util.getFilenameFromPath(thumb)
-        thumbInfo.btnName = '⬜'
+        thumbInfo.btnName = t('thumbView.unchecked')
         thumbnailImages.push(thumbInfo)
     }
 }
@@ -115,7 +118,7 @@ watch(
     async (): Promise<void> => {
         thumbnailImages.value = []
         update_thumbnail_images(thumbnailImages.value)
-    console.log("============asdfsgdghf", thumbnailImages.value.length)
+        console.log(t('thumbView.thumbnailCount', { count: thumbnailImages.value.length }))
     }
 )
 

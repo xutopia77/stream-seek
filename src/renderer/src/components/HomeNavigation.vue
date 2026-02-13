@@ -3,59 +3,64 @@
         <div class="btn-container">
             <div class="menu-item dropdown" @click="toggleDropdown($event, 'home')">
                 <!-- 文件 -->
-                <span class="xc-text">文件</span>
+                <!-- <span class="xc-text">文件</span> -->
+                <span class="xc-text">{{ t('navigation.file') }}</span>
                 <div
                     ref="dropdownMenuRefHome"
                     class="dropdown-menu"
                     :class="{ show: isDropdownOpen['home'] }"
                 >
                     <button class="xc-button menu-button" @click.stop="btn_createPrj">
-                        创建项目
+                        {{ t('navigation.menuItems.createProject') }}
                     </button>
                     <button class="xc-button menu-button" @click.stop="btn_openPrj">
-                        打开项目
+                        {{ t('navigation.menuItems.openProject') }}
                     </button>
-                    <button class="xc-button menu-button" @click.stop="exitApp">退出</button>
+                    <button class="xc-button menu-button" @click.stop="exitApp">
+                        {{ t('navigation.menuItems.exit') }}
+                    </button>
                 </div>
             </div>
             <div class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
-                <span class="xc-text">视图</span>
+                <span class="xc-text">{{ t('navigation.menuItems.view') }}</span>
                 <div
                     ref="dropdownMenuRefView"
                     class="dropdown-menu"
                     :class="{ show: isDropdownOpen['view'] }"
                 >
                     <button class="xc-button menu-button" @click.stop="btn_viewChange('list_show')">
-                        文件列表
+                        {{ t('navigation.menuItems.fileList') }}
                     </button>
                     <button
                         class="xc-button menu-button"
                         @click.stop="btn_viewChange('operate_show')"
                     >
-                        操作面板
+                        {{ t('navigation.menuItems.operationPanel') }}
                     </button>
                     <button
                         class="xc-button menu-button"
                         @click.stop="btn_viewChange('thumb_show')"
                     >
-                        缩略图查看🖼️
+                        {{ t('navigation.menuItems.thumbnailView') }}🖼️
                     </button>
                     <button
                         class="xc-button menu-button"
                         @click.stop="btn_viewChange('video_show')"
                     >
-                        视频查看🎞️
+                        {{ t('navigation.menuItems.videoView') }}🎞️
                     </button>
                     <button class="xc-button menu-button" @click.stop="btn_viewChange('bck_home')">
-                        返回主页
+                        {{ t('navigation.menuItems.returnHome') }}
                     </button>
                 </div>
             </div>
             <div class="menu-item">
-                <span class="xc-text" @click="btn_function()">功能</span>
+                <span class="xc-text" @click="btn_function()">{{
+                    t('navigation.menuItems.function')
+                }}</span>
             </div>
             <div class="menu-item" @click="showAboutModal">
-                <span class="xc-text">关于</span>
+                <span class="xc-text">{{ t('navigation.menuItems.about') }}</span>
             </div>
         </div>
 
@@ -66,7 +71,7 @@
             <button
                 class="xc-button"
                 style="border: none"
-                title="查看最近消息提醒"
+                :title="t('navigation.viewRecentMessages')"
                 @click="appStore.bPageResentMsg = true"
             >
                 🔔
@@ -76,9 +81,9 @@
     <!-- 关于模态框 -->
     <div v-if="isAboutModalVisible" class="modal-overlay" @click.self="hideAboutModal">
         <div class="modal-content">
-            <h2>版本信息</h2>
-            <p>当前版本：1.0.0</p>
-            <button @click="hideAboutModal">取消</button>
+            <h2>{{ t('navigation.menuItems.about') }} {{ t('common.info') }}</h2>
+            <p>{{ t('common.currentVersion') }}：{{ appStore.prj.version || '1.0.0' }}</p>
+            <button @click="hideAboutModal">{{ t('common.cancel') }}</button>
         </div>
     </div>
 </template>
@@ -93,8 +98,15 @@ const router = useRouter()
 
 const appStore = useAppStore()
 import { IpcApi } from '../utils/ipcApi'
-import MessageShow from './util/MessageShow'
 import * as Dty from '../../../bridge/dataTypedef'
+
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+// const changeLang = () => {
+//   locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
+// }
 
 // 控制下拉菜单是否显示
 const isDropdownOpen = ref<{ home: boolean; video: boolean; view: boolean }>({
@@ -116,8 +128,7 @@ let statusInfoTitle = ref<string>('')
 let statusInfo = ref<string>('')
 
 function navContentMake(): void {
-    statusInfoTitle.value =
-        appStore.prj.repoType == Dty.RepoType.Normal ? '仓库文件' : '回收站文件'
+    statusInfoTitle.value = appStore.prj.repoType == Dty.RepoType.Normal ? t('navigation.repositoryFiles') : t('navigation.recycleBinFiles')
     const repoStr = appStore.prj.repoType == Dty.RepoType.Normal ? '🗄️' : '🗑️'
     statusInfo.value = `${repoStr} ${appStore.homeNavContent}`
 }
@@ -151,17 +162,17 @@ const btn_openPrj = async (): Promise<void> => {
     }
     const response: Dty.Resp = await IpcApi.trigger_event(req)
     if (response.code != 0) {
-        console.log('打开项目失败')
+        console.log(t('navigation.openProjectFailed'))
     } else {
         if (response.bOver == false) {
-            MessageShow.success('后台执行中...')
+            util.addToastInfo(t('navigation.backgroundExecuting'))
         } else {
             const req = await util.start_app()
             if (req.code != 0) {
-                MessageShow.error(`启动失败 ${req.status}`)
+                util.addToastErr(`${t('navigation.startupFailed')} ${req.status}`)
                 return
             }
-            MessageShow.success('打开项目成功')
+            util.addToastInfo(t('navigation.openProjectSuccess'))
         }
     }
 }

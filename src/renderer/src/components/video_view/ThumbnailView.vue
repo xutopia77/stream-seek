@@ -11,12 +11,15 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import '@renderer/assets/common.css'
 import util from '../../utils/util'
 import * as Dty from '../../../../bridge/dataTypedef'
 // import { IpcApi } from '../../utils/ipcApi'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
+
+const { t } = useI18n()
 
 // 定义缩略图对象的类型
 class Thumbnail {
@@ -51,14 +54,14 @@ function btnclk_card_check(thumb: Thumbnail): void {
     let lastChked = thumb.checked
     for (let i = 0; i < thumbnailImages.value.length; i++) {
         thumbnailImages.value[i].checked = false
-        thumbnailImages.value[i].btnName = '⬜'
+        thumbnailImages.value[i].btnName = t('thumbnailView.unchecked')
     }
     curCheckImage.value = thumb
     thumb.checked = !lastChked
     if (thumb.checked) {
-        thumb.btnName = '✅'
+        thumb.btnName = t('thumbnailView.checked')
     } else {
-        thumb.btnName = '⬜'
+        thumb.btnName = t('thumbnailView.unchecked')
     }
 }
 
@@ -85,7 +88,7 @@ function update_thumbnail_images(thumbnailImages: Thumbnail[]): void {
         return
     }
     if (appStore.curSltVideo.thumbnail?.path == null) {
-        console.log('cur video thumbnail null')
+        console.log(t('thumbnailView.curVideoThumbnailNull'))
         return
     }
     for (let i = 0; i < appStore.curSltVideo.thumbnail.path.length; i++) {
@@ -94,7 +97,7 @@ function update_thumbnail_images(thumbnailImages: Thumbnail[]): void {
         thumbInfo.path = thumb
         thumbInfo.indexTime = Dty.FileTools.parse_timestr_2_seconds(thumb)
         thumbInfo.name = util.getFilenameFromPath(thumb)
-        thumbInfo.btnName = '⬜'
+        thumbInfo.btnName = t('thumbnailView.unchecked')
         thumbnailImages.push(thumbInfo)
     }
 }

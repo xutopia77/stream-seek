@@ -1,6 +1,6 @@
 {
   "name": "record-manager",
-  "version": "2.2.8",
+  "version": "3.0.0",
   "description": "An Mi camera video process application",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -28,6 +28,7 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "vite-plugin-vue-devtools": "^7.7.2",
+    "vue-i18n": "^11.2.8",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {

@@ -16,12 +16,17 @@ import HomeNavigation from './HomeNavigation.vue'
 import { useAppStore } from '../stores/AppStore'
 import RecentMessagesPanel from '@renderer/components/MessageNotify/RecentMessagesPanel.vue'
 import MessageToast from '@renderer/components/MessageNotify/MessageToast.vue'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
+const { t } = useI18n()
 import { onBeforeMount, onMounted, watch } from 'vue'
-import util from '../utils/util.js'
+import util, { setI18nFunction } from '../utils/util.js'
 import { IpcApi } from '../utils/ipcApi'
 import * as Dty from '../../../bridge/dataTypedef'
 import router from '../router/router'
+
+// 设置util.ts中的国际化函数
+setI18nFunction(t)
 // 启动一个定时器，周期性trigger_event
 function startTimer(): void {
     setInterval(() => {

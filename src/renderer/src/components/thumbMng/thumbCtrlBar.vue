@@ -1,9 +1,9 @@
 <template>
     <div class="play-ctrl">
-        <span class="xc-text" style="padding-right: 3px">文件总数</span>
+        <span class="xc-text" style="padding-right: 3px">{{ t('thumbCtrlBar.totalFiles') }}</span>
         <div class="right-area-ctrl">
-            <button class="xc-button btn-noborder" title="上一个文件" @click="btn_thumbDel()">
-                删除
+            <button class="xc-button btn-noborder" :title="t('thumbCtrlBar.deleteFile')" @click="btn_thumbDel()">
+                {{ t('thumbCtrlBar.delete') }}
             </button>
         </div>
     </div>
@@ -11,15 +11,18 @@
 
 <script setup lang="ts">
 import { useAppStore } from '../../stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import util from '@renderer/utils/util'
 import * as Dty from '../../../../bridge/dataTypedef'
 
+const { t } = useI18n()
+
 function btn_thumbDel(): void {
     const curChkThumb = appStore.curChkThumb
     if (curChkThumb == null) {
-        util.addToastInfo('没有选择的文件')
+        util.addToastInfo(t('thumbCtrlBar.noSelectedFile'))
         return
     }
 
@@ -31,7 +34,7 @@ function btn_thumbDel(): void {
         req.files.push(fInfo)
     }
     if (req.files.length == 0) {
-        util.addToastInfo('没有选择的文件')
+        util.addToastInfo(t('thumbCtrlBar.noSelectedFile'))
         return
     }
     req.type = 'destroy'

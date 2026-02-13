@@ -1,42 +1,42 @@
 <template>
     <div class="admin-setting-container">
         <div class="setting-card">
-            <h3 class="setting-title">项目信息</h3>
+            <h3 class="setting-title">{{ t('adminSetting.projectInfo') }}</h3>
             <div class="info-item">
-                <span class="info-label">项目路径:</span>
+                <span class="info-label">{{ t('adminSetting.projectPath') }}:</span>
                 <span class="info-value">{{ appStore.prj.path }}</span>
             </div>
             <div v-for="(repo, index) in dataRepo" :key="index" class="repo-item">
-                <span class="info-label">仓库路径:</span>
+                <span class="info-label">{{ t('adminSetting.repoPath') }}:</span>
                 <span class="info-value">{{ repo.path }}</span>
             </div>
         </div>
 
         <div class="setting-card">
-            <h3 class="setting-title">同步选项</h3>
+            <h3 class="setting-title">{{ t('adminSetting.syncOptions') }}</h3>
             <div class="option-item">
                 <input v-model="bNeedClassifyFile" type="checkbox" class="xc-check-input" />
-                <span class="option-label">文件规整</span>
+                <span class="option-label">{{ t('adminSetting.fileOrganize') }}</span>
             </div>
             <div class="option-item">
                 <input v-model="bNeedGenThumbnail" type="checkbox" class="xc-check-input" />
-                <span class="option-label">生成缩略图</span>
+                <span class="option-label">{{ t('adminSetting.generateThumbnail') }}</span>
             </div>
             <button class="xc-button primary" type="button" @click="btnclk_sync_work()">
-                同步项目
+                {{ t('adminSetting.syncProject') }}
             </button>
-            <button class="xc-button" type="button" @click="btnclk_syncStop()">停止同步</button>
+            <button class="xc-button" type="button" @click="btnclk_syncStop()">{{ t('adminSetting.stopSync') }}</button>
         </div>
 
         <div class="setting-card">
-            <h3 class="setting-title">仓库模式</h3>
+            <h3 class="setting-title">{{ t('adminSetting.repoMode') }}</h3>
             <div class="mode-selector">
                 <select v-model="repoType" class="xc-select">
-                    <option :value="Dty.RepoType.Normal">正常🗄️</option>
-                    <option :value="Dty.RepoType.Trash">回收站🗑️</option>
+                    <option :value="Dty.RepoType.Normal">{{ t('adminSetting.normalMode') }}🗄️</option>
+                    <option :value="Dty.RepoType.Trash">{{ t('adminSetting.trashMode') }}🗑️</option>
                 </select>
                 <button class="xc-button primary" type="button" @click="btnclk_set_repo_type()">
-                    设置仓库模式
+                    {{ t('adminSetting.setRepoMode') }}
                 </button>
             </div>
         </div>
@@ -48,9 +48,12 @@ import { onMounted, ref, watch } from 'vue'
 import '@renderer/assets/common.css'
 import { IpcApi } from '../../utils/ipcApi'
 import * as Dty from '../../../../bridge/dataTypedef'
-import { useAppStore } from '../../stores/AppStore'
-import util from '@renderer/utils/util'
+import { useAppStore } from '@renderer/stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
+import util from '@renderer/utils/util'
+
+const { t } = useI18n()
 
 const dataRepo = ref<Dty.DataRepo[]>([
     {
@@ -80,12 +83,12 @@ async function btnclk_syncStop(): Promise<void> {
     const response: Dty.Resp = await IpcApi.trigger_event(req)
     if (response.code == Dty.RespCode.Success) {
         if (response.bOver == false) {
-            util.addToastInfo(`停止同步，后台执行中`)
+            util.addToastInfo(t('adminSetting.stopSyncBackground'))
         } else {
-            util.addToastInfo(`停止同步`)
+            util.addToastInfo(t('adminSetting.stopSync'))
         }
     } else {
-        util.addToastErr(`停止同步失败 ${response.status}`)
+        util.addToastErr(`${t('adminSetting.stopSyncFailed')} ${response.status}`)
     }
     return
 }
@@ -105,12 +108,12 @@ async function btnclk_sync_work(types: Dty.SyncType[] = []): Promise<void> {
     }
     const response = await util.sync_prj(syncTypes)
     if (response.code !== Dty.RespCode.Success) {
-        util.addToastErr(`同步项目失败: ${response.status}`)
+        util.addToastErr(`${t('adminSetting.syncProjectFailed')}: ${response.status}`)
     } else {
         if (response.bOver === false) {
-            util.addToastInfo('后台执行中...')
+            util.addToastInfo(t('adminSetting.backgroundExecuting'))
         } else {
-            util.addToastInfo(`同步项目：${response.status}`)
+            util.addToastInfo(`${t('adminSetting.syncProject')}: ${response.status}`)
             await util.start_app()
         }
     }

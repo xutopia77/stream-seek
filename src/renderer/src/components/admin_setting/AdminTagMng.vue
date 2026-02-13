@@ -4,10 +4,10 @@
             <table class="path-table">
                 <thead>
                     <tr>
-                        <th class="index-col">序号</th>
-                        <th>名称</th>
-                        <th>颜色</th>
-                        <th>操作</th>
+                        <th class="index-col">{{ t('adminTagMng.serialNumber') }}</th>
+                        <th>{{ t('adminTagMng.name') }}</th>
+                        <th>{{ t('adminTagMng.color') }}</th>
+                        <th>{{ t('adminTagMng.operations') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -34,9 +34,9 @@
                                 style="margin-right: 10px"
                                 @click.stop="btn_showEditDialog(item)"
                             >
-                                编辑
+                                {{ t('adminTagMng.edit') }}
                             </button>
-                            <button class="xc-button" @click="btn_deletetag(item)">删除</button>
+                            <button class="xc-button" @click="btn_deletetag(item)">{{ t('adminTagMng.delete') }}</button>
                         </td>
                     </tr>
                 </tbody>
@@ -48,8 +48,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 import * as Dty from '../../../../bridge/dataTypedef'
+
+const { t } = useI18n()
 
 const allTags = computed(() => {
     return appStore.tags

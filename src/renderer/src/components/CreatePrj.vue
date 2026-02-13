@@ -1,28 +1,29 @@
 <template>
     <div class="create-prj-comtainer">
         <router-link to="/" class="no-underline-link">
-            <button class="xc-button">返回主页</button>
+            <button class="xc-button">{{ t('createPrj.returnHome') }}</button>
         </router-link>
         <br />
         <div v-for="(repo, index) in dataRepo" :key="index" class="input-container">
             <div>
-                <label>仓库路径：</label>
+                <label>{{ t('createPrj.repoPath') }}：</label>
                 <input
                     v-model="repo.path"
                     class="xc-text-input"
                     type="text"
-                    placeholder="请输入仓库路径"
+                    :placeholder="t('createPrj.repoPathPlaceholder')"
                     style="width: 80%"
                 />
             </div>
         </div>
 
-        <button class="xc-button" @click="btnclk_create_prj">创建项目</button>
-        <label>项目创建成功后，需要到 功能 界面中，项目同步</label>
+        <button class="xc-button" @click="btnclk_create_prj">{{ t('createPrj.createProject') }}</button>
+        <label>{{ t('createPrj.description') }}</label>
     </div>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 // import { useAppStore } from '../stores/AppStore'
 // const appStore = useAppStore()
 import '@renderer/assets/common.css'
@@ -30,6 +31,8 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 import * as Dty from '../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
+
+const { t } = useI18n()
 
 // 创建一个ref数组 3个元素
 const dataRepo = ref<Dty.DataRepo[]>([
@@ -45,18 +48,18 @@ async function btnclk_create_prj(): Promise<void> {
     let relRepo = dataRepo.value.filter((repo) => repo.name != null && repo.name !== '')
 
     if (relRepo == null || relRepo.length === 0) {
-        return util.addToast(`请输入数据路径`, 'error')
+        return util.addToast(t('createPrj.enterDataPath'), 'error')
     }
     const response = await util.create_prj(relRepo)
     if (response.code === 0) {
         if (response.bOver === false) {
-            util.addToast('创建项目中，请稍候...', 'warning')
+            util.addToast(t('createPrj.creatingProject'), 'warning')
         } else {
-            util.addToast('创建项目成功', 'info')
+            util.addToast(t('createPrj.createProjectSuccess'), 'info')
         }
         router.push('/')
     } else {
-        util.addToast(`创建项目失败: ${response.status}`, 'error')
+        util.addToast(`${t('createPrj.createProjectFailed')}: ${response.status}`, 'error')
     }
 }
 </script>

@@ -4,6 +4,16 @@ let appStore: AppStore
 import * as Dty from '../../../bridge/dataTypedef'
 import { IpcApi } from './ipcApi'
 
+// 创建一个可以在Vue组件中使用的国际化函数
+let t: (key: string, values?: Record<string, unknown>) => string = (key: string) => key
+
+// 设置国际化函数，由Vue组件调用
+export function setI18nFunction(
+    i18nFunction: (key: string, values?: Record<string, unknown>) => string
+): void {
+    t = i18nFunction
+}
+
 async function getKeyFrameInfo(): Promise<Dty.Resp<Dty.FrameInfo>> {
     const resp = new Dty.Resp<Dty.FrameInfo>()
     if (appStore?.curSltVideo === null || appStore?.curSltVideo?.mediaInfo === null) {
@@ -27,15 +37,15 @@ async function getKeyFrameInfo(): Promise<Dty.Resp<Dty.FrameInfo>> {
 
 function folder_file_proc(resp: Dty.Resp<Dty.TraversalFolder>): void {
     if (resp.code !== 0) {
-        util.addToastErr(`打开文件夹失败: ${resp.status}`)
+        util.addToastErr(`${t('util.openFolderFailed')}: ${resp.status}`)
         return
     }
     if (resp.bOver == false) {
-        util.addToastInfo(`正在处理...`)
+        util.addToastInfo(t('util.processing'))
         return
     }
     if (resp.data == null) {
-        util.addToastErr(`打开文件夹失败: ${resp.status}`)
+        util.addToastErr(`${t('util.openFolderFailed')}: ${resp.status}`)
         return
     }
     const respData: Dty.TraversalFolder = resp.data
@@ -122,7 +132,7 @@ const formatSecond2Time = (timeSec: number): string => {
 
 async function make_prj_info(): Promise<Dty.Req_CutVideo | null> {
     if (appStore?.curSltVideo === null) {
-        util.addToastInfo(`当前没有选择视频文件`)
+        util.addToastInfo(t('util.noVideoFileSelected'))
         return null
     }
     const prjInfo: Dty.Req_CutVideo = {
@@ -379,7 +389,7 @@ const export_cut_video = async (cutReq: Dty.CutVideoReq | null): Promise<void> =
         return
     }
     if (appStore.curSltVideo == null) {
-        util.addToastInfo('请先选择一个视频')
+        util.addToastInfo(t('util.selectVideoFirst'))
         return
     }
     util.stop_play()
@@ -399,12 +409,12 @@ const export_cut_video = async (cutReq: Dty.CutVideoReq | null): Promise<void> =
         return
     }
     if (response.code !== 0) {
-        util.addToastInfo(`剪辑失败: ${response.status}`)
+        util.addToastInfo(`${t('util.clipFailed')}: ${response.status}`)
     } else {
         if (response.bOver === false) {
-            util.addToastInfo(`正在处理...`)
+            util.addToastInfo(t('util.processing'))
         } else {
-            util.addToastInfo(`剪辑成功`)
+            util.addToastInfo(t('util.clipSuccess'))
         }
     }
 }
@@ -562,17 +572,18 @@ class Util {
         if (response.code === 1001) {
             return
         }
-        const delStr = reqInfo.type == 'destroy' ? '彻底删除' : '移到回收站'
+        const delStr =
+            reqInfo.type == 'destroy' ? t('util.permanentlyDelete') : t('util.moveToTrash')
         if (response.code !== 0) {
-            util.addToastErr(`${delStr} 失败: ${response.status}`)
+            util.addToastErr(`${delStr} ${t('util.failed')}: ${response.status}`)
         } else {
             if (response.bOver === false) {
-                util.addToastInfo(`${delStr} 正在处理...`)
+                util.addToastInfo(`${delStr} ${t('util.processing')}`)
             } else {
                 const searchReq = new Dty.FilesReq()
                 searchReq.status.push(Dty.Fstatus.Destroy)
                 await this.thumbsGet(searchReq)
-                util.addToastInfo(`${delStr} 成功`)
+                util.addToastInfo(`${delStr} ${t('util.success')}`)
             }
         }
     }
@@ -587,12 +598,13 @@ class Util {
         if (response.code === 1001) {
             return
         }
-        const delStr = reqInfo.type == 'destroy' ? '彻底删除' : '移到回收站'
+        const delStr =
+            reqInfo.type == 'destroy' ? t('util.permanentlyDelete') : t('util.moveToTrash')
         if (response.code !== 0) {
-            util.addToastErr(`${delStr} 失败: ${response.status}`)
+            util.addToastErr(`${delStr} ${t('util.failed')}: ${response.status}`)
         } else {
             if (response.bOver === false) {
-                util.addToastInfo(`${delStr} 正在处理...`)
+                util.addToastInfo(`${delStr} ${t('util.processing')}`)
             } else {
                 // util.addToastInfo(`删除成功`)
                 appStore.curCheckedVideo.clear()
@@ -603,7 +615,7 @@ class Util {
                         : Dty.Fstatus.Deleted
                 searchReq.status.push(fStatus)
                 await this.files_get(searchReq)
-                util.addToastInfo(`${delStr} 成功`)
+                util.addToastInfo(`${delStr} ${t('util.success')}`)
             }
         }
     }
@@ -651,12 +663,12 @@ class Util {
             console.log('slect video failed', response)
         } else {
             if (response.bOver == false) {
-                util.addToastInfo(`正在处理...`)
+                util.addToastInfo(t('util.processing'))
                 return
             }
             const respData: Dty.File | undefined = response.data
             if (respData == undefined) {
-                util.addToastErr(`获取视频信息失败: ${response.status}`)
+                util.addToastErr(`${t('util.getVideoInfoFailed')}: ${response.status}`)
                 console.log('slect video failed', response)
                 return
             }
@@ -693,7 +705,7 @@ class Util {
     }
 
     async sync_prj(types: Dty.SyncType[]): Promise<Dty.Resp<Dty.SyncPrjResp>> {
-        util.addToastInfo(`同步开始`)
+        util.addToastInfo(t('util.syncStarted'))
         const req: Dty.Req<Dty.SyncPrjReq> = {
             cmd: Dty.CmdType.prjSync,
             data: {
@@ -733,7 +745,7 @@ class Util {
         appStore.thumbTotalNum = response.data?.total || 0
         if (appStore.thumbList.length == 0) {
             util.addToastInfo(
-                `没有文件，当前模式:${appStore.prj.repoType == Dty.RepoType.Trash ? '回收站' : '正常'}`
+                `${t('util.noFiles')}，${t('util.currentMode')}:${appStore.prj.repoType == Dty.RepoType.Trash ? t('util.trashMode') : t('util.normalMode')}`
             )
         }
         return response
@@ -753,11 +765,11 @@ class Util {
         req.data.pageSize = appStore.fileSearchPageSize
         const response: Dty.Resp<Dty.FilesResp> = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
-            util.addToastErr(`获取文件列表失败: ${response.status}`)
+            util.addToastErr(`${t('util.getFileListFailed')}: ${response.status}`)
             return response
         } else {
             if (response.bOver == false) {
-                util.addToastInfo(`正在处理...`)
+                util.addToastInfo(t('util.processing'))
                 return response
             }
         }
@@ -774,11 +786,11 @@ class Util {
         }
         const response: Dty.Resp<Dty.TagsResp> = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
-            util.addToastErr(`获取标签列表失败: ${response.status}`)
+            util.addToastErr(`${t('util.getTagListFailed')}: ${response.status}`)
             return response
         } else {
             if (response.bOver == false) {
-                util.addToastInfo(`正在处理...`)
+                util.addToastInfo(t('util.processing'))
                 return response
             }
         }
@@ -796,10 +808,10 @@ class Util {
         }
         const response: Dty.Resp = await IpcApi.trigger_event(req)
         if (response.code !== 0) {
-            util.addToastErr(`设置标签失败: ${response.status}`)
+            util.addToastErr(`${t('util.setTagFailed')}: ${response.status}`)
         } else {
             if (response.bOver == false) {
-                util.addToastInfo(`正在处理...`)
+                util.addToastInfo(t('util.processing'))
                 return
             }
             if (param != null) {
@@ -817,7 +829,7 @@ class Util {
                     await this.get_slt_video(appStore.curSltVideo)
                 }
             }
-            util.addToastInfo(`设置标签成功`)
+            util.addToastInfo(t('util.setTagSuccess'))
         }
     }
 
@@ -897,9 +909,9 @@ class Util {
                     const response = workRespose.data
                     util.folder_file_proc(response)
                     if (response.code !== 0) {
-                        util.addToastErr(`打开文件夹失败: ${response.status}`)
+                        util.addToastErr(`${t('util.openFolderFailed')}: ${response.status}`)
                     } else {
-                        util.addToastInfo(`打开文件夹成功: ${response.status}`)
+                        util.addToastInfo(`${t('util.openFolderSuccess')}: ${response.status}`)
                     }
                 }
 
@@ -909,10 +921,10 @@ class Util {
                     const workRespose: Dty.WorkResp<Dty.Resp<Dty.Resp_CutVideo>> = JSON.parse(data)
                     const response = workRespose.data
                     if (response.code !== 0) {
-                        util.addToastErr(`视频裁剪失败: ${response.status}`)
+                        util.addToastErr(`${t('util.videoCropFailed')}: ${response.status}`)
                         console.log('cut video failed', response)
                     } else {
-                        util.addToastInfo(`视频裁剪完成:${response.status}`)
+                        util.addToastInfo(`${t('util.videoCropCompleted')}:${response.status}`)
                         if (response.data != null) {
                             const respData: Dty.Resp_CutVideo = response.data
                             if (respData.traversalResp != null) {
@@ -929,10 +941,10 @@ class Util {
                     const workRespose: Dty.WorkResp<Dty.Resp> = JSON.parse(data)
                     const response = workRespose.data
                     if (response.code !== 0) {
-                        util.addToastErr(`删除失败: ${response.status}`)
+                        util.addToastErr(`${t('util.deleteFailed')}: ${response.status}`)
                         console.log('cut video failed', response)
                     } else {
-                        util.addToastInfo(`删除完成:${response.status}`)
+                        util.addToastInfo(`${t('util.deleteCompleted')}:${response.status}`)
                         const searchReq = new Dty.FilesReq()
                         const fStatus =
                             appStore.prj.repoType == Dty.RepoType.Normal
@@ -948,7 +960,7 @@ class Util {
                     const workRespose: Dty.WorkResp<Dty.Resp<Dty.FrameInfo>> = JSON.parse(data)
                     const response = workRespose.data
                     if (response.code !== 0) {
-                        util.addToastErr(`获取关键帧信息失败: ${response.status}`)
+                        util.addToastErr(`${t('util.getKeyFrameInfoFailed')}: ${response.status}`)
                     } else {
                         if (appStore) {
                             if (appStore.curSltVideo == null) {
@@ -957,7 +969,9 @@ class Util {
                             if (null != response.data) {
                                 appStore.curSltVideo.frameInfo = response.data
                                 console.log('get key frame info', appStore.curSltVideo.frameInfo)
-                                util.addToastInfo(`获取关键帧信息完成:${response.status}`)
+                                util.addToastInfo(
+                                    `${t('util.getKeyFrameInfoCompleted')}:${response.status}`
+                                )
                             }
                         }
                     }
@@ -1011,7 +1025,10 @@ class Util {
         } else if (viewModel === 'thumbnail') {
             appStore.curViewModel = 'thumbnail'
         }
-        const showCtx = appStore.curViewModel === 'video' ? `视频播放模式` : `缩略图模式`
+        const showCtx =
+            appStore.curViewModel === 'video'
+                ? t('util.videoPlaybackMode')
+                : t('util.thumbnailMode')
         util.addToast(showCtx, 'info')
     }
 }

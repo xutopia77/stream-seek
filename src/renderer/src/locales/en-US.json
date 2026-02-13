@@ -1,0 +1,297 @@
+{
+  "common": {
+    "appName": "Video File Management System",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info",
+    "yes": "Yes",
+    "no": "No",
+    "operations": "Operations",
+    "currentVersion": "Current Version"
+  },
+  "navigation": {
+    "home": "Home",
+    "file": "File",
+    "projects": "Projects",
+    "videos": "Videos",
+    "settings": "Settings",
+    "admin": "Admin",
+    "search": "Search",
+    "thumbnails": "Thumbnails",
+    "repositoryFiles": "Repository Files",
+    "recycleBinFiles": "Recycle Bin Files",
+    "viewRecentMessages": "View Recent Messages",
+    "openProjectFailed": "Failed to open project",
+    "backgroundExecuting": "Executing in background...",
+    "startupFailed": "Startup failed",
+    "openProjectSuccess": "Project opened successfully",
+    "menuItems": {
+      "createProject": "Create Project",
+      "openProject": "Open Project",
+      "exit": "Exit",
+      "view": "View",
+      "fileList": "File List",
+      "operationPanel": "Operation Panel",
+      "thumbnailView": "Thumbnail View",
+      "videoView": "Video View",
+      "returnHome": "Return Home",
+      "function": "Function",
+      "about": "About"
+    }
+  },
+  "project": {
+    "title": "Project",
+    "create": "Create Project",
+    "open": "Open Project",
+    "name": "Project Name",
+    "path": "Project Path",
+    "storagePath": "Storage Path",
+    "sync": "Sync Project",
+    "syncSuccess": "Project sync successful",
+    "syncError": "Project sync failed"
+  },
+  "video": {
+    "title": "Video",
+    "play": "Play",
+    "pause": "Pause",
+    "stop": "Stop",
+    "speed": "Speed",
+    "frameByFrame": "Frame by Frame",
+    "keyFrame": "Key Frame",
+    "duration": "Duration",
+    "size": "Size",
+    "resolution": "Resolution",
+    "deleteConfirm": "Are you sure to delete this video?",
+    "deleteSuccess": "Video deleted successfully",
+    "deleteError": "Failed to delete video"
+  },
+  "thumbnail": {
+    "title": "Thumbnail",
+    "generate": "Generate Thumbnail",
+    "view": "View Thumbnail",
+    "regenerate": "Regenerate",
+    "generated": "Thumbnail generation completed"
+  },
+  "tag": {
+    "title": "Tag",
+    "manage": "Tag Management",
+    "add": "Add Tag",
+    "name": "Tag Name",
+    "color": "Tag Color",
+    "assign": "Assign Tag"
+  },
+  "status": {
+    "normal": "Normal",
+    "deleted": "Deleted",
+    "error": "Error",
+    "destroyed": "Destroyed",
+    "nothing": "Non-existent"
+  },
+  "appSetting": {
+    "title": "Application Settings",
+    "interface": "Interface Settings",
+    "language": "Interface Language",
+    "languageOptions": {
+      "chinese": "Chinese",
+      "english": "English"
+    },
+    "operations": {
+      "save": "Save Settings",
+      "reset": "Reset to Default"
+    }
+  },
+  "messages": {
+    "welcome": "Welcome to Video File Management System",
+    "noVideos": "No video files available",
+    "fileNotFound": "File not found",
+    "operationSuccess": "Operation successful",
+    "operationFailed": "Operation failed"
+  },
+  "adminNav": {
+    "returnHome": "Return Home",
+    "projectSettings": "Project Settings",
+    "tagManagement": "Tag Management",
+    "thumbnailManagement": "Thumbnail Management",
+    "smallFileOrganization": "Small File Organization",
+    "settings": "Settings"
+  },
+  "adminSetting": {
+    "projectInfo": "Project Information",
+    "projectPath": "Project Path",
+    "repoPath": "Repository Path",
+    "syncOptions": "Sync Options",
+    "fileOrganize": "File Organization",
+    "generateThumbnail": "Generate Thumbnail",
+    "syncProject": "Sync Project",
+    "stopSync": "Stop Sync",
+    "repoMode": "Repository Mode",
+    "normalMode": "Normal",
+    "trashMode": "Trash",
+    "setRepoMode": "Set Repository Mode",
+    "stopSyncBackground": "Stopping sync, executing in background",
+    "stopSyncFailed": "Failed to stop sync",
+    "syncProjectFailed": "Failed to sync project",
+    "backgroundExecuting": "Executing in background..."
+  },
+  "adminTagMng": {
+    "serialNumber": "Serial Number",
+    "name": "Name",
+    "color": "Color",
+    "operations": "Operations",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "pagination": {
+    "pageInfo": "Page {current} of {total} (Total: {count} items)",
+    "jumpTo": "Go to",
+    "itemsPerPage": "Items per page"
+  },
+  "recentMessages": {
+    "title": "Recent Messages",
+    "clearAll": "Clear All",
+    "close": "Close",
+    "noMessages": "No messages",
+    "justNow": "Just now",
+    "minutesAgo": "{minutes} minutes ago",
+    "hoursAgo": "{hours} hours ago",
+    "daysAgo": "{days} days ago"
+  },
+  "thumbCtrlBar": {
+    "totalFiles": "Total Files",
+    "deleteFile": "Delete File",
+    "delete": "Delete",
+    "noSelectedFile": "No selected file"
+  },
+  "thumbFileList": {
+    "selectionChanged": "Video {name} is {status}",
+    "levelColorMapping": "Level name: {levelName}, Target color: {targetColor}"
+  },
+  "thumbView": {
+    "unchecked": "⬜",
+    "checked": "✅",
+    "curVideoThumbnailNull": "Current video thumbnail is null",
+    "thumbnailCount": "Thumbnail count: {count}"
+  },
+  "tinyFileDb": {
+    "returnHome": "Return Home",
+    "thumbnailFilePath": "Thumbnail File Path",
+    "thumbnailDbPath": "Thumbnail Database Path",
+    "start": "Start",
+    "stop": "Stop",
+    "description": "Organize small file thumbnails into database",
+    "stopError": "File organization stop triggered",
+    "stopSuccess": "File organization stop triggered successfully",
+    "startError": "File organization",
+    "startSuccess": "File organization started successfully"
+  },
+  "playCtrl": {
+    "selectVideoFirst": "Please select a video first",
+    "levelRangeError": "Level must be between 1-5",
+    "selectFileFirst": "Please select a file",
+    "noVideoFiles": "No video files",
+    "alreadyFirstFile": "Already the first file",
+    "alreadyLastFile": "Already the last file",
+    "deleteMethod": "Delete method",
+    "moveToTrash": "Move to trash",
+    "moveToTrashWithThumb": "Move to trash and delete thumbnails",
+    "noSelectedFile": "No selected file"
+  },
+  "playProgressBar": {
+    "openVideoFirst": "Please open a video file first",
+    "getKeyFrameError": "Get key frame info error",
+    "processing": "Processing...",
+    "getKeyFrameSuccess": "Get key frame info success"
+  },
+  "thumbnailView": {
+    "unchecked": "⬜",
+    "checked": "✅",
+    "curVideoThumbnailNull": "Current video thumbnail is null"
+  },
+  "videoList": {
+    "selectionChanged": "Video {name} is {status}",
+    "levelColorMapping": "Level name: {levelName}, Target color: {targetColor}"
+  },
+  "videoInfo": {
+    "tagPlaceholder": "Enter tag to add",
+    "removeTag": "Remove tag {name}",
+    "tagNameEmpty": "Tag name cannot be empty",
+    "selectFileFirst": "Please select a file"
+  },
+  "videoOperatePanel": {
+    "selectVideoFirst": "Please select a video first",
+    "noSplitInfo": "No split information",
+    "cannotDeleteSystemSegment": "Cannot delete system segment",
+    "confirmDeleteSegment": "Are you sure you want to delete the selected segment record?",
+    "selectSegmentFirst": "Please select a segment to delete/restore first"
+  },
+  "createPrj": {
+    "returnHome": "Return Home",
+    "repoPath": "Repository Path",
+    "repoPathPlaceholder": "Please enter repository path",
+    "createProject": "Create Project",
+    "description": "After project creation is successful, go to the Function interface to sync the project",
+    "enterDataPath": "Please enter data path",
+    "creatingProject": "Creating project, please wait...",
+    "createProjectSuccess": "Project created successfully",
+    "createProjectFailed": "Project creation failed"
+  },
+  "adminSearch": {
+    "returnHome": "Return Home",
+    "videoClipManagement": "Video Clip Management"
+  },
+  "queryForm": {
+    "start": "Start",
+    "end": "End",
+    "query": "Query",
+    "overallDisplay": "Overall Display",
+    "dailyDisplay": "Daily Display"
+  },
+  "videoAction": {
+    "startDetection": "Start Detection"
+  },
+  "util": {
+    "openFolderFailed": "Failed to open folder",
+    "processing": "Processing...",
+    "noVideoFileSelected": "No video file selected",
+    "selectVideoFirst": "Please select a video first",
+    "clipFailed": "Clip failed",
+    "clipSuccess": "Clip successful",
+    "permanentlyDelete": "Permanently delete",
+    "moveToTrash": "Move to trash",
+    "failed": "failed",
+    "success": "successful",
+    "getVideoInfoFailed": "Failed to get video info",
+    "syncStarted": "Sync started",
+    "noFiles": "No files",
+    "currentMode": "Current mode",
+    "trashMode": "Trash",
+    "normalMode": "Normal",
+    "getFileListFailed": "Failed to get file list",
+    "getTagListFailed": "Failed to get tag list",
+    "setTagFailed": "Failed to set tag",
+    "setTagSuccess": "Tag set successfully",
+    "openFolderSuccess": "Folder opened successfully",
+    "videoCropFailed": "Video crop failed",
+    "videoCropCompleted": "Video crop completed",
+    "deleteFailed": "Delete failed",
+    "deleteCompleted": "Delete completed",
+    "getKeyFrameInfoFailed": "Failed to get key frame info",
+    "getKeyFrameInfoCompleted": "Key frame info retrieved",
+    "videoPlaybackMode": "Video playback mode",
+    "thumbnailMode": "Thumbnail mode"
+  }
+}

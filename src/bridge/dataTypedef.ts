@@ -389,10 +389,12 @@ export enum ThumbType {
     FnameThumb = 'fNameThumb'
 }
 
+export type LangType = 'zh-CN' | 'en-US'
+
 // 项目配置，存储在项目json文件中
 export class Prj {
     name: string = ''
-    version: string = '2.2.0'
+    version: string = '3.0.0'
     path: string = '' //  project path
     thumbStrategy: ThumbStrategy = ThumbStrategy.BySize // 缩略图策略
     thumbEachSec: number = 0.1 // 每多少秒生成一张缩略图
@@ -400,6 +402,7 @@ export class Prj {
     numEachFolder: number = 10 // 每个文件夹多少视频文件
     dataRepo: DataRepo[] = []
     repoType: RepoType = RepoType.Normal
+    language: LangType = 'zh-CN'
 }
 
 export class Tiny2DbReq {

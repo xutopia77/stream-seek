@@ -1,11 +1,11 @@
 <template>
     <div v-if="visible" class="global-message-panel" @click.stop>
         <div class="panel-header">
-            <h3 class="panel-title">最近消息</h3>
+            <h3 class="panel-title">{{ t('recentMessages.title') }}</h3>
             <div class="header-actions">
-                <button class="xc-button small danger" @click="btn_clear_all_msg">清空所有</button>
+                <button class="xc-button small danger" @click="btn_clear_all_msg">{{ t('recentMessages.clearAll') }}</button>
                 <button class="xc-button small primary" @click="appStore.bPageResentMsg = false">
-                    关闭
+                    {{ t('recentMessages.close') }}
                 </button>
             </div>
         </div>
@@ -22,7 +22,7 @@
                     <span class="message-time">{{ formatTime(message.timestamp) }}</span>
                 </div>
             </div>
-            <div v-if="recentMessages.length === 0" class="no-messages">暂无消息</div>
+            <div v-if="recentMessages.length === 0" class="no-messages">{{ t('recentMessages.noMessages') }}</div>
         </div>
     </div>
 </template>
@@ -31,8 +31,11 @@
 import { computed } from 'vue'
 import Utils from '@renderer/utils/util'
 import { useAppStore } from '@renderer/stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 import * as DatType from '../../../../bridge/dataTypedef'
+
+const { t } = useI18n()
 const visible = computed(() => appStore.bPageResentMsg)
 
 // 计算最近5条消息（从历史消息中获取）
@@ -71,14 +74,14 @@ const formatTime = (timestamp: number): string => {
     const diff = now.getTime() - date.getTime()
     const minutes = Math.floor(diff / 60000)
 
-    if (minutes < 1) return '刚刚'
-    if (minutes < 60) return `${minutes}分钟前`
+    if (minutes < 1) return t('recentMessages.justNow')
+    if (minutes < 60) return t('recentMessages.minutesAgo', { minutes })
 
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}小时前`
+    if (hours < 24) return t('recentMessages.hoursAgo', { hours })
 
     const days = Math.floor(hours / 24)
-    return `${days}天前`
+    return t('recentMessages.daysAgo', { days })
 }
 </script>
 

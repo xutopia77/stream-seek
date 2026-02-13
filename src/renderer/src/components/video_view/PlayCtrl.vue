@@ -96,10 +96,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
+import { useI18n } from 'vue-i18n'
 import '@renderer/assets/common.css'
-import util from '@renderer/utils/util'
+import util from '../../utils/util'
 const appStore = useAppStore()
 import * as Dty from '../../../../bridge/dataTypedef'
+
+const { t } = useI18n()
 
 // 改变播放倍速
 const changePlaybackRate = (): void => {}
@@ -138,7 +141,7 @@ let frameRate = computed(() => {
 
 function nextFrame(): void {
     if (appStore.curSltVideo == null) {
-        util.addToastInfo('请先选择一个视频')
+        util.addToastInfo(t('playCtrl.selectVideoFirst'))
         return
     }
     if (appStore.func_nextFrame) {
@@ -148,7 +151,7 @@ function nextFrame(): void {
 
 function previousFrame(): void {
     if (appStore.curSltVideo == null) {
-        util.addToastInfo('请先选择一个视频')
+        util.addToastInfo(t('playCtrl.selectVideoFirst'))
         return
     }
     if (appStore.func_prevFrame) {
@@ -158,7 +161,7 @@ function previousFrame(): void {
 
 function btnclk_stop_play(): void {
     if (appStore.curSltVideo == null) {
-        util.addToastInfo('请先选择一个视频')
+        util.addToastInfo(t('playCtrl.selectVideoFirst'))
         return
     }
     util.stop_play()
@@ -167,7 +170,7 @@ function btnclk_stop_play(): void {
 // 切换播放/暂停状态
 const btnclk_toggle_play = (): void => {
     if (appStore.curSltVideo == null) {
-        util.addToastInfo('请先选择一个视频')
+        util.addToastInfo(t('playCtrl.selectVideoFirst'))
         return
     }
     appStore.videoPlayCtrl.isPlay = !appStore.videoPlayCtrl.isPlay
@@ -191,7 +194,7 @@ async function btnclk_set_file_level(): Promise<void> {
     const req = new Dty.FileTagsReq()
     const levelVal = fileLevel.value + 1
     if (levelVal < 1 || levelVal > 5) {
-        util.addToastErr(`等级只能是1-5`)
+        util.addToastErr(t('playCtrl.levelRangeError'))
         return
     }
     let tagName = `sys_score${levelVal}`
@@ -203,7 +206,7 @@ async function btnclk_set_file_level(): Promise<void> {
         req.fileTags.push(fileTag)
     }
     if (req.fileTags.length === 0) {
-        util.addToastErr(`请选择文件`)
+        util.addToastErr(t('playCtrl.selectFileFirst'))
         return
     }
     await util.file_tags_set(req, { bNeedSltCurVideo: true, bNeedUpdate: true })
@@ -220,7 +223,7 @@ function btn_showKeyFrame(): void {
 function changeFile(flag: string): void {
     // 根据curSltVideo 从appStore的videoList中找到当前视频的索引
     if (appStore.videoList.length == 0) {
-        util.addToastInfo('没有视频文件')
+        util.addToastInfo(t('playCtrl.noVideoFiles'))
         return
     }
     if (appStore.curSltVideo == null) {
@@ -241,14 +244,14 @@ function changeFile(flag: string): void {
 
     if (flag == 'previous') {
         if (curVideoIdx == 0) {
-            util.addToastInfo('已经是第一个文件')
+            util.addToastInfo(t('playCtrl.alreadyFirstFile'))
             appStore.curSltVideo = appStore.videoList[curVideoIdx]
             return
         }
         appStore.curSltVideo = appStore.videoList[curVideoIdx - 1]
     } else {
         if (curVideoIdx == appStore.videoList.length - 1) {
-            util.addToastInfo('已经是最后一个文件')
+            util.addToastInfo(t('playCtrl.alreadyLastFile'))
             appStore.curSltVideo = appStore.videoList[curVideoIdx]
             return
         }
@@ -263,15 +266,15 @@ function btnclk_chg_panel(model: Dty.WorkPanel): void {
 let delType = ref<'delVideo' | 'delVideoAndThumb'>('delVideo')
 
 function changeDelType(): void {
-    let str = '移动到回收站'
-    if (delType.value == 'delVideoAndThumb') str = '移动到回收站，同时删除缩略图'
-    util.addToastInfo(`删除方式为：${str}`)
+    let str = t('playCtrl.moveToTrash')
+    if (delType.value == 'delVideoAndThumb') str = t('playCtrl.moveToTrashWithThumb')
+    util.addToastInfo(`${t('playCtrl.deleteMethod')}: ${str}`)
 }
 
 function btnclk_delSltVideos(): void {
     const curCheckedVideo = appStore.curCheckedVideo
     if (curCheckedVideo == null) {
-        util.addToastInfo('没有选择的文件')
+        util.addToastInfo(t('playCtrl.noSelectedFile'))
         return
     }
 
@@ -283,7 +286,7 @@ function btnclk_delSltVideos(): void {
         req.files.push(fInfo)
     }
     if (req.files.length == 0) {
-        util.addToastInfo('没有选择的文件')
+        util.addToastInfo(t('playCtrl.noSelectedFile'))
         return
     }
     if (appStore.prj.repoType == Dty.RepoType.Normal) {

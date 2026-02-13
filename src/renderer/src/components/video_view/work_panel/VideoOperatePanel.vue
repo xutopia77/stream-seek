@@ -44,11 +44,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useAppStore } from '../../../stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import util from '../../../utils/util.js'
 // import { IpcApi } from '../../utils/ipcApi'
 import * as Dty from '../../../../../bridge/dataTypedef'
+
+const { t } = useI18n()
 
 // ------ 切换视图
 const curViewBtn = computed(() => {
@@ -62,11 +65,11 @@ const btnclk_change_view_model = (): void => {
 // ------
 const btnclk_splitVideo = (): void => {
     if (appStore.curSltVideo?.mediaInfo == null) {
-        util.addToastErr(`请先选择视频`)
+        util.addToastErr(t('videoOperatePanel.selectVideoFirst'))
         return
     }
     if (appStore.curSltVideo?.splitInfo == null) {
-        util.addToastErr(`没有分段信息`)
+        util.addToastErr(t('videoOperatePanel.noSplitInfo'))
         return
     }
     const currentTime = appStore.videoPlayCtrl.curTime
@@ -128,15 +131,15 @@ const selectSplitInfo = (splitInfo: Dty.SplitInfo): void => {
 
 const removeVideosplit = (): void => {
     if (selectedSplitInfo.value?.percent === 100) {
-        util.addToastInfo(`不能删除系统片段`)
+        util.addToastInfo(t('videoOperatePanel.cannotDeleteSystemSegment'))
         return
     }
     if (appStore.curSltVideo?.splitInfo == null) {
-        util.addToastInfo(`没有分段信息`)
+        util.addToastInfo(t('videoOperatePanel.noSplitInfo'))
         return
     }
     if (selectedSplitInfo.value) {
-        const confirmDelete = confirm('确定要删除当前选中的片段信息记录吗？')
+        const confirmDelete = confirm(t('videoOperatePanel.confirmDeleteSegment'))
         if (confirmDelete) {
             const index = appStore.curSltVideo?.splitInfo.splits.findIndex(
                 (item: Dty.SplitInfo) => item.percent === selectedSplitInfo.value?.percent
@@ -151,14 +154,14 @@ const removeVideosplit = (): void => {
 
 const removeVideoRecord = (): void => {
     if (selectedSplitInfo.value == null) {
-        util.addToastErr(`请先选择要删除的片段`)
+        util.addToastErr(t('videoOperatePanel.selectSegmentFirst'))
         return
     }
     if (appStore.curSltVideo?.splitInfo == null) {
-        util.addToastErr(`没有分段信息`)
+        util.addToastErr(t('videoOperatePanel.noSplitInfo'))
         return
     }
-    const confirmDelete = confirm('确定要删除当前选中的片段信息记录吗？')
+    const confirmDelete = confirm(t('videoOperatePanel.confirmDeleteSegment'))
     if (!confirmDelete) {
         return
     }
@@ -173,11 +176,11 @@ const removeVideoRecord = (): void => {
 
 const restoreVideoRecord = (): void => {
     if (!selectedSplitInfo.value) {
-        util.addToastErr(`请先选择要恢复的片段`)
+        util.addToastErr(t('videoOperatePanel.selectSegmentFirst'))
         return
     }
     if (appStore.curSltVideo?.splitInfo == null) {
-        util.addToastErr(`没有分段信息`)
+        util.addToastErr(t('videoOperatePanel.noSplitInfo'))
         return
     }
     const index = appStore.curSltVideo.splitInfo.splits.findIndex(

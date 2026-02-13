@@ -48,11 +48,13 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { useAppStore } from '../../stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 // import { IpcApi } from '../../utils/ipcApi'
 import util from '../../utils/util.js'
-import MessageShow from '../util/MessageShow'
 import * as Dty from '../../../../bridge/dataTypedef'
+
+const { t } = useI18n()
 
 const mergedProgressBar = ref<HTMLElement | null>(null)
 const isDragging = ref<boolean>(false)
@@ -118,7 +120,7 @@ watch(
 
 async function processShowKeyInfo(): Promise<void> {
     if (appStore.curSltVideo == null) {
-        MessageShow.error(`请先打开视频文件`)
+        util.addToastErr(t('playProgressBar.openVideoFirst'))
         return
     }
     if (appStore.bShowKeyFrameInfo == false) {
@@ -132,10 +134,10 @@ async function processShowKeyInfo(): Promise<void> {
     }
     const response = await util.getKeyFrameInfo()
     if (response.code != 0) {
-        MessageShow.error(`get key frame info err:${response.status}`)
+        util.addToastErr(`${t('playProgressBar.getKeyFrameError')}: ${response.status}`)
     } else {
         console.log('get key frame info success', response)
-        MessageShow.info(response.bOver == false ? '正在处理...' : `获取关键帧信息成功`)
+        util.addToastInfo(response.bOver == false ? t('playProgressBar.processing') : t('playProgressBar.getKeyFrameSuccess'))
     }
 }
 

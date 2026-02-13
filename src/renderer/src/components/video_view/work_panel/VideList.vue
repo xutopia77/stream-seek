@@ -37,11 +37,13 @@
 import PaginationCtrl from '@renderer/components/common/paginationCtrl.vue'
 import { computed, onBeforeMount, ref, onMounted, onUnmounted } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
+import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import * as Dty from '../../../../../bridge/dataTypedef'
 // import util from '@renderer/utils/util'
 
+const { t } = useI18n()
 const videoList = computed<Dty.File[]>(() => appStore.videoList)
 
 // 记录上一次选中的索引
@@ -76,7 +78,7 @@ const toggleVideoSelection = (
     isChecked: boolean,
     currentIndex: number
 ): void => {
-    console.log(`Video ${video.name} is ${isChecked ? 'selected' : 'deselected'}`)
+    console.log(t('videoList.selectionChanged', { name: video.name, status: isChecked ? 'selected' : 'deselected' }))
     if (isShiftPressed.value && lastSelectedIndex.value !== -1) {
         const start = Math.min(lastSelectedIndex.value, currentIndex)
         const end = Math.max(lastSelectedIndex.value, currentIndex)
@@ -129,7 +131,7 @@ const getVideoLevelColorStyle = (video): string => {
 
     // 匹配颜色，无匹配则用默认浅灰色
     const targetColor = levelColorMap[levelName] || '#cccccc'
-    console.log(`levelName: ${levelName}, targetColor: ${targetColor}`)
+    console.log(t('videoList.levelColorMapping', { levelName, targetColor }))
     return `color: ${targetColor};`
 }
 </script>

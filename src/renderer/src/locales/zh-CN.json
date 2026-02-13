@@ -1,0 +1,320 @@
+{
+  "common": {
+    "appName": "视频文件智能管理系统",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "confirm": "确认",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "close": "关闭",
+    "refresh": "刷新",
+    "loading": "加载中...",
+    "success": "成功",
+    "error": "错误",
+    "warning": "警告",
+    "info": "信息",
+    "yes": "是",
+    "no": "否",
+    "operations": "操作",
+    "currentVersion": "当前版本"
+  },
+  "navigation": {
+    "home": "首页",
+    "file": "文件",
+    "projects": "项目管理",
+    "videos": "视频管理",
+    "settings": "设置",
+    "admin": "管理员",
+    "search": "搜索",
+    "thumbnails": "缩略图管理",
+    "repositoryFiles": "仓库文件",
+    "recycleBinFiles": "回收站文件",
+    "viewRecentMessages": "查看最近消息提醒",
+    "openProjectFailed": "打开项目失败",
+    "backgroundExecuting": "后台执行中...",
+    "startupFailed": "启动失败",
+    "openProjectSuccess": "打开项目成功",
+    "menuItems": {
+      "createProject": "创建项目",
+      "openProject": "打开项目",
+      "exit": "退出",
+      "view": "视图",
+      "fileList": "文件列表",
+      "operationPanel": "操作面板",
+      "thumbnailView": "缩略图查看",
+      "videoView": "视频查看",
+      "returnHome": "返回主页",
+      "function": "功能",
+      "about": "关于"
+    }
+  },
+  "settings": {
+    "title": "应用设置",
+    "interface": "界面设置",
+    "language": "语言",
+    "languageDesc": "选择应用程序的显示语言",
+    "theme": "主题",
+    "lightTheme": "浅色主题",
+    "darkTheme": "深色主题",
+    "autoTheme": "跟随系统",
+    "themeDesc": "选择应用程序的外观主题",
+    "video": "视频设置",
+    "thumbnailInterval": "缩略图生成间隔",
+    "seconds": "秒",
+    "thumbnailIntervalDesc": "设置生成缩略图的时间间隔",
+    "maxConcurrentTasks": "最大并发任务数",
+    "maxConcurrentTasksDesc": "设置同时处理的最大任务数量",
+    "storage": "存储设置",
+    "autoCleanTrash": "自动清理回收站",
+    "autoCleanTrashDesc": "是否自动清理回收站中的旧文件",
+    "trashRetentionDays": "回收站保留天数",
+    "days": "天",
+    "trashRetentionDaysDesc": "设置回收站中文件的保留天数"
+  },
+  "project": {
+    "title": "项目",
+    "create": "创建项目",
+    "open": "打开项目",
+    "name": "项目名称",
+    "path": "项目路径",
+    "storagePath": "存储路径",
+    "sync": "同步项目",
+    "syncSuccess": "项目同步成功",
+    "syncError": "项目同步失败"
+  },
+  "video": {
+    "title": "视频",
+    "play": "播放",
+    "pause": "暂停",
+    "stop": "停止",
+    "speed": "倍速",
+    "frameByFrame": "逐帧播放",
+    "keyFrame": "关键帧",
+    "duration": "时长",
+    "size": "大小",
+    "resolution": "分辨率",
+    "deleteConfirm": "确认删除此视频？",
+    "deleteSuccess": "视频删除成功",
+    "deleteError": "视频删除失败"
+  },
+  "thumbnail": {
+    "title": "缩略图",
+    "generate": "生成缩略图",
+    "view": "查看缩略图",
+    "regenerate": "重新生成",
+    "generated": "缩略图生成完成"
+  },
+  "tag": {
+    "title": "标签",
+    "manage": "标签管理",
+    "add": "添加标签",
+    "name": "标签名称",
+    "color": "标签颜色",
+    "assign": "分配标签"
+  },
+  "status": {
+    "normal": "正常",
+    "deleted": "已删除",
+    "error": "错误",
+    "destroyed": "已销毁",
+    "nothing": "不存在"
+  },
+  "appSetting": {
+    "title": "程序设置",
+    "interface": "界面设置",
+    "language": "界面语言",
+    "languageOptions": {
+      "chinese": "中文",
+      "english": "English"
+    },
+    "operations": {
+      "save": "保存设置",
+      "reset": "恢复默认"
+    }
+  },
+  "messages": {
+    "welcome": "欢迎使用视频文件智能管理系统",
+    "noVideos": "暂无视频文件",
+    "fileNotFound": "文件未找到",
+    "operationSuccess": "操作成功",
+    "operationFailed": "操作失败"
+  },
+  "adminNav": {
+    "returnHome": "返回主页",
+    "projectSettings": "项目设置",
+    "tagManagement": "标签管理",
+    "thumbnailManagement": "缩略图管理",
+    "smallFileOrganization": "小文件整理",
+    "settings": "设置"
+  },
+  "adminSetting": {
+    "projectInfo": "项目信息",
+    "projectPath": "项目路径",
+    "repoPath": "仓库路径",
+    "syncOptions": "同步选项",
+    "fileOrganize": "文件规整",
+    "generateThumbnail": "生成缩略图",
+    "syncProject": "同步项目",
+    "stopSync": "停止同步",
+    "repoMode": "仓库模式",
+    "normalMode": "正常",
+    "trashMode": "回收站",
+    "setRepoMode": "设置仓库模式",
+    "stopSyncBackground": "停止同步，后台执行中",
+    "stopSyncFailed": "停止同步失败",
+    "syncProjectFailed": "同步项目失败",
+    "backgroundExecuting": "后台执行中..."
+  },
+  "adminTagMng": {
+    "serialNumber": "序号",
+    "name": "名称",
+    "color": "颜色",
+    "operations": "操作",
+    "edit": "编辑",
+    "delete": "删除"
+  },
+  "pagination": {
+    "pageInfo": "第 {current} 页 / 共 {total} 页 (共 {count} 条)",
+    "jumpTo": "跳转",
+    "itemsPerPage": "每页"
+  },
+  "recentMessages": {
+    "title": "最近消息",
+    "clearAll": "清空所有",
+    "close": "关闭",
+    "noMessages": "暂无消息",
+    "justNow": "刚刚",
+    "minutesAgo": "{minutes}分钟前",
+    "hoursAgo": "{hours}小时前",
+    "daysAgo": "{days}天前"
+  },
+  "thumbCtrlBar": {
+    "totalFiles": "文件总数",
+    "deleteFile": "删除文件",
+    "delete": "删除",
+    "noSelectedFile": "没有选择的文件"
+  },
+  "thumbFileList": {
+    "selectionChanged": "视频 {name} 已{status}",
+    "levelColorMapping": "等级名称: {levelName}, 目标颜色: {targetColor}"
+  },
+  "thumbView": {
+    "unchecked": "⬜",
+    "checked": "✅",
+    "curVideoThumbnailNull": "当前视频缩略图为空",
+    "thumbnailCount": "缩略图数量: {count}"
+  },
+  "tinyFileDb": {
+    "returnHome": "返回主页",
+    "thumbnailFilePath": "缩略图文件路径",
+    "thumbnailDbPath": "缩略图数据库路径",
+    "start": "开始",
+    "stop": "停止",
+    "description": "把小文件缩略图文件，整理到数据库中",
+    "stopError": "文件整理停止触发",
+    "stopSuccess": "文件整理停止触发成功",
+    "startError": "文件整理",
+    "startSuccess": "文件整理开始成功"
+  },
+  "playCtrl": {
+    "selectVideoFirst": "请先选择一个视频",
+    "levelRangeError": "等级只能是1-5",
+    "selectFileFirst": "请选择文件",
+    "noVideoFiles": "没有视频文件",
+    "alreadyFirstFile": "已经是第一个文件",
+    "alreadyLastFile": "已经是最后一个文件",
+    "deleteMethod": "删除方式",
+    "moveToTrash": "移动到回收站",
+    "moveToTrashWithThumb": "移动到回收站，同时删除缩略图",
+    "noSelectedFile": "没有选择的文件"
+  },
+  "playProgressBar": {
+    "openVideoFirst": "请先打开视频文件",
+    "getKeyFrameError": "获取关键帧信息错误",
+    "processing": "正在处理...",
+    "getKeyFrameSuccess": "获取关键帧信息成功"
+  },
+  "thumbnailView": {
+    "unchecked": "⬜",
+    "checked": "✅",
+    "curVideoThumbnailNull": "当前视频缩略图为空"
+  },
+  "videoList": {
+    "selectionChanged": "视频 {name} 已{status}",
+    "levelColorMapping": "等级名称: {levelName}, 目标颜色: {targetColor}"
+  },
+  "videoInfo": {
+    "tagPlaceholder": "输入标签确认添加",
+    "removeTag": "移除标签 {name}",
+    "tagNameEmpty": "标签名不能为空",
+    "selectFileFirst": "请选择文件"
+  },
+  "videoOperatePanel": {
+    "selectVideoFirst": "请先选择视频",
+    "noSplitInfo": "没有分段信息",
+    "cannotDeleteSystemSegment": "不能删除系统片段",
+    "confirmDeleteSegment": "确定要删除当前选中的片段信息记录吗？",
+    "selectSegmentFirst": "请先选择要删除/恢复的片段"
+  },
+  "createPrj": {
+    "returnHome": "返回主页",
+    "repoPath": "仓库路径",
+    "repoPathPlaceholder": "请输入仓库路径",
+    "createProject": "创建项目",
+    "description": "项目创建成功后，需要到 功能 界面中，项目同步",
+    "enterDataPath": "请输入数据路径",
+    "creatingProject": "创建项目中，请稍候...",
+    "createProjectSuccess": "创建项目成功",
+    "createProjectFailed": "创建项目失败"
+  },
+  "adminSearch": {
+    "returnHome": "返回主页",
+    "videoClipManagement": "录像片段管理"
+  },
+  "queryForm": {
+    "start": "开始",
+    "end": "结束",
+    "query": "查询",
+    "overallDisplay": "整体展示",
+    "dailyDisplay": "按天展示"
+  },
+  "videoAction": {
+    "startDetection": "开始检测"
+  },
+  "util": {
+    "openFolderFailed": "打开文件夹失败",
+    "processing": "正在处理...",
+    "noVideoFileSelected": "当前没有选择视频文件",
+    "selectVideoFirst": "请先选择一个视频",
+    "clipFailed": "剪辑失败",
+    "clipSuccess": "剪辑成功",
+    "permanentlyDelete": "彻底删除",
+    "moveToTrash": "移到回收站",
+    "failed": "失败",
+    "success": "成功",
+    "getVideoInfoFailed": "获取视频信息失败",
+    "syncStarted": "同步开始",
+    "noFiles": "没有文件",
+    "currentMode": "当前模式",
+    "trashMode": "回收站",
+    "normalMode": "正常",
+    "getFileListFailed": "获取文件列表失败",
+    "getTagListFailed": "获取标签列表失败",
+    "setTagFailed": "设置标签失败",
+    "setTagSuccess": "设置标签成功",
+    "openFolderSuccess": "打开文件夹成功",
+    "videoCropFailed": "视频裁剪失败",
+    "videoCropCompleted": "视频裁剪完成",
+    "deleteFailed": "删除失败",
+    "deleteCompleted": "删除完成",
+    "getKeyFrameInfoFailed": "获取关键帧信息失败",
+    "getKeyFrameInfoCompleted": "获取关键帧信息完成",
+    "videoPlaybackMode": "视频播放模式",
+    "thumbnailMode": "缩略图模式"
+  }
+}
