@@ -158,7 +158,10 @@
   "pagination": {
     "pageInfo": "Page {current} of {total} (Total: {count} items)",
     "jumpTo": "Go",
-    "itemsPerPage": "Page Size"
+    "itemsPerPage": "Page Size",
+    "selectAll": "Select All",
+    "selectLevel": "Select Level",
+    "allLevels": "All Levels"
   },
   "recentMessages": {
     "title": "Recent Messages",

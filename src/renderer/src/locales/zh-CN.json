@@ -181,7 +181,10 @@
   "pagination": {
     "pageInfo": "第 {current} 页 / 共 {total} 页 (共 {count} 条)",
     "jumpTo": "跳转",
-    "itemsPerPage": "每页"
+    "itemsPerPage": "每页",
+    "selectAll": "全选",
+    "selectLevel": "选择级别",
+    "allLevels": "所有级别"
   },
   "recentMessages": {
     "title": "最近消息",

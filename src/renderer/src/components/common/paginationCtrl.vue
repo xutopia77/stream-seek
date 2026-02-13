@@ -2,15 +2,46 @@
     <!-- 分页控制区域 -->
     <div class="pagination-controls">
         <div class="pagination-info">
-            <span class="xc-text">
-                {{
-                    t('pagination.pageInfo', {
-                        current: currentPage,
-                        total: totalPages,
-                        count: totalNum
-                    })
-                }}
-            </span>
+            <div>
+                <span class="xc-text">
+                    {{
+                        t('pagination.pageInfo', {
+                            current: currentPage,
+                            total: totalPages,
+                            count: totalNum
+                        })
+                    }}
+                </span>
+            </div>
+            <div class="multi-select-dropdown">
+                <div class="dropdown-header" @click="toggleDropdown">
+                    <span class="selected-text">{{ getSelectedLevelsText() }}</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div v-show="isDropdownOpen" class="dropdown-content">
+                    <div class="select-all-container">
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                :checked="selectedLevels.length === 5"
+                                @change="toggleSelectAll"
+                            />
+                            {{ t('pagination.selectAll') }}
+                        </label>
+                    </div>
+                    <div v-for="index in 5" :key="index" class="level-option">
+                        <label class="checkbox-label">
+                            <input
+                                v-model="selectedLevels"
+                                type="checkbox"
+                                :value="index - 1"
+                                @change="handleLevelChange"
+                            />
+                            {{ index }}☆
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="pagination-nav">
@@ -57,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
@@ -104,17 +135,76 @@ const totalNum = computed(() => {
 })
 const jumpPageNum = ref(1) // 用于跳转的页码输入
 
+const selectedLevels = ref<number[]>([0]) // 默认选择第一个级别
+const isDropdownOpen = ref(false) // 控制下拉框是否打开
+
+// 切换下拉框显示状态
+const toggleDropdown = (): void => {
+    isDropdownOpen.value = !isDropdownOpen.value
+}
+
+// 获取选中级别的显示文本
+const getSelectedLevelsText = (): string => {
+    if (selectedLevels.value.length === 0) {
+        return t('pagination.selectLevel')
+    } else if (selectedLevels.value.length === 5) {
+        return t('pagination.allLevels')
+    } else {
+        return selectedLevels.value.map((level) => `${level + 1}☆`).join(', ')
+    }
+}
+
+// 全选/取消全选
+const toggleSelectAll = (): void => {
+    if (selectedLevels.value.length === 5) {
+        selectedLevels.value = []
+    } else {
+        selectedLevels.value = [0, 1, 2, 3, 4]
+    }
+    handleLevelChange()
+}
+
+// 处理级别选择变化
+const handleLevelChange = (): void => {
+    // 如果没有选择任何级别，默认选择第一个级别
+    if (selectedLevels.value.length === 0) {
+        selectedLevels.value = [0]
+    }
+    handleSearch()
+}
+
+// 点击外部关闭下拉框
+const handleClickOutside = (event: Event): void => {
+    const target = event.target as Element
+    if (!target.closest('.multi-select-dropdown')) {
+        isDropdownOpen.value = false
+    }
+}
+
+// 添加和移除全局点击事件监听
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside)
+})
+
 // 搜索处理函数
 const handleSearch = (): void => {
     if (props.pageType === 'thumb') {
         let searchReq = new Dty.FilesReq()
         searchReq.status.push(Dty.Fstatus.Destroy)
+        // 这里可以添加级别过滤逻辑，如果后端支持的话
+        // searchReq.levels = selectedLevels.value
         util.thumbsGet(searchReq)
     } else {
         let searchReq = new Dty.FilesReq()
         const fStatus =
             appStore.prj.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
         searchReq.status.push(fStatus)
+        // 这里可以添加级别过滤逻辑，如果后端支持的话
+        // searchReq.levels = selectedLevels.value
         util.files_get(searchReq)
     }
 }
@@ -211,5 +301,86 @@ const jumpToPage = (): void => {
 
 .size-select:focus {
     border-color: #007fd4;
+}
+
+/* 多选下拉框样式 */
+.multi-select-dropdown {
+    position: relative;
+    min-width: 120px;
+}
+
+.dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: #2d2d30;
+    border: 1px solid #3c3c41;
+    border-radius: 3px;
+    color: var(--xc-text-color);
+    cursor: pointer;
+    user-select: none;
+}
+
+.dropdown-header:hover {
+    border-color: #007fd4;
+}
+
+.selected-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    font-size: small;
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    margin-left: 5px;
+}
+
+.dropdown-content {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background-color: #2d2d30;
+    border: 1px solid #3c3c41;
+    border-radius: 3px;
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 2px;
+}
+
+.select-all-container {
+    /* padding: 6px 8px; */
+    padding: 0px;
+    font-size: small;
+    border-bottom: 1px solid #3c3c41;
+}
+
+.level-option {
+    /* padding: 4px 8px; */
+    padding: 0px;
+}
+
+.level-option:hover {
+    background-color: #3c3c41;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--xc-text-color);
+    cursor: pointer;
+    /* font-size: 12px; */
+    font-size: small;
+    width: 100%;
+}
+
+.checkbox-label input[type='checkbox'] {
+    accent-color: #007fd4;
 }
 </style>
