@@ -135,7 +135,7 @@ const totalNum = computed(() => {
 })
 const jumpPageNum = ref(1) // 用于跳转的页码输入
 
-const selectedLevels = ref<number[]>([0]) // 默认选择第一个级别
+const selectedLevels = ref<number[]>([]) // 默认不选择任何级别
 const isDropdownOpen = ref(false) // 控制下拉框是否打开
 
 // 切换下拉框显示状态
@@ -146,7 +146,7 @@ const toggleDropdown = (): void => {
 // 获取选中级别的显示文本
 const getSelectedLevelsText = (): string => {
     if (selectedLevels.value.length === 0) {
-        return t('pagination.selectLevel')
+        return t('pagination.noLevelSelected')
     } else if (selectedLevels.value.length === 5) {
         return t('pagination.allLevels')
     } else {
@@ -166,10 +166,6 @@ const toggleSelectAll = (): void => {
 
 // 处理级别选择变化
 const handleLevelChange = (): void => {
-    // 如果没有选择任何级别，默认选择第一个级别
-    if (selectedLevels.value.length === 0) {
-        selectedLevels.value = [0]
-    }
     handleSearch()
 }
 
@@ -195,16 +191,18 @@ const handleSearch = (): void => {
     if (props.pageType === 'thumb') {
         let searchReq = new Dty.FilesReq()
         searchReq.status.push(Dty.Fstatus.Destroy)
-        // 这里可以添加级别过滤逻辑，如果后端支持的话
-        // searchReq.levels = selectedLevels.value
+        for (const lvl of selectedLevels.value) {
+            searchReq.tags.push(`sys_score${lvl + 1}`)
+        }
         util.thumbsGet(searchReq)
     } else {
         let searchReq = new Dty.FilesReq()
         const fStatus =
             appStore.prj.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
         searchReq.status.push(fStatus)
-        // 这里可以添加级别过滤逻辑，如果后端支持的话
-        // searchReq.levels = selectedLevels.value
+        for (const lvl of selectedLevels.value) {
+            searchReq.tags.push(`sys_score${lvl + 1}`)
+        }
         util.files_get(searchReq)
     }
 }

@@ -16,7 +16,7 @@ class AppDb {
     private tbl_filesview = 'files_view'
     private tbl_tags = 'tags'
     private tbl_fileTag = 'fileTags'
-
+    debugSql = true
     public async initDb(dbFolderPath: string): Promise<Dty.Resp> {
         if (dbFolderPath === '') return new Dty.Resp().err('dbFolderPath is empty')
         const resp = new Dty.Resp()
@@ -439,6 +439,35 @@ class AppDb {
                 countParams.push(...req.type)
             }
 
+            // 处理标签过滤条件
+            if (req.tags.length > 0) {
+                if (tblName === this.tbl_filesview) {
+                    // 对于 files_view 视图，直接使用 tagName 列进行过滤
+                    const tagPlaceholders = req.tags.map(() => '?').join(', ')
+                    conditionsParam.push(`tagName IN (${tagPlaceholders})`)
+                    countConditionsParam.push(`tagName IN (${tagPlaceholders})`)
+                    params.push(...req.tags)
+                    countParams.push(...req.tags)
+                } else {
+                    // 对于 files 表，使用子查询过滤包含指定标签名称的文件
+                    const tagPlaceholders = req.tags.map(() => '?').join(', ')
+                    conditionsParam.push(`id IN (
+                        SELECT DISTINCT fileId FROM ${this.tbl_fileTag} 
+                        WHERE tagId IN (
+                            SELECT id FROM ${this.tbl_tags} WHERE name IN (${tagPlaceholders})
+                        )
+                    )`)
+                    countConditionsParam.push(`id IN (
+                        SELECT DISTINCT fileId FROM ${this.tbl_fileTag} 
+                        WHERE tagId IN (
+                            SELECT id FROM ${this.tbl_tags} WHERE name IN (${tagPlaceholders})
+                        )
+                    )`)
+                    params.push(...req.tags)
+                    countParams.push(...req.tags)
+                }
+            }
+
             if (conditionsParam.length > 0) {
                 query += ' WHERE ' + conditionsParam.join(' AND ')
                 countQuery += ' WHERE ' + countConditionsParam.join(' AND ')
@@ -483,7 +512,6 @@ class AppDb {
         return resp
     }
 
-    // 非必要，不要使用此函数
     async filesSearch(req: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
         const resp = new Dty.Resp<Dty.FilesResp>()
         try {
@@ -523,6 +551,22 @@ class AppDb {
                 fileInfo.status = fileModel.status
                 fileInfo.repo = fileModel.repo
                 fileInfo.description = fileModel.description
+
+                // 加载文件关联的标签
+                const tagQuery = `
+                    SELECT t.* FROM ${this.tbl_tags} t
+                    INNER JOIN ${this.tbl_fileTag} ft ON t.id = ft.tagId
+                    WHERE ft.fileId = ?
+                `
+                const tagModels = await this.db.all<Dty.TagModel[]>(tagQuery, [fileInfo.id])
+                fileInfo.tags = tagModels.map((tagModel) => {
+                    const tag = new Dty.Tag()
+                    tag.id = tagModel.id || 0
+                    tag.name = tagModel.name
+                    tag.color = tagModel.color
+                    return tag
+                })
+
                 resp.data.files.push(fileInfo)
             }
             resp.data.total = total

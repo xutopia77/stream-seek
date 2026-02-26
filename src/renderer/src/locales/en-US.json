@@ -161,7 +161,8 @@
     "itemsPerPage": "Page Size",
     "selectAll": "Select All",
     "selectLevel": "Select Level",
-    "allLevels": "All Levels"
+    "allLevels": "All Levels",
+    "noLevelSelected": "No Level Selected"
   },
   "recentMessages": {
     "title": "Recent Messages",

@@ -184,7 +184,8 @@
     "itemsPerPage": "每页",
     "selectAll": "全选",
     "selectLevel": "选择级别",
-    "allLevels": "所有级别"
+    "allLevels": "所有级别",
+    "noLevelSelected": "未选择级别"
   },
   "recentMessages": {
     "title": "最近消息",

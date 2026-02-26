@@ -108,7 +108,7 @@ npm run build:win
 
 ## 3.0.0 2026年2月13日14:25:03
 1. add i18n for overseas
-
+2. 搜索时支持tags过滤
 
 
 # 代码

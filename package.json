@@ -1,6 +1,6 @@
 {
   "name": "record-manager",
-  "version": "3.0.1",
+  "version": "3.1.1",
   "description": "a camera video process application",
   "main": "./out/main/index.js",
   "author": "example.com",

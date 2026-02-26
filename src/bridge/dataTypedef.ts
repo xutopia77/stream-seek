@@ -517,6 +517,7 @@ export class FilesReq {
     durationMax: number | null = null
     sizeMin: number | null = null
     sizeMax: number | null = null
+    tags: string[] = []
     type: FileType[] = []
     // 升序，降序
     order: 'asc' | 'desc' = 'asc' // 枚举值直接传入数据库
