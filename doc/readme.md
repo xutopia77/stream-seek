@@ -113,6 +113,8 @@ npm run build:win
 
 # 代码
 
+记录一些代码使用示例
+
 ```shell
 
 ffmpeg -hwaccel cuda -hwaccel_output_format cuda -i 00_20250301122432_20250301123046.mp4 -vf "fps=15,hwupload" -c:v hevc_nvenc -preset medium output.mp4

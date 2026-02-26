@@ -218,6 +218,9 @@ export class FileViewModel {
     tagColor: string = ''
 }
 
+export const tagDefColor = '#4A6FA5'
+export const tagNoneDefName = 'sys_score0'
+
 export class Tag {
     id: number = 0
     name: string = ''

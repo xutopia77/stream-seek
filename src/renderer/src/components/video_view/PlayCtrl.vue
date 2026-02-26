@@ -47,7 +47,7 @@
                 ⭐
             </button>
             <select v-model="fileLevel" class="xc-select">
-                <option v-for="index in 5" :key="index" :value="index - 1">{{ index }}☆</option>
+                <option v-for="index in 6" :key="index" :value="index - 1">{{ index - 1 }}☆</option>
             </select>
 
             <button
@@ -192,8 +192,8 @@ watch(
 const fileLevel = ref(0)
 async function btnclk_set_file_level(): Promise<void> {
     const req = new Dty.FileTagsReq()
-    const levelVal = fileLevel.value + 1
-    if (levelVal < 1 || levelVal > 5) {
+    const levelVal = fileLevel.value
+    if (levelVal < 0 || levelVal > 5) {
         util.addToastErr(t('playCtrl.levelRangeError'))
         return
     }

@@ -523,18 +523,19 @@ class AppProc {
         workQueue.statusSet(`start set file tags len= ${req.data?.fileTags.length}`)
         let tags = tagResp.data?.tags ?? []
         for (const item of req.data?.fileTags ?? []) {
+            // find tag is in db
             let tagInfo = tags.find((tag) => tag.name === item.tagName)
-            if (tagInfo == null) {
+            if (tagInfo == null && item.tagName != Dty.tagNoneDefName) {
                 const tag: Dty.Tag = {
                     id: 0,
                     name: item.tagName,
-                    color: '#4A6FA5'
+                    color: Dty.tagDefColor
                 }
                 const respInsert = await appDb.tag_insert(tag)
                 if (!respInsert.isSuccess()) {
                     logger.error(`insert tag err: ${respInsert.status}`)
                 } else {
-                    logger.info(`insert tag success: ${item.tagName}`)
+                    logger.info(`tag insert success: ${item.tagName}`)
                 }
                 tagResp = await appDb.tag_search(null)
                 if (!tagResp.isSuccess()) {
@@ -549,6 +550,7 @@ class AppProc {
                     return logStatusRespReturn(resp.err(`tag search err: ${tagResp.status}`))
                 }
             }
+            // insert file tag, delete firstly, then insert
             const fileTag: Dty.FileTag = {
                 id: 0,
                 fileId: item.fileId,
@@ -559,16 +561,24 @@ class AppProc {
                 workQueue.statusSet(logger.error(`delete file tag err: ${respDel.status}`))
                 resp.err('delete file tags error')
             }
-            const respUpdate = await appDb.file_tag_insert(fileTag)
-            if (!respUpdate.isSuccess()) {
-                workQueue.statusSet(logger.error(`insert file tag err: ${respUpdate.status}`))
-                resp.err('insert file tags error')
-            } else {
+            if (item.tagName == Dty.tagNoneDefName) {
                 workQueue.statusSet(
                     logger.info(
-                        `insert file tag success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
+                        `file tag delete success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
                     )
                 )
+            } else {
+                const respUpdate = await appDb.file_tag_insert(fileTag)
+                if (!respUpdate.isSuccess()) {
+                    workQueue.statusSet(logger.error(`insert file tag err: ${respUpdate.status}`))
+                    resp.err('insert file tags error')
+                } else {
+                    workQueue.statusSet(
+                        logger.info(
+                            `insert file tag success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
+                        )
+                    )
+                }
             }
         }
         workQueue.statusSet(
