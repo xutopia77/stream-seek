@@ -189,7 +189,7 @@ watch(
 )
 
 // ==================================== 文件等级设置
-const fileLevel = ref(0)
+const fileLevel = ref(1)
 async function btnclk_set_file_level(): Promise<void> {
     const req = new Dty.FileTagsReq()
     const levelVal = fileLevel.value
