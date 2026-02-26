@@ -55,7 +55,7 @@ No additional configuration is required for the first startup. The system will a
 
 ## 3.1 Interface Overview
 
-![1770566450364](image/readme-zh/1770566450364.png)
+![1770566450364](image/readme-zh/interface_overview.jpg)
 
 - 1 **Status Panel**: Real-time display of system running status
 - 2 **Function Navigation Bar**: Provides main operation entries
@@ -78,7 +78,7 @@ No additional configuration is required for the first startup. The system will a
 
 ## 3.2 Create/Open Project
 
-![1770566555962](image/readme-zh/1770566555962.png)
+![1770566555962](image/readme-zh/open_create_prj.jpg)
 
 Project creation requires configuring video storage warehouse directory and project working directory. The system will cache the last project path, supporting automatic reconnection.
 
@@ -86,7 +86,7 @@ After creating a project, you need to perform project synchronization operation 
 
 ## 3.3 Switch Views
 
-![1770566588813](image/readme-zh/1770566588813.png)
+![1770566588813](image/readme-zh/view_operation.jpg)
 - **File List View**: Metadata table display
 - **Edit Panel**: Video editing toolset
 - **Video Playback View**: Standard player interface
@@ -95,7 +95,7 @@ After creating a project, you need to perform project synchronization operation 
 
 ## 3.4 Standard Operation Flow
 
-![1770566607354](image/readme-zh/1770566607354.png)
+![1770566607354](image/readme-zh/admin_setting.jpg)
 
 ## 3.4 Basic Operation Flow
 
