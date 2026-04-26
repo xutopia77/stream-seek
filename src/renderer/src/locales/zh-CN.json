@@ -44,6 +44,7 @@
       "openProject": "打开项目",
       "exit": "退出",
       "view": "视图",
+      "fileManagement": "文件管理",
       "fileList": "文件列表",
       "operationPanel": "操作面板",
       "thumbnailView": "缩略图查看",
@@ -146,6 +147,7 @@
   },
   "adminNav": {
     "returnHome": "返回主页",
+    "fileManagement": "文件管理",
     "projectSettings": "项目设置",
     "tagManagement": "标签管理",
     "thumbnailManagement": "缩略图管理",
@@ -320,5 +322,12 @@
     "getKeyFrameInfoCompleted": "获取关键帧信息完成",
     "videoPlaybackMode": "视频播放模式",
     "thumbnailMode": "缩略图模式"
+  },
+  "homeEditor": {
+    "dropVideoHint": "拖拽视频文件到此处打开",
+    "dropToOpen": "释放以打开视频文件",
+    "clickToSelect": "或点击此处选择文件",
+    "openVideoFailed": "打开视频失败",
+    "openVideoSuccess": "视频打开成功"
   }
 }

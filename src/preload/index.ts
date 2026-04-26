@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
@@ -25,5 +25,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // 监听主进程主动推送的事件
     onSystemNotify: (callback: (data: unknown) => void) => {
         ipcRenderer.on('msg-notify', (_event, data) => callback(data))
+    },
+    // 获取拖拽文件的路径
+    getPathForFile: (file: File): string => {
+        return webUtils.getPathForFile(file)
     }
 })

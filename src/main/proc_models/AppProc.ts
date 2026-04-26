@@ -1179,6 +1179,74 @@ class AppProc {
         return resp
     }
 
+    async handle_open_video_dialog(): Promise<Dty.Resp<string>> {
+        const resp = new Dty.Resp<string>()
+        const result = await dialog.showOpenDialog({
+            title: '选择视频文件',
+            filters: [
+                { name: '视频文件', extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'] }
+            ],
+            properties: ['openFile']
+        })
+        if (result.canceled || result.filePaths.length === 0) {
+            return resp.err('user canceled')
+        }
+        resp.data = result.filePaths[0]
+        return resp.success('success')
+    }
+
+    async handle_open_external_video(req: Dty.Req<Dty.Req_SltFile>): Promise<Dty.Resp<Dty.File>> {
+        const resp = new Dty.Resp<Dty.File>()
+        resp.data = new Dty.File()
+        if (req.data == null) {
+            return resp.err('req.data is null')
+        }
+        if (resp.data == undefined) {
+            return resp.err('resp.data is null')
+        }
+        const video_path = req.data?.filepath
+        if (video_path == null) {
+            return resp.err('filepath is null')
+        }
+        if (!fs.existsSync(video_path)) {
+            return resp.err('file not exist')
+        }
+        const ext = path.extname(video_path).toLowerCase()
+        const videoExts = ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm']
+        if (!videoExts.includes(ext)) {
+            return resp.err('not a video file')
+        }
+        try {
+            const mediaInfo = await mediaProc.getVideoInfo(video_path)
+            const stat = fs.statSync(video_path)
+            resp.data.name = path.basename(video_path)
+            resp.data.path = video_path
+            resp.data.size = stat.size
+            resp.data.mediaInfo = mediaInfo
+            resp.data.startTimeSec = 0
+            resp.data.endTimeSec = mediaInfo.duration
+            resp.data.duration = mediaInfo.duration
+            resp.data.splitInfo = new Dty.SqlitInfos()
+            resp.data.splitInfo.splits = []
+            const itemInfo: Dty.SplitInfo = {
+                startTime: 0,
+                endTime: mediaInfo.duration,
+                duration: mediaInfo.duration,
+                percent: 100,
+                frameNum: Math.round(mediaInfo.duration * (mediaInfo.video?.frame_rate || 25)),
+                color: '#669999',
+                currentTime: 0,
+                frameIdx: 0,
+                isDelete: false
+            }
+            resp.data.splitInfo.splits.push(itemInfo)
+            return resp.success('success')
+        } catch (error) {
+            logger.error('get video info error:', error)
+            return resp.err('get video info error')
+        }
+    }
+
     /**
      *      删除方式均是'destroy'，会同时删除 thumb和frame
      */
@@ -1881,6 +1949,15 @@ class AppProc {
                 const cmdReq = convertCmdRequest<Dty.Req_SltFile>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
                 return this.cmdRespMake(await this.handle_select_video(cmdReq))
+            }
+            case Dty.CmdType.openExternalVideo: {
+                const cmdReq = convertCmdRequest<Dty.Req_SltFile>(req)
+                logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
+                return this.cmdRespMake(await this.handle_open_external_video(cmdReq))
+            }
+            case Dty.CmdType.openVideoDialog: {
+                logger.info(`cmd:${cmd}:${cseq}`)
+                return this.cmdRespMake(await this.handle_open_video_dialog())
             }
             case Dty.CmdType.prjSync: {
                 const cmdReq = convertCmdRequest<Dty.SyncPrjReq>(req)

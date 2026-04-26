@@ -6,6 +6,7 @@ declare global {
         api: unknown
         electronAPI: {
             onSystemNotify: (callback: (data: string) => void) => void
+            getPathForFile: (file: File) => string
         }
     }
 }
