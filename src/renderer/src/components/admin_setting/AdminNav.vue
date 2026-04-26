@@ -3,9 +3,6 @@
         <router-link to="/" class="no-underline-link">
             <button class="xc-button">{{ t('adminNav.returnHome') }}</button>
         </router-link>
-        <router-link to="/file_management" class="no-underline-link">
-            <button class="xc-button">{{ t('adminNav.fileManagement') }}</button>
-        </router-link>
         <router-link to="/admin/prj_set" class="no-underline-link">
             <button class="xc-button">{{ t('adminNav.projectSettings') }}</button>
         </router-link>

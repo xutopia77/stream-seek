@@ -23,7 +23,9 @@
                 </div>
             </div>
             <div class="edit-panel">
-                <VideoOperatePanel />
+                <VideList v-if="appStore.isProjectMode && rightPanel === Dty.WorkPanel.List" />
+                <VideoOperatePanel v-if="!appStore.isProjectMode || rightPanel === Dty.WorkPanel.Operate" />
+                <VideoInfo v-if="appStore.isProjectMode && rightPanel === Dty.WorkPanel.VideoInfo" />
             </div>
         </div>
         <div class="control-area">
@@ -40,7 +42,9 @@
 </template>
 
 <script lang="ts" setup>
+import VideList from './video_view/work_panel/VideList.vue'
 import VideoOperatePanel from './video_view/work_panel/VideoOperatePanel.vue'
+import VideoInfo from './video_view/work_panel/VideoInfo.vue'
 import ThumbnailView from './video_view/ThumbnailView.vue'
 import PlayProgressBar from './video_view/PlayProgressBar.vue'
 import PlayCtrl from './video_view/PlayCtrl.vue'
@@ -58,6 +62,8 @@ const { t } = useI18n()
 const viewModel = computed(() => {
     return appStore.curViewModel
 })
+
+const rightPanel = computed(() => appStore.rightPanel)
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const isDragOver = ref(false)

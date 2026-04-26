@@ -42,6 +42,7 @@
     "menuItems": {
       "createProject": "创建项目",
       "openProject": "打开项目",
+      "openVideoFile": "打开视频文件",
       "exit": "退出",
       "view": "视图",
       "fileManagement": "文件管理",
@@ -328,6 +329,8 @@
     "dropToOpen": "释放以打开视频文件",
     "clickToSelect": "或点击此处选择文件",
     "openVideoFailed": "打开视频失败",
-    "openVideoSuccess": "视频打开成功"
+    "openVideoSuccess": "视频打开成功",
+    "fileList": "文件列表",
+    "fileCount": "共 {count} 个文件"
   }
 }

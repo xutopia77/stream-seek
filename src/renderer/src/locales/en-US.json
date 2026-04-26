@@ -42,6 +42,7 @@
     "menuItems": {
       "createProject": "Create Project",
       "openProject": "Open Project",
+      "openVideoFile": "Open Video File",
       "exit": "Exit",
       "view": "View",
       "fileManagement": "File Management",
@@ -305,6 +306,8 @@
     "dropToOpen": "Release to open video file",
     "clickToSelect": "Or click here to select file",
     "openVideoFailed": "Failed to open video",
-    "openVideoSuccess": "Video opened successfully"
+    "openVideoSuccess": "Video opened successfully",
+    "fileList": "File List",
+    "fileCount": "{count} files"
   }
 }
