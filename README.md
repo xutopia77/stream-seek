@@ -1,5 +1,3 @@
-[简体中文](doc/readme-zh.md) | [English](doc/readme-en.md) 
-
 Video Recording File Management Software User Manual
 
 # 1 Introduction

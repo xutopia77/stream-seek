@@ -124,6 +124,11 @@ export const useAppStore = defineStore('app', {
         // ==============
         barColorDictionary: ['#FF5733', '#33FF57', '#5733FF', '#FF33E0', '#33E0FF']
     }),
+    getters: {
+        isProjectMode: (state): boolean => {
+            return state.appInfo.prjFile !== ''
+        }
+    },
     actions: {
         setData(key: string, value: string): void {
             console.log(`setData: ${key} = ${value}`)

@@ -9,6 +9,8 @@ export enum CmdType {
     tagsSearch = 'search_tag',
     search_file = 'search_file',
     sltVideo = 'slt_video',
+    openExternalVideo = 'open_external_video',
+    openVideoDialog = 'open_video_dialog',
     videoCut = 'cut_video',
     thumbGet = 'thumbGet',
     thumbDel = 'thumbDel',

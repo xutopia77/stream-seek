@@ -42,8 +42,10 @@
     "menuItems": {
       "createProject": "Create Project",
       "openProject": "Open Project",
+      "openVideoFile": "Open Video File",
       "exit": "Exit",
       "view": "View",
+      "fileManagement": "File Management",
       "fileList": "File List",
       "operationPanel": "Operation Panel",
       "thumbnailView": "Thumbnail View",
@@ -123,6 +125,7 @@
   },
   "adminNav": {
     "returnHome": "Return Home",
+    "fileManagement": "File Management",
     "projectSettings": "Project Settings",
     "tagManagement": "Tag Management",
     "thumbnailManagement": "Thumbnail Management",
@@ -297,5 +300,14 @@
     "getKeyFrameInfoCompleted": "Key frame info retrieved",
     "videoPlaybackMode": "Video playback mode",
     "thumbnailMode": "Thumbnail mode"
+  },
+  "homeEditor": {
+    "dropVideoHint": "Drag and drop video file here to open",
+    "dropToOpen": "Release to open video file",
+    "clickToSelect": "Or click here to select file",
+    "openVideoFailed": "Failed to open video",
+    "openVideoSuccess": "Video opened successfully",
+    "fileList": "File List",
+    "fileCount": "{count} files"
   }
 }

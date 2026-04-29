@@ -2,8 +2,6 @@
     <div class="home-navigation">
         <div class="btn-container">
             <div class="menu-item dropdown" @click="toggleDropdown($event, 'home')">
-                <!-- 文件 -->
-                <!-- <span class="xc-text">文件</span> -->
                 <span class="xc-text">{{ t('navigation.file') }}</span>
                 <div
                     ref="dropdownMenuRefHome"
@@ -16,12 +14,15 @@
                     <button class="xc-button menu-button" @click.stop="btn_openPrj">
                         {{ t('navigation.menuItems.openProject') }}
                     </button>
+                    <button class="xc-button menu-button" @click.stop="btn_openVideoDialog">
+                        {{ t('navigation.menuItems.openVideoFile') }}
+                    </button>
                     <button class="xc-button menu-button" @click.stop="exitApp">
                         {{ t('navigation.menuItems.exit') }}
                     </button>
                 </div>
             </div>
-            <div class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
+            <div v-if="appStore.isProjectMode" class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
                 <span class="xc-text">{{ t('navigation.menuItems.view') }}</span>
                 <div
                     ref="dropdownMenuRefView"
@@ -54,7 +55,7 @@
                     </button>
                 </div>
             </div>
-            <div class="menu-item">
+            <div v-if="appStore.isProjectMode" class="menu-item">
                 <span class="xc-text" @click="btn_function()">{{
                     t('navigation.menuItems.function')
                 }}</span>
@@ -173,6 +174,29 @@ const btn_openPrj = async (): Promise<void> => {
                 return
             }
             util.addToastInfo(t('navigation.openProjectSuccess'))
+        }
+    }
+}
+
+const btn_openVideoDialog = async (): Promise<void> => {
+    isDropdownOpen.value.home = false
+    const req: Dty.Req = {
+        cmd: Dty.CmdType.openVideoDialog
+    }
+    const response: Dty.Resp<string> = await IpcApi.trigger_event(req)
+    if (response.code === 0 && response.data) {
+        router.push('/')
+        const openReq: Dty.Req<Dty.Req_SltFile> = {
+            cmd: Dty.CmdType.openExternalVideo,
+            data: { filepath: response.data }
+        }
+        const openResp: Dty.Resp<Dty.File> = await IpcApi.trigger_event(openReq)
+        if (openResp.code === 0 && openResp.data) {
+            appStore.curSltVideo = openResp.data
+            appStore.curSltVideoName4Play = openResp.data.name
+            util.addToastInfo(t('homeEditor.openVideoSuccess'))
+        } else {
+            util.addToastErr(`${t('homeEditor.openVideoFailed')}: ${openResp.status}`)
         }
     }
 }
