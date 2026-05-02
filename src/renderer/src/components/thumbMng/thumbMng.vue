@@ -55,7 +55,7 @@ onMounted(() => {
 
 .preview-image {
     height: 100%;
-    width: 90%;
+    flex: 1;
     padding: 0;
     margin: 0;
     display: flex;
@@ -66,8 +66,8 @@ onMounted(() => {
 
 .work-panel {
     height: 100%;
-    min-width: 200px;
-    max-width: 300px;
+    width: 20%;
+    max-width: 250px;
     padding: 0;
     margin: 0;
 }

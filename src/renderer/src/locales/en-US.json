@@ -257,7 +257,8 @@
   "thumbnailView": {
     "unchecked": "⬜",
     "checked": "✅",
-    "curVideoThumbnailNull": "Current video thumbnail is null"
+    "curVideoThumbnailNull": "Current video thumbnail is null",
+    "cardSize": "Card Size"
   },
   "videoList": {
     "selectionChanged": "Video {name} is {status}",

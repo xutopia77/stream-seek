@@ -58,6 +58,7 @@ export type AppStore = {
     barSeekTime: number
     documentTitle: string
     thumbSeekTime: number
+    thumbnailCardSize: number // columns per row: 2-8
     //   queryInfo: null
     queryCtrl: {
         displayOption: 'single' | 'daily'
@@ -124,6 +125,7 @@ export const useAppStore = defineStore('app', {
         // thumbnail
         // thumbnailImages: [], // 缩略图列表
         thumbSeekTime: 0, // 缩略图拖动时间
+        thumbnailCardSize: 4, // default 4 columns per row
         // admin
         // queryInfo: null,
         queryCtrl: {

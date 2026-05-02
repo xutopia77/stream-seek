@@ -420,7 +420,7 @@ onUnmounted(() => {
 
 .video-area {
     height: 100%;
-    width: 75%;
+    flex: 1;
     padding: 0;
     margin: 0;
     display: flex;
@@ -478,9 +478,8 @@ onUnmounted(() => {
 
 .edit-panel {
     height: 100%;
-    width: 25%;
-    min-width: 280px;
-    max-width: 400px;
+    width: 20%;
+    max-width: 250px;
     padding: 0;
     margin: 0;
     border-left: 1px solid #333;

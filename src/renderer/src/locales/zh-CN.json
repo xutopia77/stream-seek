@@ -280,7 +280,8 @@
   "thumbnailView": {
     "unchecked": "⬜",
     "checked": "✅",
-    "curVideoThumbnailNull": "当前视频缩略图为空"
+    "curVideoThumbnailNull": "当前视频缩略图为空",
+    "cardSize": "卡片大小"
   },
   "videoList": {
     "selectionChanged": "视频 {name} 已{status}",

@@ -1,16 +1,40 @@
 <template>
-    <div class="thumbnail-container xc-scrollbar">
-        <div v-for="thumb in thumbnailImages" :key="thumb.path" class="thumbnail-card">
-            <!-- <img :src="thumb.path" :alt="thumb.name" /> -->
-            <img :src="thumbUrlMake(thumb)" :alt="thumb.name" />
-            <span class="xc-text" @click="btnclk_card_check(thumb)">{{ thumb.btnName }}</span>
-            <span class="xc-text">{{ Thumbnail.makeDisplayName(thumb.name) }}</span>
+    <div class="thumbnail-wrapper">
+        <div class="thumbnail-toolbar">
+            <span class="xc-text toolbar-label">{{ t('thumbnailView.cardSize') }}:</span>
+            <button
+                class="size-btn"
+                :disabled="appStore.thumbnailCardSize <= 2"
+                @click="changeCardSize(-1)"
+            >
+                -
+            </button>
+            <span class="xc-text size-value">{{ appStore.thumbnailCardSize }}</span>
+            <button
+                class="size-btn"
+                :disabled="appStore.thumbnailCardSize >= 8"
+                @click="changeCardSize(1)"
+            >
+                +
+            </button>
+        </div>
+        <div class="thumbnail-container xc-scrollbar">
+            <div
+                v-for="thumb in thumbnailImages"
+                :key="thumb.path"
+                class="thumbnail-card"
+                :style="cardStyle"
+            >
+                <img :src="thumbUrlMake(thumb)" :alt="thumb.name" />
+                <span class="xc-text" @click="btnclk_card_check(thumb)">{{ thumb.btnName }}</span>
+                <span class="xc-text">{{ Thumbnail.makeDisplayName(thumb.name) }}</span>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import '@renderer/assets/common.css'
 import util from '../../utils/util'
@@ -102,6 +126,22 @@ function update_thumbnail_images(thumbnailImages: Thumbnail[]): void {
     }
 }
 
+const cardStyle = computed((): { flex: string; maxWidth: string } => {
+    const cols = appStore.thumbnailCardSize
+    const widthPercent = 100 / cols
+    return {
+        flex: `0 0 calc(${widthPercent}% - 2px)`,
+        maxWidth: `calc(${widthPercent}% - 2px)`
+    }
+})
+
+function changeCardSize(delta: number): void {
+    const newSize = appStore.thumbnailCardSize + delta
+    if (newSize >= 2 && newSize <= 8) {
+        appStore.thumbnailCardSize = newSize
+    }
+}
+
 // 监听当前选中图片的变化
 watch(
     () => curCheckImage.value,
@@ -130,50 +170,92 @@ onMounted(async (): Promise<void> => {
 </script>
 
 <style scoped>
+.thumbnail-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.thumbnail-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: var(--xc-background-color);
+    border-bottom: 1px solid #333;
+    gap: 8px;
+}
+
+.toolbar-label {
+    font-size: 12px;
+}
+
+.size-btn {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #555;
+    background-color: #333;
+    color: var(--xc-text-color);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.size-btn:hover:not(:disabled) {
+    background-color: #444;
+}
+
+.size-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.size-value {
+    min-width: 20px;
+    text-align: center;
+    font-size: 12px;
+}
+
 .thumbnail-container {
     display: flex;
     flex-wrap: wrap;
     gap: 2px;
-    /* 卡片之间的间隙 */
-    width: 100%;
-    height: 100%;
-    padding: 0;
+    flex: 1;
+    padding: 2px;
     margin: 0;
     color: var(--xc-text-color);
     overflow-y: auto;
-    /* 添加竖向滚动条 */
-    /* 计算卡片的总高度（3 行卡片 + 2 个间隙） */
-    /* max-height: calc((((100% - 20px) / 3) * 3) + 20px); */
 }
 
 .thumbnail-card {
-    /* 每行显示 4 张图片，减去间隙宽度 */
-    flex: 0 0 calc(25% - 2px);
-    max-width: calc(25% - 2px);
     border: 1px solid #2e2e2e;
     border-radius: 4px;
     padding: 1px;
     box-sizing: border-box;
     background-color: var(--xc-background-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    /* 计算卡片的高度，使每行显示 3 行 */
-    height: calc((100% - 8px) / 3);
+    display: flex;
+    flex-direction: column;
 }
 
 .thumbnail-card img {
     width: 100%;
-    height: calc(100% - 20px);
-    /* 减去标题的高度 */
-    /* object-fit: cover; */
+    flex: 1;
     border-radius: 4px;
+    object-fit: cover;
 }
 
-.thumbnail-card p {
-    /* margin-top: 1px; */
-    margin-top: 0px;
-    margin-bottom: 0px;
-    padding: 0px;
-    font-size: small;
+.thumbnail-card span {
+    margin: 0;
+    padding: 2px 4px;
+    font-size: 11px;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 </style>
