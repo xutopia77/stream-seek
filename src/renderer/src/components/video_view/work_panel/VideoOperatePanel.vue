@@ -90,7 +90,7 @@ const btnclk_splitVideo = (): void => {
     )
 
     for (let i = 0; i < appStore.curSltVideo.splitInfo.splits.length; i++) {
-        const splitInfo = appStore.curSltVideo.splitInfo[i]
+        const splitInfo = appStore.curSltVideo.splitInfo.splits[i]
         if (splitInfo.startTime < currentTime && splitInfo.endTime > currentTime) {
             const oldEndTime = splitInfo.endTime
             splitInfo.endTime = currentTime
@@ -171,7 +171,7 @@ const removeVideoRecord = (): void => {
     if (index === -1) {
         return
     }
-    appStore.curSltVideo.splitInfo[index]['isDelete'] = true
+    appStore.curSltVideo.splitInfo.splits[index]['isDelete'] = true
 }
 
 const restoreVideoRecord = (): void => {
@@ -189,7 +189,7 @@ const restoreVideoRecord = (): void => {
     if (index === -1) {
         return
     }
-    appStore.curSltVideo.splitInfo[index]['isDelete'] = false
+    appStore.curSltVideo.splitInfo.splits[index]['isDelete'] = false
 }
 
 const exportVideoRecord = async (): Promise<void> => {

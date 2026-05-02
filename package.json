@@ -1,7 +1,7 @@
 {
-  "name": "record-manager",
+  "name": "streamseek",
   "version": "3.1.2",
-  "description": "a camera video process application",
+  "description": "StreamSeek - A video stream analysis and recording management application",
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
