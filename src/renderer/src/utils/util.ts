@@ -799,6 +799,36 @@ class Util {
         return response
     }
 
+    async tag_update(reqParam: Dty.TagUpdateReq): Promise<Dty.Resp> {
+        const req: Dty.Req<Dty.TagUpdateReq> = {
+            cmd: Dty.CmdType.tagUpdate,
+            data: reqParam
+        }
+        const response: Dty.Resp = await IpcApi.trigger_event(req)
+        if (response.code !== 0) {
+            util.addToastErr(`${t('adminTagMng.updateFailed')}: ${response.status}`)
+        } else {
+            util.addToastInfo(t('adminTagMng.updateSuccess'))
+            await this.tags_get(null)
+        }
+        return response
+    }
+
+    async tag_delete(tagId: number): Promise<Dty.Resp> {
+        const req: Dty.Req<Dty.TagDeleteReq> = {
+            cmd: Dty.CmdType.tagDelete,
+            data: { id: tagId } as Dty.TagDeleteReq
+        }
+        const response: Dty.Resp = await IpcApi.trigger_event(req)
+        if (response.code !== 0) {
+            util.addToastErr(`${t('adminTagMng.deleteFailed')}: ${response.status}`)
+        } else {
+            util.addToastInfo(t('adminTagMng.deleteSuccess'))
+            await this.tags_get(null)
+        }
+        return response
+    }
+
     async file_tags_set(
         fileTags: Dty.FileTagsReq,
         param: Dty.FileTagsSetParam | null = null

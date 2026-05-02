@@ -3,6 +3,8 @@ export enum CmdType {
     app_start = 'app_start',
     get_key_frame_info = 'get_key_frame_info',
     tags_get = 'tags_get',
+    tagUpdate = 'tag_update',
+    tagDelete = 'tag_delete',
     filesGet = 'files_get',
     fileTagsSet = 'file_tags_set',
     tagsSearch = 'search_tag',
@@ -242,12 +244,14 @@ export class Tag {
     id: number = 0
     name: string = ''
     color: string = ''
+    description: string = ''
 }
 
 export class TagModel {
     id?: number
     name: string = ''
     color: string = ''
+    description: string = ''
     created_at?: string = '' // create time, add when insert
     updated_at?: string = '' // update time, add when update
     deleted_at?: string = '' // delete time, add when delete
@@ -583,6 +587,18 @@ export class TagsResp {
     total: number = 0
     tags: Tag[] = []
 }
+
+export class TagUpdateReq {
+    id: number = 0
+    name?: string = ''
+    color?: string = ''
+    description?: string = ''
+}
+
+export class TagDeleteReq {
+    id: number = 0
+}
+
 // ======================== main
 
 export class DbInsertResp {

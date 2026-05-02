@@ -65,9 +65,6 @@
             </div>
         </div>
 
-        <div class="info-container">
-            <span class="xc-text" :title="statusInfoTitle">{{ statusInfo }}</span>
-        </div>
         <div>
             <button
                 class="xc-button"
@@ -95,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useAppStore } from '../stores/AppStore'
 import '../assets/common.css'
 import util from '../utils/util'
@@ -131,28 +128,6 @@ const dropdownMenuRefView = ref<HTMLElement | null>(null)
 
 // 控制关于模态框是否显示
 const isAboutModalVisible = ref<boolean>(false)
-
-// 状态信息相关
-let statusInfoTitle = ref<string>('')
-let statusInfo = ref<string>('')
-
-function navContentMake(): void {
-    if (appStore.prj == null) {
-        statusInfoTitle.value = t('navigation.repositoryFiles')
-        statusInfo.value = appStore.homeNavContent
-        return
-    }
-    statusInfoTitle.value = appStore.fileSearchStatus == Dty.Fstatus.Normal ? t('navigation.repositoryFiles') : t('navigation.recycleBinFiles')
-    const repoStr = appStore.fileSearchStatus == Dty.Fstatus.Normal ? '🗄️' : '🗑️'
-    statusInfo.value = `${repoStr} ${appStore.homeNavContent}`
-}
-
-watch(
-    () => [appStore.homeNavContent, appStore.fileSearchStatus],
-    () => {
-        navContentMake()
-    }
-)
 
 // 切换下拉菜单的显示状态
 const toggleDropdown = (event: MouseEvent, menu: string): void => {
@@ -301,7 +276,6 @@ function btn_function(): void {
 
 onMounted(() => {
     document.addEventListener('click', handleClickOutside)
-    navContentMake()
 })
 
 onUnmounted(() => {
@@ -416,9 +390,5 @@ onUnmounted(() => {
 
 .modal-content button:hover {
     background-color: #444;
-}
-
-.info-container {
-    margin-left: auto;
 }
 </style>

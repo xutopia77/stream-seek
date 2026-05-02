@@ -2,9 +2,6 @@
     <div class="pagination-controls" :class="{ compact: compactMode }">
         <template v-if="compactMode">
             <div class="compact-pagination">
-                <span class="xc-text status-indicator" :class="{ 'trash-mode': isTrashMode }">
-                    {{ isTrashMode ? '🗑️' : '🗄️' }}
-                </span>
                 <button
                     :disabled="currentPage <= 1"
                     class="xc-button small compact-btn"
@@ -215,8 +212,6 @@ const pageSize = computed({
     }
 })
 
-const isTrashMode = computed(() => appStore.fileSearchStatus === Dty.Fstatus.Deleted)
-
 const totalPages = computed(() => {
     let total = appStore.videoTotalNum
     if (props.pageType === 'thumb') {
@@ -392,15 +387,6 @@ const applySettings = (): void => {
 
 .settings-btn {
     margin-left: 8px;
-}
-
-.status-indicator {
-    font-size: 14px;
-    margin-right: 4px;
-}
-
-.status-indicator.trash-mode {
-    opacity: 0.7;
 }
 
 .pagination-info {

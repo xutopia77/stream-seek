@@ -198,9 +198,16 @@
     "serialNumber": "序号",
     "name": "名称",
     "color": "颜色",
+    "description": "描述",
     "operations": "操作",
     "edit": "编辑",
-    "delete": "删除"
+    "delete": "删除",
+    "editTag": "编辑标签",
+    "deleteConfirm": "确定要删除该标签吗？",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "updateSuccess": "更新成功",
+    "updateFailed": "更新失败"
   },
   "pagination": {
     "pageInfo": "第 {current} 页 / 共 {total} 页 (共 {count} 条)",

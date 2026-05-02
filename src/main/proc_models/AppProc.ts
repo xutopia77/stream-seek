@@ -577,7 +577,8 @@ class AppProc {
                 const tag: Dty.Tag = {
                     id: 0,
                     name: item.tagName,
-                    color: Dty.tagDefColor
+                    color: Dty.tagDefColor,
+                    description: ''
                 }
                 const respInsert = await appDb.tag_insert(tag)
                 if (!respInsert.isSuccess()) {
@@ -638,6 +639,19 @@ class AppProc {
     }
     async handle_tags_get(req: Dty.Req<Dty.TagsReq>): Promise<Dty.Resp<Dty.TagsResp>> {
         return await appDb.tag_search(req.data == null ? null : req.data)
+    }
+    async handle_tag_update(req: Dty.Req<Dty.TagUpdateReq>): Promise<Dty.Resp> {
+        const tag = new Dty.Tag()
+        tag.id = req.data?.id || 0
+        tag.name = req.data?.name || ''
+        tag.color = req.data?.color || ''
+        tag.description = req.data?.description || ''
+        return await appDb.tag_update(tag)
+    }
+    async handle_tag_delete(req: Dty.Req<Dty.TagDeleteReq>): Promise<Dty.Resp> {
+        const tag = new Dty.Tag()
+        tag.id = req.data?.id || 0
+        return await appDb.tag_delete(tag)
     }
     async handle_files_get(req: Dty.Req<Dty.FilesReq>): Promise<Dty.Resp<Dty.FilesResp>> {
         return await appDb.fileViewSearch(req.data == null ? null : req.data)
@@ -1893,7 +1907,8 @@ class AppProc {
                 const tag: Dty.Tag = {
                     id: 0,
                     name: `sys_score${i}`,
-                    color: '#4A6FA5'
+                    color: '#4A6FA5',
+                    description: ''
                 }
                 await appDb.tag_insert(tag)
             }
@@ -2038,6 +2053,16 @@ class AppProc {
                 const cmdReq = convertCmdRequest<Dty.TagsReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}`)
                 return this.cmdRespMake(await this.handle_tags_get(cmdReq))
+            }
+            case Dty.CmdType.tagUpdate: {
+                const cmdReq = convertCmdRequest<Dty.TagUpdateReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}, id:${cmdReq.data?.id}`)
+                return this.cmdRespMake(await this.handle_tag_update(cmdReq))
+            }
+            case Dty.CmdType.tagDelete: {
+                const cmdReq = convertCmdRequest<Dty.TagDeleteReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}, id:${cmdReq.data?.id}`)
+                return this.cmdRespMake(await this.handle_tag_delete(cmdReq))
             }
             case Dty.CmdType.filesGet: {
                 const cmdReq = convertCmdRequest<Dty.FilesReq>(req)

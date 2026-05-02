@@ -62,12 +62,14 @@ class AppDb {
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     color TEXT,
+                    description TEXT,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME,
                     deleted_at DATETIME
                     );
                 `
                 await db.exec(createTableQuery)
+                await this.addColumnIfNotExists(db, this.tbl_tags, 'description', 'TEXT')
             }
             {
                 const createTableQuery = `
@@ -111,6 +113,24 @@ class AppDb {
     async close(): Promise<void> {
         if (this.db) {
             await this.db.close()
+        }
+    }
+
+    async addColumnIfNotExists(
+        db: Database,
+        tableName: string,
+        columnName: string,
+        columnType: string
+    ): Promise<void> {
+        try {
+            const tableInfo = await db.all(`PRAGMA table_info(${tableName})`)
+            const columnExists = tableInfo.some((col: { name: string }) => col.name === columnName)
+            if (!columnExists) {
+                await db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnType}`)
+                logger.info(`Added column ${columnName} to ${tableName}`)
+            }
+        } catch (error) {
+            logger.error(`Error adding column ${columnName} to ${tableName}:`, error)
         }
     }
 
@@ -641,7 +661,8 @@ class AppDb {
                     const tag: Dty.Tag = {
                         id: -1,
                         name: fileViewModel.tagName,
-                        color: fileViewModel.tagColor || ''
+                        color: fileViewModel.tagColor || '',
+                        description: ''
                     }
                     fileInfo.tags.push(tag)
                 }
@@ -677,6 +698,11 @@ class AppDb {
                 fields.push('color')
                 values.push('?')
                 sqlParams.push(tag.color)
+            }
+            {
+                fields.push('description')
+                values.push('?')
+                sqlParams.push(tag.description)
             }
             sqlCmd += '(' + fields.join(', ') + ') VALUES (' + values.join(', ') + ')'
             const result = await this.db.run(sqlCmd, sqlParams)
@@ -731,6 +757,10 @@ class AppDb {
             {
                 updateFields.push('color =?')
                 sqlParams.push(tag.color)
+            }
+            {
+                updateFields.push('description =?')
+                sqlParams.push(tag.description)
             }
             sqlCmd += updateFields.join(', ')
             sqlCmd += 'WHERE id =?'
@@ -789,6 +819,7 @@ class AppDb {
                 tagInfo.id = tagModel.id == undefined ? 0 : tagModel.id
                 tagInfo.name = tagModel.name
                 tagInfo.color = tagModel.color
+                tagInfo.description = tagModel.description || ''
                 resp.data.tags.push(tagInfo)
             }
             resp.success('success')
