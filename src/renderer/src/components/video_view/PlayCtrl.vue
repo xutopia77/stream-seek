@@ -27,6 +27,24 @@
             <option value="4">4x</option>
             <option value="6">6x</option>
         </select>
+        <!-- 音量控制 -->
+        <button
+            class="xc-button btn-noborder"
+            :title="appStore.videoPlayCtrl.muted ? t('playCtrl.unmute') : t('playCtrl.mute')"
+            @click="toggleMute"
+        >
+            {{ volumeIcon }}
+        </button>
+        <input
+            v-model.number="appStore.videoPlayCtrl.volume"
+            type="range"
+            class="volume-slider"
+            min="0"
+            max="1"
+            step="0.01"
+            :title="t('playCtrl.volume')"
+            @input="changeVolume"
+        />
         <!-- 播放时间 -->
         <span class="xc-text" style="padding-right: 3px">{{ curTime }}/{{ videoDuration }}</span>
         <!-- 帧控制播放 -->
@@ -106,6 +124,31 @@ const { t } = useI18n()
 
 // 改变播放倍速
 const changePlaybackRate = (): void => {}
+
+// volume control
+const toggleMute = (): void => {
+    appStore.videoPlayCtrl.muted = !appStore.videoPlayCtrl.muted
+    util.set_volume_muted(appStore.videoPlayCtrl.muted)
+}
+
+const changeVolume = (): void => {
+    util.set_volume(appStore.videoPlayCtrl.volume)
+    if (appStore.videoPlayCtrl.volume > 0 && appStore.videoPlayCtrl.muted) {
+        appStore.videoPlayCtrl.muted = false
+    }
+}
+
+const volumeIcon = computed(() => {
+    if (appStore.videoPlayCtrl.muted || appStore.videoPlayCtrl.volume === 0) {
+        return '🔇'
+    } else if (appStore.videoPlayCtrl.volume < 0.3) {
+        return '🔈'
+    } else if (appStore.videoPlayCtrl.volume < 0.7) {
+        return '🔉'
+    } else {
+        return '🔊'
+    }
+})
 
 let curTime = computed(() => {
     let str = '00:00:00.000'
@@ -320,5 +363,39 @@ function btnclk_delSltVideos(): void {
 
 .right-area-ctrl {
     margin-left: auto;
+}
+
+.volume-slider {
+    width: 60px;
+    height: 4px;
+    margin: 0 8px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #3c3c3c;
+    border-radius: 2px;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #0e639c;
+    cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    background: #1177bb;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #0e639c;
+    cursor: pointer;
+    border: none;
 }
 </style>

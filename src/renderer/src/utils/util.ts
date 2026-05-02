@@ -324,6 +324,20 @@ function toggle_play(videoRef: HTMLVideoElement): void {
     }
 }
 
+function set_volume(volume: number): void {
+    const videoRef = appStore.func_get_ele_video?.()
+    if (videoRef) {
+        videoRef.volume = volume
+    }
+}
+
+function set_volume_muted(muted: boolean): void {
+    const videoRef = appStore.func_get_ele_video?.()
+    if (videoRef) {
+        videoRef.muted = muted
+    }
+}
+
 function update_bar_clips(): Dty.BarClip[] {
     const barClips: Dty.BarClip[] = []
 
@@ -876,6 +890,8 @@ class Util {
     stop_play = stop_play
     play_video = play_video
     toggle_play = toggle_play
+    set_volume = set_volume
+    set_volume_muted = set_volume_muted
     setupVideoEventListeners = setupVideoEventListeners
     setAppStore(store): void {
         appStore = store

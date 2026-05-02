@@ -25,12 +25,14 @@ export type AppStore = {
     homeNavContent: string
     // ------
     videoPlayCtrl: {
-        curSrc: string // 当前播放视频地址
-        curTime: number // 浮点数，秒 只读参数
-        videoStartTime: number //视频文件的开始时间可能不是从0开始的，所以需要记录一下
+        curSrc: string // current video source url
+        curTime: number // float, seconds, read-only
+        videoStartTime: number // video file may not start from 0
         isPlay: boolean
         isStop: boolean
         playbackRate: number
+        volume: number // 0-1
+        muted: boolean
     }
     curViewModel: 'video' | 'thumbnail'
     func_nextFrame: (() => void) | null
@@ -84,12 +86,14 @@ export const useAppStore = defineStore('app', {
         homeNavContent: '',
         // video play
         videoPlayCtrl: {
-            curSrc: '', // 当前播放视频地址
-            curTime: 0, // 当前播放时间
-            videoStartTime: 0, // 播放开始的时间
-            isPlay: false, // 播放状态
-            playbackRate: 1, // 播放速率
-            isStop: false
+            curSrc: '', // current video source url
+            curTime: 0, // current playback time
+            videoStartTime: 0, // playback start time
+            isPlay: false, // play status
+            playbackRate: 1, // playback rate
+            isStop: false,
+            volume: 1, // volume 0-1
+            muted: false // mute status
         },
         curViewModel: 'video', //当前视图模式 video, thumbnail
         func_nextFrame: null,

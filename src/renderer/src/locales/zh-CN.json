@@ -238,7 +238,10 @@
     "deleteMethod": "删除方式",
     "moveToTrash": "移动到回收站",
     "moveToTrashWithThumb": "移动到回收站，同时删除缩略图",
-    "noSelectedFile": "没有选择的文件"
+    "noSelectedFile": "没有选择的文件",
+    "volume": "音量",
+    "mute": "静音",
+    "unmute": "取消静音"
   },
   "playProgressBar": {
     "openVideoFirst": "请先打开视频文件",

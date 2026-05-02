@@ -215,7 +215,10 @@
     "deleteMethod": "Delete method",
     "moveToTrash": "Move to trash",
     "moveToTrashWithThumb": "Move to trash and delete thumbnails",
-    "noSelectedFile": "No selected file"
+    "noSelectedFile": "No selected file",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute"
   },
   "playProgressBar": {
     "openVideoFirst": "Please open a video file first",
