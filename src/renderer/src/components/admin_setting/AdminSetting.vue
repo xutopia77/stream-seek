@@ -27,19 +27,6 @@
             </button>
             <button class="xc-button" type="button" @click="btnclk_syncStop()">{{ t('adminSetting.stopSync') }}</button>
         </div>
-
-        <div class="setting-card">
-            <h3 class="setting-title">{{ t('adminSetting.repoMode') }}</h3>
-            <div class="mode-selector">
-                <select v-model="repoType" class="xc-select">
-                    <option :value="Dty.RepoType.Normal">{{ t('adminSetting.normalMode') }}🗄️</option>
-                    <option :value="Dty.RepoType.Trash">{{ t('adminSetting.trashMode') }}🗑️</option>
-                </select>
-                <button class="xc-button primary" type="button" @click="btnclk_set_repo_type()">
-                    {{ t('adminSetting.setRepoMode') }}
-                </button>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -121,20 +108,9 @@ async function btnclk_sync_work(types: Dty.SyncType[] = []): Promise<void> {
     }
 }
 
-// ------------------------------------------------
-const repoType = ref<Dty.RepoType>(Dty.RepoType.Normal)
-async function btnclk_set_repo_type(): Promise<void> {
-    if (!appStore.prj) return
-    appStore.prj.repoType = repoType.value
-    await btnclk_sync_work([Dty.SyncType.prjInfo])
-    console.log(`repoType: ${repoType.value}`)
-}
-// ------------------------------------------------
-
 onMounted(() => {
     if (appStore.prj) {
         dataRepo.value = appStore.prj.dataRepo
-        repoType.value = appStore.prj.repoType
     }
 })
 </script>

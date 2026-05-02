@@ -121,7 +121,15 @@ const openProject = async (): Promise<void> => {
     })
     if (response.code === 0 && response.data) {
         appStore.prj = response.data
+        appStore.appInfo.prjFile = response.data.path || ''
+
+        const searchReq = new Dty.FilesReq()
+        searchReq.status = [appStore.fileSearchStatus]
+        await util.files_get(searchReq)
+
         router.push('/')
+    } else {
+        util.addToastErr(`${t('welcome.openProjectFailed')}: ${response.status}`)
     }
 }
 
@@ -155,6 +163,12 @@ const openRecentProject = async (projectPath: string): Promise<void> => {
     const response: Dty.Resp<Dty.Prj> = await IpcApi.trigger_event(req)
     if (response.code === 0 && response.data) {
         appStore.prj = response.data
+        appStore.appInfo.prjFile = projectPath
+
+        const searchReq = new Dty.FilesReq()
+        searchReq.status = [appStore.fileSearchStatus]
+        await util.files_get(searchReq)
+
         router.push('/')
     } else {
         util.addToastErr(`${t('welcome.openProjectFailed')}: ${response.status}`)
@@ -163,10 +177,7 @@ const openRecentProject = async (projectPath: string): Promise<void> => {
 
 const loadProjectData = async (): Promise<void> => {
     const searchReq = new Dty.FilesReq()
-    const fStatus = appStore.prj?.repoType === Dty.RepoType.Normal
-        ? Dty.Fstatus.Normal
-        : Dty.Fstatus.Deleted
-    searchReq.status = [fStatus]
+    searchReq.status = [appStore.fileSearchStatus]
     searchReq.page = 1
     searchReq.pageSize = 100
     

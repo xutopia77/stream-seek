@@ -6,6 +6,9 @@
         <router-link to="/admin/prj_set" class="no-underline-link">
             <button class="xc-button">{{ t('adminNav.projectSettings') }}</button>
         </router-link>
+        <router-link to="/file_list" class="no-underline-link">
+            <button class="xc-button">{{ t('adminNav.fileList') }}</button>
+        </router-link>
         <router-link to="/admin/tag_mng" class="no-underline-link">
             <button class="xc-button">{{ t('adminNav.tagManagement') }}</button>
         </router-link>

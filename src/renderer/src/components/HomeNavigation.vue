@@ -142,13 +142,13 @@ function navContentMake(): void {
         statusInfo.value = appStore.homeNavContent
         return
     }
-    statusInfoTitle.value = appStore.prj.repoType == Dty.RepoType.Normal ? t('navigation.repositoryFiles') : t('navigation.recycleBinFiles')
-    const repoStr = appStore.prj.repoType == Dty.RepoType.Normal ? '🗄️' : '🗑️'
+    statusInfoTitle.value = appStore.fileSearchStatus == Dty.Fstatus.Normal ? t('navigation.repositoryFiles') : t('navigation.recycleBinFiles')
+    const repoStr = appStore.fileSearchStatus == Dty.Fstatus.Normal ? '🗄️' : '🗑️'
     statusInfo.value = `${repoStr} ${appStore.homeNavContent}`
 }
 
 watch(
-    () => [appStore.homeNavContent, appStore.prj?.repoType],
+    () => [appStore.homeNavContent, appStore.fileSearchStatus],
     () => {
         navContentMake()
     }
@@ -184,18 +184,26 @@ const btn_openPrj = async (): Promise<void> => {
     const req: Dty.Req = {
         cmd: Dty.CmdType.prjOpen
     }
-    const response: Dty.Resp = await IpcApi.trigger_event(req)
+    const response: Dty.Resp<Dty.Prj> = await IpcApi.trigger_event(req)
     if (response.code != 0) {
-        console.log(t('navigation.openProjectFailed'))
+        util.addToastErr(`${t('navigation.openProjectFailed')}: ${response.status}`)
     } else {
         if (response.bOver == false) {
             util.addToastInfo(t('navigation.backgroundExecuting'))
         } else {
-            const req = await util.start_app()
-            if (req.code != 0) {
-                util.addToastErr(`${t('navigation.startupFailed')} ${req.status}`)
+            appStore.prj = response.data || null
+            appStore.appInfo.prjFile = response.data?.path || ''
+            
+            const startReq = await util.start_app()
+            if (startReq.code != 0) {
+                util.addToastErr(`${t('navigation.startupFailed')} ${startReq.status}`)
                 return
             }
+
+            const searchReq = new Dty.FilesReq()
+            searchReq.status = [appStore.fileSearchStatus]
+            await util.files_get(searchReq)
+
             util.addToastInfo(t('navigation.openProjectSuccess'))
         }
     }
@@ -345,7 +353,7 @@ onUnmounted(() => {
     background-color: #333;
     min-width: 160px;
     box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-    z-index: 1;
+    z-index: 100;
     /* 添加圆角和边框 */
     border-radius: 4px;
     border: 1px solid #444;

@@ -26,6 +26,10 @@ const routes: RouteRecordRaw[] = [
         ]
     },
     {
+        path: '/file_list',
+        component: () => import('../components/admin_setting/AdminFileList.vue')
+    },
+    {
         path: '/thumb_mng',
         component: thumbMng
     },

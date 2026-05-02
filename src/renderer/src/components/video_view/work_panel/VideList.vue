@@ -29,7 +29,7 @@
                 >
             </li>
         </ul>
-        <PaginationCtrl page-type="video" />
+        <PaginationCtrl page-type="video" :compact="true" />
     </div>
 </template>
 
@@ -112,24 +112,24 @@ const btn_playVideo = (video: Dty.File): void => {
  * @returns {string} 带颜色的行内样式字符串
  */
 const getVideoLevelColorStyle = (video): string => {
-    // 防御性判断：避免tags不存在/为空导致的报错
-    if (!video?.tags || video.tags.length === 0) {
-        return 'color: #cccccc;' // 默认浅灰色（黑色背景通用）
+    if (appStore.fileSearchStatus === Dty.Fstatus.Deleted) {
+        return 'color: #888888;'
     }
 
-    // 提取等级名称并统一转为小写，增强鲁棒性
+    if (!video?.tags || video.tags.length === 0) {
+        return 'color: #cccccc;'
+    }
+
     const levelName = video.tags[0].name.toLowerCase()
 
-    // 黑色主题下的等级颜色映射表（高对比度、层级区分）
     const levelColorMap = {
-        sys_score1: '#00c6ff', // 亮蓝色（最高级，最醒目）
-        sys_score2: '#76ff03', // 亮绿色（次高级）
-        sys_score3: '#ffea00', // 金黄色（中级）
-        sys_score4: '#ff9100', // 橙色（次低级）
-        sys_score5: '#ff3d00' // 橙红色（最低级）
+        sys_score1: '#00c6ff',
+        sys_score2: '#76ff03',
+        sys_score3: '#ffea00',
+        sys_score4: '#ff9100',
+        sys_score5: '#ff3d00'
     }
 
-    // 匹配颜色，无匹配则用默认浅灰色
     const targetColor = levelColorMap[levelName] || '#cccccc'
     console.log(t('videoList.levelColorMapping', { levelName, targetColor }))
     return `color: ${targetColor};`

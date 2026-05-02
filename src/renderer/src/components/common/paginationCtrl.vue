@@ -1,87 +1,176 @@
 <template>
-    <!-- 分页控制区域 -->
-    <div class="pagination-controls">
-        <div class="pagination-info">
-            <div>
-                <span class="xc-text">
-                    {{
-                        t('pagination.pageInfo', {
-                            current: currentPage,
-                            total: totalPages,
-                            count: totalNum
-                        })
-                    }}
+    <div class="pagination-controls" :class="{ compact: compactMode }">
+        <template v-if="compactMode">
+            <div class="compact-pagination">
+                <span class="xc-text status-indicator" :class="{ 'trash-mode': isTrashMode }">
+                    {{ isTrashMode ? '🗑️' : '🗄️' }}
                 </span>
+                <button
+                    :disabled="currentPage <= 1"
+                    class="xc-button small compact-btn"
+                    @click="goToPage(currentPage - 1)"
+                >
+                    ◀
+                </button>
+                <span class="xc-text page-info-compact">
+                    {{ currentPage }} / {{ totalPages || 1 }}
+                </span>
+                <button
+                    :disabled="currentPage >= totalPages"
+                    class="xc-button small compact-btn"
+                    @click="goToPage(currentPage + 1)"
+                >
+                    ▶
+                </button>
+                <button class="xc-button small compact-btn settings-btn" @click="openSettingsModal">
+                    ⚙
+                </button>
             </div>
-            <div class="multi-select-dropdown">
-                <div class="dropdown-header" @click="toggleDropdown">
-                    <span class="selected-text">{{ getSelectedLevelsText() }}</span>
-                    <span class="dropdown-arrow">▼</span>
+        </template>
+
+        <template v-else>
+            <div class="pagination-info">
+                <div>
+                    <span class="xc-text">
+                        {{
+                            t('pagination.pageInfo', {
+                                current: currentPage,
+                                total: totalPages,
+                                count: totalNum
+                            })
+                        }}
+                    </span>
                 </div>
-                <div v-show="isDropdownOpen" class="dropdown-content">
-                    <div class="select-all-container">
-                        <label class="checkbox-label">
-                            <input
-                                type="checkbox"
-                                :checked="selectedLevels.length === 5"
-                                @change="toggleSelectAll"
-                            />
-                            {{ t('pagination.selectAll') }}
-                        </label>
+                <div class="multi-select-dropdown">
+                    <div class="dropdown-header" @click="toggleDropdown">
+                        <span class="selected-text">{{ getSelectedLevelsText() }}</span>
+                        <span class="dropdown-arrow">▼</span>
                     </div>
-                    <div v-for="index in 5" :key="index" class="level-option">
-                        <label class="checkbox-label">
-                            <input
-                                v-model="selectedLevels"
-                                type="checkbox"
-                                :value="index - 1"
-                                @change="handleLevelChange"
-                            />
-                            {{ index }}☆
-                        </label>
+                    <div v-show="isDropdownOpen" class="dropdown-content">
+                        <div class="select-all-container">
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    :checked="selectedLevels.length === 5"
+                                    @change="toggleSelectAll"
+                                />
+                                {{ t('pagination.selectAll') }}
+                            </label>
+                        </div>
+                        <div v-for="index in 5" :key="index" class="level-option">
+                            <label class="checkbox-label">
+                                <input
+                                    v-model="selectedLevels"
+                                    type="checkbox"
+                                    :value="index - 1"
+                                    @change="handleLevelChange"
+                                />
+                                {{ index }}☆
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="pagination-nav">
-            <button
-                :disabled="currentPage <= 1"
-                class="xc-button small"
-                @click="goToPage(currentPage - 1)"
-            >
-                ◀
-            </button>
+            <div class="pagination-nav">
+                <button
+                    :disabled="currentPage <= 1"
+                    class="xc-button small"
+                    @click="goToPage(currentPage - 1)"
+                >
+                    ◀
+                </button>
 
-            <div class="page-jump">
-                <span class="xc-text">{{ t('pagination.jumpTo') }}</span>
-                <input
-                    v-model.number="jumpPageNum"
-                    type="number"
-                    class="page-input"
-                    :min="1"
-                    :max="totalPages"
-                    @keyup.enter="jumpToPage"
-                />
+                <div class="page-jump">
+                    <span class="xc-text">{{ t('pagination.jumpTo') }}</span>
+                    <input
+                        v-model.number="jumpPageNum"
+                        type="number"
+                        class="page-input"
+                        :min="1"
+                        :max="totalPages"
+                        @keyup.enter="jumpToPage"
+                    />
+                </div>
+
+                <button
+                    :disabled="currentPage >= totalPages"
+                    class="xc-button small"
+                    @click="goToPage(currentPage + 1)"
+                >
+                    ▶
+                </button>
+                <span class="xc-text">{{ t('pagination.itemsPerPage') }}</span>
+                <div class="page-size-selector">
+                    <select v-model="pageSize" class="size-select" @change="handlePageSizeChange">
+                        <option :value="10">10</option>
+                        <option :value="50">50</option>
+                        <option :value="100">100</option>
+                        <option :value="200">200</option>
+                        <option :value="500">500</option>
+                        <option :value="1000">1000</option>
+                    </select>
+                </div>
             </div>
+        </template>
 
-            <button
-                :disabled="currentPage >= totalPages"
-                class="xc-button small"
-                @click="goToPage(currentPage + 1)"
-            >
-                ▶
-            </button>
-            <span class="xc-text">{{ t('pagination.itemsPerPage') }}</span>
-            <div class="page-size-selector">
-                <select v-model="pageSize" class="size-select" @change="handlePageSizeChange">
-                    <option :value="10">10</option>
-                    <option :value="50">50</option>
-                    <option :value="100">100</option>
-                    <option :value="200">200</option>
-                    <option :value="500">500</option>
-                    <option :value="1000">1000</option>
-                </select>
+        <div v-if="showSettingsModal" class="settings-modal-overlay" @click.self="closeSettingsModal">
+            <div class="settings-modal">
+                <div class="modal-header">
+                    <span class="xc-text">{{ t('pagination.settings') }}</span>
+                    <button class="close-btn" @click="closeSettingsModal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-item">
+                        <span class="xc-text">{{ t('pagination.fileStatus') }}</span>
+                        <div class="status-selector">
+                            <label class="radio-label">
+                                <input
+                                    v-model="modalFileStatus"
+                                    type="radio"
+                                    :value="Dty.Fstatus.Normal"
+                                />
+                                🗄️ {{ t('pagination.normalFiles') }}
+                            </label>
+                            <label class="radio-label">
+                                <input
+                                    v-model="modalFileStatus"
+                                    type="radio"
+                                    :value="Dty.Fstatus.Deleted"
+                                />
+                                🗑️ {{ t('pagination.trashFiles') }}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <span class="xc-text">{{ t('pagination.levelFilter') }}</span>
+                        <div class="level-checkboxes">
+                            <label v-for="index in 5" :key="index" class="checkbox-label">
+                                <input
+                                    v-model="modalSelectedLevels"
+                                    type="checkbox"
+                                    :value="index - 1"
+                                />
+                                {{ index }}☆
+                            </label>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <span class="xc-text">{{ t('pagination.itemsPerPage') }}</span>
+                        <select v-model="modalPageSize" class="size-select">
+                            <option :value="10">10</option>
+                            <option :value="50">50</option>
+                            <option :value="100">100</option>
+                            <option :value="200">200</option>
+                            <option :value="500">500</option>
+                            <option :value="1000">1000</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="xc-button" @click="applySettings">{{ t('pagination.apply') }}</button>
+                    <button class="xc-button" @click="closeSettingsModal">{{ t('pagination.cancel') }}</button>
+                </div>
             </div>
         </div>
     </div>
@@ -103,10 +192,15 @@ const props = defineProps({
         type: String,
         default: 'video',
         validator: (value: string) => ['video', 'thumb'].includes(value)
+    },
+    compact: {
+        type: Boolean,
+        default: false
     }
 })
 
-// 分页相关
+const compactMode = computed(() => props.compact)
+
 const currentPage = computed({
     get: () => appStore.fileSearchPage,
     set: (value: number) => {
@@ -121,6 +215,8 @@ const pageSize = computed({
     }
 })
 
+const isTrashMode = computed(() => appStore.fileSearchStatus === Dty.Fstatus.Deleted)
+
 const totalPages = computed(() => {
     let total = appStore.videoTotalNum
     if (props.pageType === 'thumb') {
@@ -133,17 +229,20 @@ const totalPages = computed(() => {
 const totalNum = computed(() => {
     return props.pageType === 'thumb' ? appStore.thumbTotalNum : appStore.videoTotalNum
 })
-const jumpPageNum = ref(1) // 用于跳转的页码输入
+const jumpPageNum = ref(1)
 
-const selectedLevels = ref<number[]>([]) // 默认不选择任何级别
-const isDropdownOpen = ref(false) // 控制下拉框是否打开
+const selectedLevels = ref<number[]>([])
+const isDropdownOpen = ref(false)
 
-// 切换下拉框显示状态
+const showSettingsModal = ref(false)
+const modalSelectedLevels = ref<number[]>([])
+const modalPageSize = ref(50)
+const modalFileStatus = ref<Dty.Fstatus>(Dty.Fstatus.Normal)
+
 const toggleDropdown = (): void => {
     isDropdownOpen.value = !isDropdownOpen.value
 }
 
-// 获取选中级别的显示文本
 const getSelectedLevelsText = (): string => {
     if (selectedLevels.value.length === 0) {
         return t('pagination.noLevelSelected')
@@ -154,7 +253,6 @@ const getSelectedLevelsText = (): string => {
     }
 }
 
-// 全选/取消全选
 const toggleSelectAll = (): void => {
     if (selectedLevels.value.length === 5) {
         selectedLevels.value = []
@@ -164,12 +262,10 @@ const toggleSelectAll = (): void => {
     handleLevelChange()
 }
 
-// 处理级别选择变化
 const handleLevelChange = (): void => {
     handleSearch()
 }
 
-// 点击外部关闭下拉框
 const handleClickOutside = (event: Event): void => {
     const target = event.target as Element
     if (!target.closest('.multi-select-dropdown')) {
@@ -177,7 +273,6 @@ const handleClickOutside = (event: Event): void => {
     }
 }
 
-// 添加和移除全局点击事件监听
 onMounted(() => {
     document.addEventListener('click', handleClickOutside)
 })
@@ -186,7 +281,6 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
 })
 
-// 搜索处理函数
 const handleSearch = (): void => {
     if (props.pageType === 'thumb') {
         let searchReq = new Dty.FilesReq()
@@ -197,9 +291,7 @@ const handleSearch = (): void => {
         util.thumbsGet(searchReq)
     } else {
         let searchReq = new Dty.FilesReq()
-        const fStatus =
-            appStore.prj?.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
-        searchReq.status.push(fStatus)
+        searchReq.status.push(appStore.fileSearchStatus)
         for (const lvl of selectedLevels.value) {
             searchReq.tags.push(`sys_score${lvl + 1}`)
         }
@@ -207,13 +299,11 @@ const handleSearch = (): void => {
     }
 }
 
-// 页面大小改变处理
 const handlePageSizeChange = (): void => {
     handleSearch()
-    currentPage.value = 1 // 每页大小变化时回到第一页
+    currentPage.value = 1
 }
 
-// 跳转到指定页
 const goToPage = (pageNum: number): void => {
     if (pageNum < 1 || pageNum > totalPages.value) return
 
@@ -221,7 +311,6 @@ const goToPage = (pageNum: number): void => {
     handleSearch()
 }
 
-// 跳转到输入的页码
 const jumpToPage = (): void => {
     if (jumpPageNum.value < 1) {
         jumpPageNum.value = 1
@@ -231,10 +320,43 @@ const jumpToPage = (): void => {
     currentPage.value = jumpPageNum.value
     handleSearch()
 }
+
+const openSettingsModal = (): void => {
+    modalSelectedLevels.value = [...selectedLevels.value]
+    modalPageSize.value = pageSize.value
+    modalFileStatus.value = appStore.fileSearchStatus
+    showSettingsModal.value = true
+}
+
+const closeSettingsModal = (): void => {
+    showSettingsModal.value = false
+}
+
+const applySettings = (): void => {
+    selectedLevels.value = [...modalSelectedLevels.value]
+    let needSearch = false
+
+    if (appStore.fileSearchStatus !== modalFileStatus.value) {
+        appStore.fileSearchStatus = modalFileStatus.value
+        currentPage.value = 1
+        needSearch = true
+    }
+
+    if (pageSize.value !== modalPageSize.value) {
+        pageSize.value = modalPageSize.value
+        currentPage.value = 1
+        needSearch = true
+    }
+
+    if (needSearch || modalSelectedLevels.value.length !== selectedLevels.value.length) {
+        handleSearch()
+    }
+
+    closeSettingsModal()
+}
 </script>
 
 <style scoped>
-/* 分页控制区域样式 */
 .pagination-controls {
     display: flex;
     align-items: center;
@@ -244,6 +366,41 @@ const jumpToPage = (): void => {
     border-top: 1px solid #333;
     flex-wrap: wrap;
     gap: 2px;
+}
+
+.pagination-controls.compact {
+    justify-content: center;
+    padding: 4px 8px;
+}
+
+.compact-pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.compact-btn {
+    min-width: 28px;
+    padding: 2px 6px;
+}
+
+.page-info-compact {
+    font-size: 13px;
+    min-width: 60px;
+    text-align: center;
+}
+
+.settings-btn {
+    margin-left: 8px;
+}
+
+.status-indicator {
+    font-size: 14px;
+    margin-right: 4px;
+}
+
+.status-indicator.trash-mode {
+    opacity: 0.7;
 }
 
 .pagination-info {
@@ -273,7 +430,6 @@ const jumpToPage = (): void => {
     outline: none;
 }
 
-/* 隐藏数字输入框的上下箭头 */
 .page-input::-webkit-outer-spin-button,
 .page-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
@@ -301,7 +457,6 @@ const jumpToPage = (): void => {
     border-color: #007fd4;
 }
 
-/* 多选下拉框样式 */
 .multi-select-dropdown {
     position: relative;
     min-width: 120px;
@@ -352,14 +507,12 @@ const jumpToPage = (): void => {
 }
 
 .select-all-container {
-    /* padding: 6px 8px; */
     padding: 0px;
     font-size: small;
     border-bottom: 1px solid #3c3c41;
 }
 
 .level-option {
-    /* padding: 4px 8px; */
     padding: 0px;
 }
 
@@ -373,12 +526,111 @@ const jumpToPage = (): void => {
     gap: 6px;
     color: var(--xc-text-color);
     cursor: pointer;
-    /* font-size: 12px; */
     font-size: small;
     width: 100%;
 }
 
 .checkbox-label input[type='checkbox'] {
     accent-color: #007fd4;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--xc-text-color);
+    cursor: pointer;
+    font-size: small;
+}
+
+.radio-label input[type='radio'] {
+    accent-color: #007fd4;
+}
+
+.settings-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.settings-modal {
+    background-color: #2d2d30;
+    border: 1px solid #3c3c41;
+    border-radius: 6px;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #3c3c41;
+}
+
+.modal-header span {
+    font-weight: 500;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--xc-text-color);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+}
+
+.close-btn:hover {
+    color: #fff;
+}
+
+.modal-body {
+    padding: 16px;
+}
+
+.setting-item {
+    margin-bottom: 16px;
+}
+
+.setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.setting-item > span {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.status-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.level-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.level-checkboxes .checkbox-label {
+    font-size: 13px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid #3c3c41;
 }
 </style>

@@ -127,6 +127,7 @@
     "returnHome": "Return Home",
     "fileManagement": "File Management",
     "projectSettings": "Project Settings",
+    "fileList": "File List",
     "tagManagement": "Tag Management",
     "thumbnailManagement": "Thumbnail Management",
     "smallFileOrganization": "Small File Organization",
@@ -150,6 +151,26 @@
     "syncProjectFailed": "Failed to sync project",
     "backgroundExecuting": "Executing in background..."
   },
+  "fileList": {
+    "title": "File List",
+    "backToAdmin": "Back to Admin",
+    "projectName": "Project Name",
+    "totalFiles": "Total Files",
+    "columnIndex": "Index",
+    "columnName": "File Name",
+    "columnStartTime": "Start Time",
+    "columnEndTime": "End Time",
+    "columnPath": "Path",
+    "columnSize": "Size",
+    "columnDuration": "Duration",
+    "columnBitrate": "Bitrate",
+    "columnStatus": "Status",
+    "noFiles": "No files",
+    "statusNormal": "Normal",
+    "statusDeleted": "Deleted",
+    "statusDestroyed": "Destroyed",
+    "statusUnknown": "Unknown"
+  },
   "adminTagMng": {
     "serialNumber": "Serial Number",
     "name": "Name",
@@ -165,7 +186,14 @@
     "selectAll": "Select All",
     "selectLevel": "Select Level",
     "allLevels": "All Levels",
-    "noLevelSelected": "No Level Selected"
+    "noLevelSelected": "No Level Selected",
+    "settings": "Search Settings",
+    "levelFilter": "Level Filter",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "fileStatus": "File Status",
+    "normalFiles": "Normal Files",
+    "trashFiles": "Trash Files"
   },
   "recentMessages": {
     "title": "Recent Messages",

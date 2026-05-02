@@ -41,6 +41,7 @@ export type AppStore = {
     rightPanel: Dty.WorkPanel
     fileSearchPage: number
     fileSearchPageSize: number
+    fileSearchStatus: Dty.Fstatus
     videoTotalNum: number
     thumbTotalNum: number
 
@@ -103,6 +104,7 @@ export const useAppStore = defineStore('app', {
         rightPanel: Dty.WorkPanel.List,
         fileSearchPage: 1,
         fileSearchPageSize: 100,
+        fileSearchStatus: Dty.Fstatus.Normal,
         videoTotalNum: 0,
         thumbTotalNum: 0,
         thumbList: [],

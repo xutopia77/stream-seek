@@ -150,6 +150,7 @@
     "returnHome": "返回主页",
     "fileManagement": "文件管理",
     "projectSettings": "项目设置",
+    "fileList": "文件列表",
     "tagManagement": "标签管理",
     "thumbnailManagement": "缩略图管理",
     "smallFileOrganization": "小文件整理",
@@ -173,6 +174,26 @@
     "syncProjectFailed": "同步项目失败",
     "backgroundExecuting": "后台执行中..."
   },
+  "fileList": {
+    "title": "文件列表",
+    "backToAdmin": "返回管理",
+    "projectName": "项目名称",
+    "totalFiles": "文件总数",
+    "columnIndex": "序号",
+    "columnName": "文件名",
+    "columnStartTime": "开始时间",
+    "columnEndTime": "结束时间",
+    "columnPath": "路径",
+    "columnSize": "大小",
+    "columnDuration": "时长",
+    "columnBitrate": "码率",
+    "columnStatus": "状态",
+    "noFiles": "暂无文件",
+    "statusNormal": "正常",
+    "statusDeleted": "已删除",
+    "statusDestroyed": "已销毁",
+    "statusUnknown": "未知"
+  },
   "adminTagMng": {
     "serialNumber": "序号",
     "name": "名称",
@@ -188,7 +209,14 @@
     "selectAll": "全选",
     "selectLevel": "选择级别",
     "allLevels": "所有级别",
-    "noLevelSelected": "未选择级别"
+    "noLevelSelected": "未选择级别",
+    "settings": "搜索设置",
+    "levelFilter": "等级筛选",
+    "apply": "应用",
+    "cancel": "取消",
+    "fileStatus": "文件状态",
+    "normalFiles": "正常文件",
+    "trashFiles": "回收站文件"
   },
   "recentMessages": {
     "title": "最近消息",

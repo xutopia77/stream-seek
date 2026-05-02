@@ -80,7 +80,7 @@
                 <option
                     value="delVideoAndThumb"
                     title="移动到回收站，同时删除缩略图"
-                    :disabled="!(appStore.prj?.repoType == Dty.RepoType.Trash)"
+                    :disabled="!(appStore.fileSearchStatus == Dty.Fstatus.Deleted)"
                 >
                     🗑+
                 </option>
@@ -332,7 +332,7 @@ function btnclk_delSltVideos(): void {
         util.addToastInfo(t('playCtrl.noSelectedFile'))
         return
     }
-    if (appStore.prj?.repoType == Dty.RepoType.Normal) {
+    if (appStore.fileSearchStatus == Dty.Fstatus.Normal) {
         req.type = 'del'
     } else {
         req.type = 'destroy'

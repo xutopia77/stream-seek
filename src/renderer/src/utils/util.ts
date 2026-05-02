@@ -609,11 +609,7 @@ class Util {
                 // util.addToastInfo(`删除成功`)
                 appStore.curCheckedVideo.clear()
                 const searchReq = new Dty.FilesReq()
-                const fStatus =
-                    appStore.prj?.repoType == Dty.RepoType.Normal
-                        ? Dty.Fstatus.Normal
-                        : Dty.Fstatus.Deleted
-                searchReq.status.push(fStatus)
+                searchReq.status.push(appStore.fileSearchStatus)
                 await this.files_get(searchReq)
                 util.addToastInfo(`${delStr} ${t('util.success')}`)
             }
@@ -750,7 +746,7 @@ class Util {
         appStore.thumbTotalNum = response.data?.total || 0
         if (appStore.thumbList.length == 0) {
             util.addToastInfo(
-                `${t('util.noFiles')}，${t('util.currentMode')}:${appStore.prj?.repoType == Dty.RepoType.Trash ? t('util.trashMode') : t('util.normalMode')}`
+                `${t('util.noFiles')}，${t('util.currentMode')}:${appStore.fileSearchStatus == Dty.Fstatus.Deleted ? t('util.trashMode') : t('util.normalMode')}`
             )
         }
         return response
@@ -822,11 +818,7 @@ class Util {
             if (param != null) {
                 if (param.bNeedUpdate) {
                     const searchReq = new Dty.FilesReq()
-                    const fStatus =
-                        appStore.prj?.repoType == Dty.RepoType.Normal
-                            ? Dty.Fstatus.Normal
-                            : Dty.Fstatus.Deleted
-                    searchReq.status.push(fStatus)
+                    searchReq.status.push(appStore.fileSearchStatus)
                     await this.files_get(searchReq)
                     await this.tags_get(null)
                 }
@@ -953,11 +945,7 @@ class Util {
                     } else {
                         util.addToastInfo(`${t('util.deleteCompleted')}:${response.status}`)
                         const searchReq = new Dty.FilesReq()
-                        const fStatus =
-                            appStore.prj?.repoType == Dty.RepoType.Normal
-                                ? Dty.Fstatus.Normal
-                                : Dty.Fstatus.Deleted
-                        searchReq.status.push(fStatus)
+                        searchReq.status.push(appStore.fileSearchStatus)
                         this.files_get(searchReq)
                     }
                 }
