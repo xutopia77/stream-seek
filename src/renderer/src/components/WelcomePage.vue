@@ -20,7 +20,7 @@
                             <span class="action-text">{{ t('welcome.openProject') }}</span>
                             <span class="action-desc">{{ t('welcome.openProjectDesc') }}</span>
                         </button>
-                        <button class="start-action" @click="createProject">
+                        <button class="start-action" @click="showCreateModal = true">
                             <span class="action-icon">✨</span>
                             <span class="action-text">{{ t('welcome.createProject') }}</span>
                             <span class="action-desc">{{ t('welcome.createProjectDesc') }}</span>
@@ -51,21 +51,29 @@
                 </div>
             </div>
         </div>
+        <CreateProjectModal
+            :visible="showCreateModal"
+            @close="showCreateModal = false"
+            @created="onProjectCreated"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/AppStore'
 import { useI18n } from 'vue-i18n'
 import { IpcApi } from '../utils/ipcApi'
 import * as Dty from '../../../bridge/dataTypedef'
 import util from '../utils/util'
+import CreateProjectModal from './CreateProjectModal.vue'
 
 const router = useRouter()
 const appStore = useAppStore()
 const { t } = useI18n()
+
+const showCreateModal = ref(false)
 
 interface RecentItemWithType extends Dty.RecentItem {
     type: 'file' | 'project'
@@ -113,14 +121,13 @@ const openProject = async (): Promise<void> => {
     })
     if (response.code === 0 && response.data) {
         appStore.prj = response.data
-        appStore.appInfo.prjFile = response.data.prjFile
-        await loadProjectData()
         router.push('/')
     }
 }
 
-const createProject = (): void => {
-    router.push('/create_prj')
+const onProjectCreated = async (): Promise<void> => {
+    await loadProjectData()
+    router.push('/')
 }
 
 const openRecentFile = async (filePath: string): Promise<void> => {
@@ -148,8 +155,6 @@ const openRecentProject = async (projectPath: string): Promise<void> => {
     const response: Dty.Resp<Dty.Prj> = await IpcApi.trigger_event(req)
     if (response.code === 0 && response.data) {
         appStore.prj = response.data
-        appStore.appInfo.prjFile = response.data.prjFile
-        await loadProjectData()
         router.push('/')
     } else {
         util.addToastErr(`${t('welcome.openProjectFailed')}: ${response.status}`)
@@ -161,7 +166,7 @@ const loadProjectData = async (): Promise<void> => {
     const fStatus = appStore.prj?.repoType === Dty.RepoType.Normal
         ? Dty.Fstatus.Normal
         : Dty.Fstatus.Deleted
-    searchReq.status = fStatus
+    searchReq.status = [fStatus]
     searchReq.page = 1
     searchReq.pageSize = 100
     

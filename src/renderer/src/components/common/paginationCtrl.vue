@@ -198,7 +198,7 @@ const handleSearch = (): void => {
     } else {
         let searchReq = new Dty.FilesReq()
         const fStatus =
-            appStore.prj.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
+            appStore.prj?.repoType == Dty.RepoType.Normal ? Dty.Fstatus.Normal : Dty.Fstatus.Deleted
         searchReq.status.push(fStatus)
         for (const lvl of selectedLevels.value) {
             searchReq.tags.push(`sys_score${lvl + 1}`)

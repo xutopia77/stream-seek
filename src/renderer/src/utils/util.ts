@@ -596,7 +596,7 @@ class Util {
                 appStore.curCheckedVideo.clear()
                 const searchReq = new Dty.FilesReq()
                 const fStatus =
-                    appStore.prj.repoType == Dty.RepoType.Normal
+                    appStore.prj?.repoType == Dty.RepoType.Normal
                         ? Dty.Fstatus.Normal
                         : Dty.Fstatus.Deleted
                 searchReq.status.push(fStatus)
@@ -674,17 +674,22 @@ class Util {
         }
     }
 
-    async create_prj(dataRepo: Dty.DataRepo[]): Promise<Dty.Resp<Dty.CreatePrjResp>> {
-        const req: Dty.Req<Dty.CreatePrjReq> = {
-            cmd: Dty.CmdType.createPrj,
+    async create_prj_with_path(
+        dataRepo: Dty.DataRepo[],
+        projectPath: string
+    ): Promise<Dty.Resp<Dty.CreatePrjResp>> {
+        const req: Dty.Req<Dty.CreatePrjWithPathReq> = {
+            cmd: Dty.CmdType.createPrjWithPath,
             data: {
-                dataRepo: dataRepo
+                dataRepo: dataRepo,
+                projectPath: projectPath
             }
         }
         const response: Dty.Resp<Dty.CreatePrjResp> = await IpcApi.trigger_event(req)
         if (response.code == 0) {
             if (response.data?.prj != null) {
                 appStore.prj = response.data.prj
+                appStore.appInfo.prjFile = response.data.prjFile
             }
         }
         return response
@@ -696,7 +701,7 @@ class Util {
             cmd: Dty.CmdType.prjSync,
             data: {
                 type: types,
-                prj: appStore.prj
+                prj: appStore.prj!
             }
         }
         const response: Dty.Resp<Dty.SyncPrjResp> = await IpcApi.trigger_event(req)
@@ -731,7 +736,7 @@ class Util {
         appStore.thumbTotalNum = response.data?.total || 0
         if (appStore.thumbList.length == 0) {
             util.addToastInfo(
-                `${t('util.noFiles')}，${t('util.currentMode')}:${appStore.prj.repoType == Dty.RepoType.Trash ? t('util.trashMode') : t('util.normalMode')}`
+                `${t('util.noFiles')}，${t('util.currentMode')}:${appStore.prj?.repoType == Dty.RepoType.Trash ? t('util.trashMode') : t('util.normalMode')}`
             )
         }
         return response
@@ -804,7 +809,7 @@ class Util {
                 if (param.bNeedUpdate) {
                     const searchReq = new Dty.FilesReq()
                     const fStatus =
-                        appStore.prj.repoType == Dty.RepoType.Normal
+                        appStore.prj?.repoType == Dty.RepoType.Normal
                             ? Dty.Fstatus.Normal
                             : Dty.Fstatus.Deleted
                     searchReq.status.push(fStatus)
@@ -933,7 +938,7 @@ class Util {
                         util.addToastInfo(`${t('util.deleteCompleted')}:${response.status}`)
                         const searchReq = new Dty.FilesReq()
                         const fStatus =
-                            appStore.prj.repoType == Dty.RepoType.Normal
+                            appStore.prj?.repoType == Dty.RepoType.Normal
                                 ? Dty.Fstatus.Normal
                                 : Dty.Fstatus.Deleted
                         searchReq.status.push(fStatus)

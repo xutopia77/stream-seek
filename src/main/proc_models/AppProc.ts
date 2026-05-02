@@ -671,7 +671,7 @@ class AppProc {
     }
 
     async create_prj(
-        req: Dty.Req<Dty.CreatePrjReq>,
+        req: Dty.Req<Dty.CreatePrjWithPathReq>,
         prjPath: string
     ): Promise<Dty.Resp<Dty.CreatePrjResp>> {
         const resp = new Dty.Resp<Dty.CreatePrjResp>()
@@ -726,6 +726,9 @@ class AppProc {
             return resp.err('save prj info error ' + saveResp.status)
         }
         resp.data.prj = prjInfo
+        resp.data.prjFile = path.join(prjPath, 'project.json')
+        appCfg.appInfo.prjFile = resp.data.prjFile
+        this.addRecentProject(resp.data.prjFile)
         resp.success('Project file created successfully')
         logger.info('create project success')
         return resp
@@ -1202,6 +1205,43 @@ class AppProc {
         }
         resp.data = result.filePaths[0]
         return resp.success('success')
+    }
+
+    async handle_select_folder(mainWindow: Electron.BrowserWindow): Promise<Dty.Resp<string>> {
+        const resp = new Dty.Resp<string>()
+        const result = await dialog.showOpenDialog(mainWindow, {
+            title: 'Select Folder',
+            properties: ['openDirectory']
+        })
+        if (result.canceled || result.filePaths.length === 0) {
+            return resp.err('user canceled')
+        }
+        resp.data = result.filePaths[0]
+        return resp.success('success')
+    }
+
+    async handle_create_prj_with_path(
+        req: Dty.Req<Dty.CreatePrjWithPathReq>
+    ): Promise<Dty.Resp<Dty.CreatePrjResp>> {
+        const resp = new Dty.Resp<Dty.CreatePrjResp>()
+        if (req.data == null) {
+            return resp.err('req.data is null')
+        }
+        const { dataRepo, projectPath } = req.data
+        
+        if (!projectPath || !fs.existsSync(projectPath)) {
+            return resp.err('project path is invalid')
+        }
+        
+        const folderContent = fs.readdirSync(projectPath)
+        if (folderContent.length > 0) {
+            return resp.err('The selected folder is not empty')
+        }
+        
+        return await this.create_prj(
+            { cmd: Dty.CmdType.createPrjWithPath, data: { dataRepo, projectPath } },
+            Util.pathToLinuxStyle(projectPath)
+        )
     }
 
     async handle_open_external_video(req: Dty.Req<Dty.Req_SltFile>): Promise<Dty.Resp<Dty.File>> {
@@ -1805,37 +1845,6 @@ class AppProc {
         return resp.success('tiny process over')
     }
 
-    async handle_create_prj(
-        req: Dty.Req<Dty.CreatePrjReq>,
-        mainWindow: Electron.BrowserWindow
-    ): Promise<Dty.Resp<Dty.CreatePrjResp>> {
-        const resp = new Dty.Resp<Dty.CreatePrjResp>()
-        try {
-            // 显示文件夹选择对话框
-            const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-                properties: ['openDirectory']
-            })
-
-            if (canceled) {
-                // 用户取消选择，返回取消状态
-                return resp.err('User canceled the folder selection')
-            }
-            const folderPath = filePaths[0]
-            // 获取当前文件夹下内容是否为空
-            const folderContent = fs.readdirSync(folderPath)
-            if (folderContent.length > 0) {
-                logger.info('The selected folder is not empty')
-                return resp.err('The selected folder is not empty')
-            }
-            return await this.create_prj(req, Util.pathToLinuxStyle(folderPath))
-        } catch (error) {
-            logger.error('Error creating project file:', error)
-            return resp.err(
-                `Error creating project file: ${error instanceof Error ? error.message : String(error)}`
-            )
-        }
-    }
-
     async handle_open_prj(mainWindow: Electron.BrowserWindow): Promise<Dty.Resp<Dty.Prj>> {
         const resp = new Dty.Resp<Dty.Prj>()
         try {
@@ -1949,11 +1958,6 @@ class AppProc {
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)
                 return this.cmdRespMake(await this.handle_get_key_frame_info(cmdReq))
             }
-            case Dty.CmdType.createPrj: {
-                const cmdReq = convertCmdRequest<Dty.CreatePrjReq>(req)
-                logger.info(`cmd:${cmd}:${cseq}, ${req}`)
-                return this.cmdRespMake(await this.handle_create_prj(cmdReq, mainWin!))
-            }
             case Dty.CmdType.prjOpen: {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
                 return this.cmdRespMake(await this.handle_open_prj(mainWin!))
@@ -2039,6 +2043,15 @@ class AppProc {
                 const cmdReq = convertCmdRequest<Dty.FilesReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}`)
                 return this.cmdRespMake(await this.handle_files_get(cmdReq))
+            }
+            case Dty.CmdType.selectFolder: {
+                logger.info(`cmd:${cmd}:${cseq}`)
+                return this.cmdRespMake(await this.handle_select_folder(mainWin!))
+            }
+            case Dty.CmdType.createPrjWithPath: {
+                const cmdReq = convertCmdRequest<Dty.CreatePrjWithPathReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}`)
+                return this.cmdRespMake(await this.handle_create_prj_with_path(cmdReq))
             }
             default: {
                 console.log(`Unknown event: ${cmd}:${cseq}`)

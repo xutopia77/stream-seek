@@ -79,11 +79,16 @@
             </button>
         </div>
     </div>
+    <CreateProjectModal
+        :visible="showCreateModal"
+        @close="showCreateModal = false"
+        @created="onProjectCreated"
+    />
     <!-- 关于模态框 -->
     <div v-if="isAboutModalVisible" class="modal-overlay" @click.self="hideAboutModal">
         <div class="modal-content">
             <h2>{{ t('navigation.menuItems.about') }} {{ t('common.info') }}</h2>
-            <p>{{ t('common.currentVersion') }}：{{ appStore.prj.version || '1.0.0' }}</p>
+            <p>{{ t('common.currentVersion') }}：{{ appStore.prj?.version || '1.0.0' }}</p>
             <button @click="hideAboutModal">{{ t('common.cancel') }}</button>
         </div>
     </div>
@@ -102,8 +107,11 @@ import { IpcApi } from '../utils/ipcApi'
 import * as Dty from '../../../bridge/dataTypedef'
 
 import { useI18n } from 'vue-i18n'
+import CreateProjectModal from './CreateProjectModal.vue'
 
 const { t } = useI18n()
+
+const showCreateModal = ref(false)
 
 // const changeLang = () => {
 //   locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
@@ -157,9 +165,19 @@ const toggleDropdown = (event: MouseEvent, menu: string): void => {
     isDropdownOpen.value[menu] = !isDropdownOpen.value[menu]
 }
 
-const btn_createPrj = async (): Promise<void> => {
-    router.push('/create_prj')
+const btn_createPrj = (): void => {
+    showCreateModal.value = true
     isDropdownOpen.value.home = false
+}
+
+const onProjectCreated = async (): Promise<void> => {
+    const req = await util.start_app()
+    if (req.code != 0) {
+        util.addToastErr(`${t('navigation.startupFailed')} ${req.status}`)
+        return
+    }
+    util.addToastInfo(t('navigation.openProjectSuccess'))
+    router.push('/')
 }
 
 const btn_openPrj = async (): Promise<void> => {

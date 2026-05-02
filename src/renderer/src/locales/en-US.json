@@ -325,5 +325,19 @@
     "yesterday": "Yesterday",
     "daysAgo": "{days} days ago",
     "openProjectFailed": "Failed to open project"
+  },
+  "createProject": {
+    "title": "Create Project",
+    "repoName": "Repository Name",
+    "repoNamePlaceholder": "Enter repository name",
+    "repoPath": "Repository Path",
+    "repoPathPlaceholder": "Select repository folder",
+    "projectLocation": "Project Location",
+    "projectLocationPlaceholder": "Select empty folder for project",
+    "projectLocationHint": "Select an empty folder to store project files",
+    "browse": "Browse",
+    "create": "Create",
+    "createSuccess": "Project created successfully",
+    "createFailed": "Failed to create project"
   }
 }

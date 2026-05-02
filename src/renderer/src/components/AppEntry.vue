@@ -19,7 +19,7 @@ import MessageToast from '@renderer/components/MessageNotify/MessageToast.vue'
 import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
 const { t } = useI18n()
-import { onBeforeMount, onMounted, watch } from 'vue'
+import { onBeforeMount, watch } from 'vue'
 import util, { setI18nFunction } from '../utils/util.js'
 import { IpcApi } from '../utils/ipcApi'
 import * as Dty from '../../../bridge/dataTypedef'
@@ -76,7 +76,7 @@ watch(
 
 onBeforeMount(async () => {
     util.setAppStore(appStore)
-    const resp = await util.start_app()
+    await util.start_app()
     startTimer()
     router.push('/welcome')
 })

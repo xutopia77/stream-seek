@@ -4,7 +4,7 @@
             <h3 class="setting-title">{{ t('adminSetting.projectInfo') }}</h3>
             <div class="info-item">
                 <span class="info-label">{{ t('adminSetting.projectPath') }}:</span>
-                <span class="info-value">{{ appStore.prj.path }}</span>
+                <span class="info-value">{{ appStore.prj?.path }}</span>
             </div>
             <div v-for="(repo, index) in dataRepo" :key="index" class="repo-item">
                 <span class="info-label">{{ t('adminSetting.repoPath') }}:</span>
@@ -68,8 +68,10 @@ const dataRepo = ref<Dty.DataRepo[]>([
 
 watch(
     () => appStore.prj,
-    (prj: Dty.Prj) => {
-        dataRepo.value = prj.dataRepo
+    (prj: Dty.Prj | null) => {
+        if (prj) {
+            dataRepo.value = prj.dataRepo
+        }
     }
 )
 
@@ -122,6 +124,7 @@ async function btnclk_sync_work(types: Dty.SyncType[] = []): Promise<void> {
 // ------------------------------------------------
 const repoType = ref<Dty.RepoType>(Dty.RepoType.Normal)
 async function btnclk_set_repo_type(): Promise<void> {
+    if (!appStore.prj) return
     appStore.prj.repoType = repoType.value
     await btnclk_sync_work([Dty.SyncType.prjInfo])
     console.log(`repoType: ${repoType.value}`)
@@ -129,8 +132,10 @@ async function btnclk_set_repo_type(): Promise<void> {
 // ------------------------------------------------
 
 onMounted(() => {
-    dataRepo.value = appStore.prj.dataRepo
-    repoType.value = appStore.prj.repoType
+    if (appStore.prj) {
+        dataRepo.value = appStore.prj.dataRepo
+        repoType.value = appStore.prj.repoType
+    }
 })
 </script>
 

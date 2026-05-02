@@ -39,7 +39,9 @@ const selectedLanguage = ref<Dty.LangType>('zh-CN')
 async function btnclk_saveSettings(): Promise<void> {
     try {
         // 保存语言设置到 store
-        appStore.prj.language = selectedLanguage.value
+        if (appStore.prj) {
+            appStore.prj.language = selectedLanguage.value
+        }
 
         // 保存到本地存储
         localStorage.setItem('locale', selectedLanguage.value)
@@ -58,7 +60,9 @@ async function btnclk_resetSettings(): Promise<void> {
     try {
         // 重置为默认语言
         selectedLanguage.value = 'zh-CN'
-        appStore.prj.language = 'zh-CN'
+        if (appStore.prj) {
+            appStore.prj.language = 'zh-CN'
+        }
 
         // 更新本地存储和全局语言
         localStorage.setItem('locale', 'zh-CN')
@@ -74,13 +78,17 @@ async function btnclk_resetSettings(): Promise<void> {
 
 onMounted(() => {
     // 从 AppStore 加载当前语言设置
-    selectedLanguage.value = appStore.prj.language
+    if (appStore.prj) {
+        selectedLanguage.value = appStore.prj.language
+    }
 
     // 也可以从本地存储加载作为备用
     const storedLanguage = localStorage.getItem('locale') as Dty.LangType | null
     if (storedLanguage) {
         selectedLanguage.value = storedLanguage
-        appStore.prj.language = storedLanguage
+        if (appStore.prj) {
+            appStore.prj.language = storedLanguage
+        }
     }
 })
 </script>

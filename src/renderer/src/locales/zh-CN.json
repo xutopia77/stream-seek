@@ -348,5 +348,19 @@
     "yesterday": "昨天",
     "daysAgo": "{days} 天前",
     "openProjectFailed": "打开项目失败"
+  },
+  "createProject": {
+    "title": "创建项目",
+    "repoName": "仓库名称",
+    "repoNamePlaceholder": "请输入仓库名称",
+    "repoPath": "仓库路径",
+    "repoPathPlaceholder": "选择仓库文件夹",
+    "projectLocation": "项目位置",
+    "projectLocationPlaceholder": "选择空文件夹作为项目位置",
+    "projectLocationHint": "选择一个空文件夹来存储项目文件",
+    "browse": "浏览",
+    "create": "创建",
+    "createSuccess": "项目创建成功",
+    "createFailed": "项目创建失败"
   }
 }

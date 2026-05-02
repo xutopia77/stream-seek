@@ -1,6 +1,5 @@
 export enum CmdType {
     heartBeat = 'heart_beat',
-    createPrj = 'create_prj',
     app_start = 'app_start',
     get_key_frame_info = 'get_key_frame_info',
     tags_get = 'tags_get',
@@ -24,7 +23,9 @@ export enum CmdType {
     videoDel = 'delete_video',
 
     tinyFileDbStart = 'tinyFileDbStart',
-    tinyFileDbStop = 'tinyFileDbStop'
+    tinyFileDbStop = 'tinyFileDbStop',
+    selectFolder = 'select_folder',
+    createPrjWithPath = 'create_prj_with_path'
 }
 
 export const httpSrvPort: number = 58080
@@ -268,12 +269,14 @@ export class FileTagModel {
     deleted_at?: string = '' // delete time, add when delete
 }
 
-export class CreatePrjReq {
+export class CreatePrjWithPathReq {
     dataRepo: DataRepo[] = []
+    projectPath: string = ''
 }
 
 export class CreatePrjResp {
     prj: Prj = new Prj()
+    prjFile: string = ''
 }
 
 export interface SplitInfo {

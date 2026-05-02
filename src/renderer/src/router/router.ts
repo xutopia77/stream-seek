@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Admin from '../components/Admin.vue'
-import CreatePrj from '../components/CreatePrj.vue'
 import HomeEditor from '../components/HomeEditor.vue'
 import WelcomePage from '../components/WelcomePage.vue'
 import FileManagement from '../components/FileManagement.vue'
@@ -12,21 +11,9 @@ const routes: RouteRecordRaw[] = [
     { path: '/', component: HomeEditor },
     { path: '/welcome', component: WelcomePage },
     { path: '/file_management', component: FileManagement },
-    // {
-    //   path: '/board',
-    //   component: FileBoard
-    // },
-    // {
-    //   path: '/settings',
-    //   component: Settings,
-    //   beforeEnter: fetchFileDirData
-    // },
     {
         path: '/admin',
         component: Admin,
-        // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
-        // children: adminRouter.options.routes // 嵌套子路由
-
         children: [
             {
                 path: 'prj_set',
@@ -36,33 +23,19 @@ const routes: RouteRecordRaw[] = [
                 path: 'tag_mng',
                 component: () => import('../components/admin_setting/AdminTagMng.vue')
             }
-            // { path: 'DbInfo', component: () => import('@/components/AdminEntry/DbInfo.vue') },
-            // { path: 'OtherMisc', component: () => import('@/components/AdminEntry/OtherMisc.vue') },
         ]
-    },
-    {
-        path: '/create_prj',
-        component: CreatePrj
-        // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
-        // children: adminRouter.options.routes // 嵌套子路由
     },
     {
         path: '/thumb_mng',
         component: thumbMng
-        // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
-        // children: adminRouter.options.routes // 嵌套子路由
     },
     {
         path: '/tiny_file_db',
         component: TinyFileDb
-        // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
-        // children: adminRouter.options.routes // 嵌套子路由
     },
     {
         path: '/app_setting',
         component: AppSetting
-        // // 如果 adminRouter 是作为子路由使用的，需要确保父路由配置正确，并且子路由能够正确继承父路由的路径。
-        // children: adminRouter.options.routes // 嵌套子路由
     }
 ]
 
