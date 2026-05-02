@@ -1,19 +1,21 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
 
 import { IpcHandlers } from './proc_models/IpcHandlers'
 import appProc from './proc_models/AppProc'
-// import logger from './proc_models/Logger'
-// import recordsProc from './proc_models/RecordsProcess'
-// import { open, Database } from 'sqlite'
-// import { open } from 'sqlite'
-// import sqlite3 from 'sqlite3'
-// import * as fs from 'fs/promises'
-// import * as path from 'path'
 
 const handlers = new IpcHandlers()
+
+function getIconPath(): string {
+    if (process.platform === 'win32') {
+        return join(__dirname, '../../build/icon.ico')
+    } else if (process.platform === 'darwin') {
+        return join(__dirname, '../../build/icon.icns')
+    } else {
+        return join(__dirname, '../../build/icon.png')
+    }
+}
 
 function createWindow(): void {
     // Create the browser window.
@@ -22,11 +24,11 @@ function createWindow(): void {
         height: 720,
         show: false,
         autoHideMenuBar: false, // hidden menu bar
-        ...(process.platform === 'linux' ? { icon } : {}),
+        icon: getIconPath(),
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             sandbox: false,
-            // 允许加载本地资源
+            // allow loading local resources
             webSecurity: false
         }
     })

@@ -67,6 +67,7 @@
     ],
     "asar": true,
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "zip",
@@ -75,6 +76,12 @@
           ]
         }
       ]
+    },
+    "mac": {
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "icon": "build/icon.png"
     }
   }
 }

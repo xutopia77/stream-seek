@@ -479,6 +479,54 @@ class AppProc {
         }
     }
 
+    addRecentFile(filePath: string): void {
+        if (!appCfg.appInfo.recentFiles) {
+            appCfg.appInfo.recentFiles = []
+        }
+        const fileName = path.basename(filePath)
+        const existingIndex = appCfg.appInfo.recentFiles.findIndex(f => f.path === filePath)
+        
+        if (existingIndex >= 0) {
+            appCfg.appInfo.recentFiles.splice(existingIndex, 1)
+        }
+        
+        const item: Dty.RecentItem = {
+            name: fileName,
+            path: filePath,
+            lastOpened: Date.now()
+        }
+        appCfg.appInfo.recentFiles.unshift(item)
+        
+        if (appCfg.appInfo.recentFiles.length > 10) {
+            appCfg.appInfo.recentFiles = appCfg.appInfo.recentFiles.slice(0, 10)
+        }
+        this.saveAppCfg()
+    }
+
+    addRecentProject(prjFile: string): void {
+        if (!appCfg.appInfo.recentProjects) {
+            appCfg.appInfo.recentProjects = []
+        }
+        const prjName = path.basename(prjFile, '.json')
+        const existingIndex = appCfg.appInfo.recentProjects.findIndex(p => p.path === prjFile)
+        
+        if (existingIndex >= 0) {
+            appCfg.appInfo.recentProjects.splice(existingIndex, 1)
+        }
+        
+        const item: Dty.RecentItem = {
+            name: prjName,
+            path: prjFile,
+            lastOpened: Date.now()
+        }
+        appCfg.appInfo.recentProjects.unshift(item)
+        
+        if (appCfg.appInfo.recentProjects.length > 10) {
+            appCfg.appInfo.recentProjects = appCfg.appInfo.recentProjects.slice(0, 10)
+        }
+        this.saveAppCfg()
+    }
+
     async initApp(): Promise<void> {
         await appCfg.initCfg()
         await startHttpSrv(Dty.httpSrvPort)
@@ -688,10 +736,10 @@ class AppProc {
         resp.data = new Dty.AppStartResp()
         const cfgPath = path.join(appCfg.appData, 'prj.json')
         if (!fs.existsSync(cfgPath)) {
-            return resp.err('success no prj')
+            resp.data.appInfo = appCfg.appInfo
+            return resp.success('no config file')
         }
         let data = ''
-        //1，read app info json
         try {
             data = fs.readFileSync(cfgPath, { encoding: 'utf-8' })
         } catch (error: unknown) {
@@ -706,46 +754,7 @@ class AppProc {
             logger.info('app cfg err parse json:', error)
             return resp.err('app cfg err parse json')
         }
-        // 2, if appInfo.prjFile isempty, return without prj info
-        if (appCfg.appInfo.prjFile == '') {
-            resp.data.prj = null
-            return resp.err('app start prj file loss')
-        }
-        if (!fs.existsSync(appCfg.appInfo.prjFile)) {
-            appCfg.appInfo.prjFile = ''
-            this.saveAppCfg()
-            return resp.err('app start prj file loss')
-        }
-
-        // 3, init db
-        const prjFilePath = path.dirname(appCfg.appInfo.prjFile)
-        const respDb = await appDb.initDb(path.join(prjFilePath, 'db'))
-        if (!respDb.isSuccess()) {
-            return resp.err('init db error')
-        }
-        for (let i = 1; i < 11; i++) {
-            const tag: Dty.Tag = {
-                id: 0,
-                name: `sys_score${i}`,
-                color: '#4A6FA5'
-            }
-            const insertResp = await appDb.tag_insert(tag)
-            if (insertResp.code != 0) {
-                return resp.err('insert tag error')
-            }
-        }
-
-        // 4, read prj json
-        try {
-            const prjData = fs.readFileSync(appCfg.appInfo.prjFile, { encoding: 'utf-8' })
-            const prjInfo = JSON.parse(prjData)
-            appCfg.prj = prjInfo
-            resp.data.prj = prjInfo
-        } catch (error: unknown) {
-            logger.info('err parse json:', error)
-            return resp.err('err parse json')
-        }
-        return resp
+        return resp.success('app start success')
     }
     async handle_search_file(req: Dty.Req<Dty.FilesReq>): Promise<Dty.Resp<Dty.FilesResp>> {
         return appDb.fileViewSearch(req.data == null ? null : req.data)
@@ -1240,6 +1249,7 @@ class AppProc {
                 isDelete: false
             }
             resp.data.splitInfo.splits.push(itemInfo)
+            this.addRecentFile(video_path)
             return resp.success('success')
         } catch (error) {
             logger.error('get video info error:', error)
@@ -1829,36 +1839,73 @@ class AppProc {
     async handle_open_prj(mainWindow: Electron.BrowserWindow): Promise<Dty.Resp<Dty.Prj>> {
         const resp = new Dty.Resp<Dty.Prj>()
         try {
-            // 显示文件选择对话框
             const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
                 properties: ['openFile'],
                 filters: [
-                    { name: 'Project Files', extensions: ['json'] }, // 可根据实际需求修改文件类型
+                    { name: 'Project Files', extensions: ['json'] },
                     { name: 'All Files', extensions: ['*'] }
                 ]
             })
 
             if (canceled) {
-                // 用户取消选择，返回取消状态
                 return resp.err('User canceled the file selection')
             }
 
             const filePath = filePaths[0]
-            logger.info('Selected file path:', filePath)
-            const fileContent = await fs.promises.readFile(filePath, 'utf-8')
-            const prjInfo = JSON.parse(fileContent) as Dty.Prj
-            appCfg.prj = prjInfo
-            appCfg.appInfo.prjFile = filePath
-            this.saveAppCfg()
-            resp.success('File opened successfully').data = prjInfo
-            return resp
+            return await this.openProjectByPath(filePath)
         } catch (error) {
-            // 处理异常，返回错误信息
             logger.error('Error opening project file:', error)
             return resp.err(
                 `Error opening project file: ${error instanceof Error ? error.message : String(error)}`
             )
         }
+    }
+
+    async openProjectByPath(prjFile: string): Promise<Dty.Resp<Dty.Prj>> {
+        const resp = new Dty.Resp<Dty.Prj>()
+        try {
+            if (!fs.existsSync(prjFile)) {
+                return resp.err('Project file not found')
+            }
+            
+            const fileContent = await fs.promises.readFile(prjFile, 'utf-8')
+            const prjInfo = JSON.parse(fileContent) as Dty.Prj
+            appCfg.prj = prjInfo
+            appCfg.appInfo.prjFile = prjFile
+            this.addRecentProject(prjFile)
+            
+            const prjFilePath = path.dirname(prjFile)
+            const respDb = await appDb.initDb(path.join(prjFilePath, 'db'))
+            if (!respDb.isSuccess()) {
+                return resp.err('init db error')
+            }
+            
+            for (let i = 1; i < 11; i++) {
+                const tag: Dty.Tag = {
+                    id: 0,
+                    name: `sys_score${i}`,
+                    color: '#4A6FA5'
+                }
+                await appDb.tag_insert(tag)
+            }
+            
+            resp.success('File opened successfully').data = prjInfo
+            return resp
+        } catch (error) {
+            logger.error('Error opening project file:', error)
+            return resp.err(
+                `Error opening project file: ${error instanceof Error ? error.message : String(error)}`
+            )
+        }
+    }
+
+    async handle_close_prj(): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
+        appCfg.appInfo.prjFile = ''
+        this.saveAppCfg()
+        await appDb.close()
+        logger.info('Project closed successfully')
+        return resp.success('Project closed successfully')
     }
 
     async handle_cmd(req: Dty.Req, mainWin: Electron.BrowserWindow | null): Promise<Dty.Resp> {
@@ -1910,6 +1957,15 @@ class AppProc {
             case Dty.CmdType.prjOpen: {
                 logger.info(`cmd:${cmd}:${cseq}, ${req}`)
                 return this.cmdRespMake(await this.handle_open_prj(mainWin!))
+            }
+            case Dty.CmdType.prjOpenByPath: {
+                const cmdReq = convertCmdRequest<Dty.Req_OpenPrj>(req)
+                logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.prjFile}`)
+                return this.cmdRespMake(await this.openProjectByPath(cmdReq.data?.prjFile || ''))
+            }
+            case Dty.CmdType.prjClose: {
+                logger.info(`cmd:${cmd}:${cseq}`)
+                return this.cmdRespMake(await this.handle_close_prj())
             }
             case Dty.CmdType.search_file: {
                 logger.info(`cmd:${cmd}:${cseq}`)

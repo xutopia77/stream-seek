@@ -501,20 +501,8 @@ class Util {
 
     private async updateAppInfo(appStartResp: Dty.AppStartResp): Promise<void> {
         appStore.appInfo = appStartResp.appInfo
-        if (appStartResp.prj != null) {
-            appStore.prj = appStartResp.prj
-            console.log('get prj success ', appStartResp.prj)
-            const searchReq = new Dty.FilesReq()
-            const fStatus =
-                appStore.prj.repoType == Dty.RepoType.Normal
-                    ? Dty.Fstatus.Normal
-                    : Dty.Fstatus.Deleted
-            searchReq.status.push(fStatus)
-            await util.files_get(searchReq)
-            await util.tags_get(null)
-        } else {
-            console.log('get prj failed')
-        }
+        appStore.recentFiles = appStartResp.appInfo.recentFiles || []
+        appStore.recentProjects = appStartResp.appInfo.recentProjects || []
     }
 
     async start_app(): Promise<Dty.Resp> {
@@ -522,11 +510,9 @@ class Util {
         const req: Dty.Req = { cmd: Dty.CmdType.app_start }
         const response: Dty.Resp<Dty.AppStartResp> = await IpcApi.trigger_event(req)
         if (response.code != Dty.RespCode.Success) {
-            Util.addToast('no prj found', 'warning')
             return resp.err(response.status)
         }
         if (response.data == null) {
-            Util.addToast('no prj found', 'warning')
             return resp.err('app start resp data is null')
         }
         this.updateAppInfo(response.data)

@@ -2,14 +2,15 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Admin from '../components/Admin.vue'
 import CreatePrj from '../components/CreatePrj.vue'
 import HomeEditor from '../components/HomeEditor.vue'
+import WelcomePage from '../components/WelcomePage.vue'
 import FileManagement from '../components/FileManagement.vue'
 import thumbMng from '@renderer/components/thumbMng/thumbMng.vue'
 import TinyFileDb from '@renderer/components/tinyFileDb/tinyFileDb.vue'
-import AppSetting from '@renderer/components/appSetting.vue' 
+import AppSetting from '@renderer/components/appSetting.vue'
 
-// 定义路由配置数组，使用 RouteRecordRaw 类型进行类型注解
 const routes: RouteRecordRaw[] = [
     { path: '/', component: HomeEditor },
+    { path: '/welcome', component: WelcomePage },
     { path: '/file_management', component: FileManagement },
     // {
     //   path: '/board',

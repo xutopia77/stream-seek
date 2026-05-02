@@ -38,7 +38,7 @@
         <button class="xc-button btn-noborder" title="显示关键帧" @click="btn_showKeyFrame">
             🔑
         </button>
-        <div class="right-area-ctrl">
+        <div v-if="appStore.isProjectMode" class="right-area-ctrl">
             <button
                 class="xc-button btn-noborder"
                 title="设置文件的等级"

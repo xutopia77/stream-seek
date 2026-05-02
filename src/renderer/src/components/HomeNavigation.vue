@@ -129,13 +129,18 @@ let statusInfoTitle = ref<string>('')
 let statusInfo = ref<string>('')
 
 function navContentMake(): void {
+    if (appStore.prj == null) {
+        statusInfoTitle.value = t('navigation.repositoryFiles')
+        statusInfo.value = appStore.homeNavContent
+        return
+    }
     statusInfoTitle.value = appStore.prj.repoType == Dty.RepoType.Normal ? t('navigation.repositoryFiles') : t('navigation.recycleBinFiles')
     const repoStr = appStore.prj.repoType == Dty.RepoType.Normal ? '🗄️' : '🗑️'
     statusInfo.value = `${repoStr} ${appStore.homeNavContent}`
 }
 
 watch(
-    () => [appStore.homeNavContent, appStore.prj.repoType],
+    () => [appStore.homeNavContent, appStore.prj?.repoType],
     () => {
         navContentMake()
     }
@@ -186,6 +191,17 @@ const btn_openVideoDialog = async (): Promise<void> => {
     const response: Dty.Resp<string> = await IpcApi.trigger_event(req)
     if (response.code === 0 && response.data) {
         router.push('/')
+        
+        // If in project mode, close the project first
+        if (appStore.isProjectMode) {
+            const closeReq: Dty.Req = {
+                cmd: Dty.CmdType.prjClose
+            }
+            await IpcApi.trigger_event(closeReq)
+            appStore.prj = null
+            appStore.appInfo.prjFile = ''
+        }
+        
         const openReq: Dty.Req<Dty.Req_SltFile> = {
             cmd: Dty.CmdType.openExternalVideo,
             data: { filepath: response.data }

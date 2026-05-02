@@ -15,6 +15,8 @@ export enum CmdType {
     thumbGet = 'thumbGet',
     thumbDel = 'thumbDel',
     prjOpen = 'open_prj',
+    prjOpenByPath = 'open_prj_by_path',
+    prjClose = 'close_prj',
 
     prjSync = 'sync_prj',
     SyncStop = 'syncStop',
@@ -27,13 +29,25 @@ export enum CmdType {
 
 export const httpSrvPort: number = 58080
 
+export class RecentItem {
+    name: string = ''
+    path: string = ''
+    lastOpened: number = 0
+}
+
 export class AppInfo {
-    prjFile: string = '' // 项目文件的路径，没有项目时，为空
+    prjFile: string = ''
+    recentFiles: RecentItem[] = []
+    recentProjects: RecentItem[] = []
 }
 
 export class AppStartResp {
     appInfo: AppInfo = new AppInfo()
     prj: Prj | null = null
+}
+
+export class Req_OpenPrj {
+    prjFile: string = ''
 }
 
 export type MessageShowType = 'success' | 'error' | 'warning' | 'info'

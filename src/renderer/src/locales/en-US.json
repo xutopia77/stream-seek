@@ -309,5 +309,21 @@
     "openVideoSuccess": "Video opened successfully",
     "fileList": "File List",
     "fileCount": "{count} files"
+  },
+  "welcome": {
+    "subtitle": "Video Management & Editing Tool",
+    "start": "Start",
+    "openVideoFile": "Open Video File",
+    "openVideoFileDesc": "Quick edit a single video file",
+    "openProject": "Open Project",
+    "openProjectDesc": "Open an existing project",
+    "createProject": "Create Project",
+    "createProjectDesc": "Create a new video management project",
+    "recent": "Recent",
+    "noRecentItems": "No recent items",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{days} days ago",
+    "openProjectFailed": "Failed to open project"
   }
 }

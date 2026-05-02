@@ -332,5 +332,21 @@
     "openVideoSuccess": "视频打开成功",
     "fileList": "文件列表",
     "fileCount": "共 {count} 个文件"
+  },
+  "welcome": {
+    "subtitle": "视频管理与编辑工具",
+    "start": "开始",
+    "openVideoFile": "打开视频文件",
+    "openVideoFileDesc": "快速编辑单个视频文件",
+    "openProject": "打开项目",
+    "openProjectDesc": "打开一个现有项目",
+    "createProject": "创建项目",
+    "createProjectDesc": "创建一个新的视频管理项目",
+    "recent": "最近",
+    "noRecentItems": "没有最近打开的项目或文件",
+    "today": "今天",
+    "yesterday": "昨天",
+    "daysAgo": "{days} 天前",
+    "openProjectFailed": "打开项目失败"
   }
 }

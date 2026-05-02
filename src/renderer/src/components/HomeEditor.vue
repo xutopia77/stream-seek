@@ -32,7 +32,7 @@
             <PlayProgressBar />
             <PlayCtrl />
         </div>
-        <div v-if="isDragOver" class="drag-overlay" @drop.prevent="onDrop">
+        <div v-if="isDragOver" class="drag-overlay" @drop.prevent.stop="onDrop">
             <div class="drag-overlay-content">
                 <span class="drag-icon">📁</span>
                 <span class="drag-text">{{ t('homeEditor.dropToOpen') }}</span>
@@ -142,6 +142,19 @@ const onHintClick = async (): Promise<void> => {
 
 const openExternalVideo = async (filePath: string): Promise<void> => {
     console.log('[HomeEditor] openExternalVideo called with filePath:', filePath)
+    
+    // If in project mode, close the project first
+    if (appStore.isProjectMode) {
+        console.log('[HomeEditor] Closing project before opening external video')
+        const closeReq: Dty.Req = {
+            cmd: Dty.CmdType.prjClose
+        }
+        await IpcApi.trigger_event(closeReq)
+        // Clear project info in store
+        appStore.prj = null
+        appStore.appInfo.prjFile = ''
+    }
+    
     const req: Dty.Req<Dty.Req_SltFile> = {
         cmd: Dty.CmdType.openExternalVideo,
         data: {

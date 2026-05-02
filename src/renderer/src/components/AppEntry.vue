@@ -77,14 +77,8 @@ watch(
 onBeforeMount(async () => {
     util.setAppStore(appStore)
     const resp = await util.start_app()
-    if (resp.code !== 0) {
-        return
-    }
     startTimer()
-})
-
-onMounted(() => {
-    router.push('/')
+    router.push('/welcome')
 })
 
 window.electronAPI.onSystemNotify((data) => {

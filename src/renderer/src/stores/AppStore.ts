@@ -11,7 +11,9 @@ export interface ToastMessage {
 
 export type AppStore = {
     appInfo: Dty.AppInfo
-    prj: Dty.Prj
+    prj: Dty.Prj | null
+    recentFiles: Dty.RecentItem[]
+    recentProjects: Dty.RecentItem[]
     serverUrlPrefix: string
     curWorks: Dty.WorkResp[]
 
@@ -66,7 +68,9 @@ export type AppStore = {
 export const useAppStore = defineStore('app', {
     state: (): AppStore => ({
         appInfo: new Dty.AppInfo(),
-        prj: new Dty.Prj(),
+        prj: null,
+        recentFiles: [],
+        recentProjects: [],
         // utils
         // serverUrlPrefix: "http://localhost:38080",
         serverUrlPrefix: '',
