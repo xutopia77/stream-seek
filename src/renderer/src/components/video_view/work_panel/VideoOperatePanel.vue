@@ -12,7 +12,7 @@
         <button class="xc-button" title="去掉此片段的拆分信息" @click="removeVideosplit">➖</button>
         <button class="xc-button" title="去掉此片段" @click="removeVideoRecord">❌</button>
         <button class="xc-button" title="恢复此片段" @click="restoreVideoRecord">🔃</button>
-        <button class="xc-button" title="导出剪辑" @click="exportVideoRecord">📤</button>
+        <button class="xc-button" title="导出剪辑" @click="showExportDialog">📤</button>
         <button class="xc-button" title="添加标签" @click="showTagDialog">🏷️</button>
         <div
             v-for="splitInfo in videoSplitInfo"
@@ -61,6 +61,43 @@
                 </div>
             </div>
         </div>
+        <div v-if="exportDialogVisible" class="modal-overlay" @click.self="cancelExport">
+            <div class="modal-dialog export-dialog">
+                <div class="modal-header">
+                    <span class="modal-title">{{ t('videoOperatePanel.exportSettings') }}</span>
+                </div>
+                <div class="modal-body">
+                    <div class="export-option">
+                        <label class="export-label">{{ t('videoOperatePanel.exportMode') }}</label>
+                        <div class="export-mode-options">
+                            <label class="radio-label">
+                                <input
+                                    type="radio"
+                                    v-model="exportMode"
+                                    :value="Dty.ExportMode.Segment"
+                                />
+                                <span>{{ t('videoOperatePanel.segmentExport') }}</span>
+                            </label>
+                            <label class="radio-label">
+                                <input
+                                    type="radio"
+                                    v-model="exportMode"
+                                    :value="Dty.ExportMode.Merge"
+                                />
+                                <span>{{ t('videoOperatePanel.mergeExport') }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="export-hint">
+                        <span class="hint-text">{{ t('videoOperatePanel.exportHint') }}</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="xc-button" @click="confirmExport">{{ t('videoOperatePanel.export') }}</button>
+                    <button class="xc-button" @click="cancelExport">{{ t('common.cancel') }}</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -78,6 +115,22 @@ const { t } = useI18n()
 const tagDialogVisible = ref(false)
 const tagInputValue = ref('')
 const tagInputRef = ref<HTMLInputElement | null>(null)
+
+const exportDialogVisible = ref(false)
+const exportMode = ref<Dty.ExportMode>(Dty.ExportMode.Segment)
+
+const showExportDialog = (): void => {
+    exportDialogVisible.value = true
+}
+
+const cancelExport = (): void => {
+    exportDialogVisible.value = false
+}
+
+const confirmExport = async (): Promise<void> => {
+    exportDialogVisible.value = false
+    await util.export_cut_video(exportMode.value)
+}
 
 const showTagDialog = (): void => {
     if (!selectedSplitInfo.value) {
@@ -253,10 +306,6 @@ const restoreVideoRecord = (): void => {
     }
     appStore.curSltVideo.splitInfo.splits[index]['isDelete'] = false
 }
-
-const exportVideoRecord = async (): Promise<void> => {
-    return util.export_cut_video(null)
-}
 </script>
 
 <style scoped>
@@ -374,5 +423,51 @@ const exportVideoRecord = async (): Promise<void> => {
 
 .tag-input:focus {
     border-color: #007acc;
+}
+
+.export-dialog {
+    min-width: 350px;
+}
+
+.export-option {
+    margin-bottom: 12px;
+}
+
+.export-label {
+    display: block;
+    color: #d4d4d4;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.export-mode-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #d4d4d4;
+    font-size: 13px;
+}
+
+.radio-label input[type="radio"] {
+    accent-color: #007acc;
+}
+
+.export-hint {
+    margin-top: 12px;
+    padding: 8px;
+    background-color: #2a2a2a;
+    border-radius: 4px;
+}
+
+.hint-text {
+    color: #9cdcfe;
+    font-size: 12px;
 }
 </style>

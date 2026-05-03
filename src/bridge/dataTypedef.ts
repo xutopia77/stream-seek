@@ -478,15 +478,22 @@ export interface TraversalFolder {
     files?: File[]
 }
 
+export enum ExportMode {
+    Segment = 'segment',
+    Merge = 'merge'
+}
+
 export interface Req_CutVideo {
     fileInfo: File
     filepath: string
     filename: string
     baseFolder?: string
+    exportMode?: ExportMode
 }
 
 export interface Resp_CutVideo {
     traversalResp?: Resp<TraversalFolder>
+    exportPath?: string
 }
 
 export class DeleteFileReq {

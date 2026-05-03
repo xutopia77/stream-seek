@@ -1,5 +1,6 @@
 import logger from './Logger'
 import appCfg from './AppCfg'
+import { app } from 'electron'
 import { exec, execSync } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -156,60 +157,71 @@ async function make_split_info(
     return resp
 }
 
-interface CutSplitInfo {
-    startTime: number
-    endTime: number
-}
-
-async function traversalFolderByFolder(
-    baseFolder: string
-): Promise<Dty.Resp<Dty.TraversalFolder>> {
-    const resp = new Dty.Resp<Dty.TraversalFolder>()
-    try {
-        const files = await fs.promises.readdir(baseFolder)
-        const fileList: Dty.File[] = []
-        for (const file of files) {
-            const filePath = path.join(baseFolder, file)
-            try {
-                const stats = await fs.promises.stat(filePath)
-                if (stats.isFile()) {
-                    fileList.push({
-                        name: file,
-                        path: filePath,
-                        size: stats.size
-                    } as Dty.File)
-                }
-            } catch {
-                // skip files that can't be accessed
+async function make_segment_split_info(
+    req: Dty.Req<Dty.Req_CutVideo>
+): Promise<Dty.Resp<CutSplitInfo[]>> {
+    function findKeyFrameBefore(
+        time: number,
+        keyFrameSplitInfo: Dty.Frame[]
+    ): number {
+        let lastKeyFrameTime = 0
+        for (const frame of keyFrameSplitInfo) {
+            if (frame.pts_time <= time) {
+                lastKeyFrameTime = frame.pts_time
+            } else {
+                break
             }
         }
-        resp.success('success').data = {
-            folder: baseFolder,
-            files: fileList
-        }
-    } catch (err) {
-        resp.err(`failed to traverse folder: ${err}`)
+        return lastKeyFrameTime < 0.0001 ? 0 : lastKeyFrameTime - 0.0001
     }
+
+    const resp = new Dty.Resp<CutSplitInfo[]>()
+    if (req.data?.fileInfo === undefined) {
+        return resp.err('fileInfo is null')
+    }
+
+    const splitInfo = req.data.fileInfo.splitInfo?.splits
+    let keyFrameSplitInfo = req.data.fileInfo?.frameInfo?.frames
+
+    if (!keyFrameSplitInfo || keyFrameSplitInfo.length === 0) {
+        logger.log('getFrameInfo: ', req.data.filepath)
+        const kResp = await getFrameInfo(req.data.filepath)
+        if (kResp.code !== 0) {
+            logger.error('getFrameInfo err: ', kResp)
+            return resp.err('getFrameInfo err')
+        }
+        keyFrameSplitInfo = kResp.data?.frames
+    }
+    if (!keyFrameSplitInfo || keyFrameSplitInfo.length === 0) {
+        logger.log('getFrameInfo err: ', keyFrameSplitInfo)
+        return resp.err('getFrameInfo err')
+    }
+    if (!splitInfo || splitInfo.length === 0) {
+        logger.log('cut video req: ', req)
+        return resp.err('splitInfo is null')
+    }
+
+    splitInfo.sort((a, b) => a.startTime - b.startTime)
+    const resvSplitInfo: CutSplitInfo[] = []
+    
+    for (const item of splitInfo) {
+        if (!item.isDelete) {
+            const startTime = findKeyFrameBefore(item.startTime, keyFrameSplitInfo)
+            resvSplitInfo.push({
+                startTime: startTime,
+                endTime: item.endTime
+            })
+        }
+    }
+
+    logger.log('segmentSplitInfo: ', resvSplitInfo)
+    resp.success('success').data = resvSplitInfo
     return resp
 }
 
-async function make_trash_folder(folderPath: string): Promise<string> {
-    try {
-        await fs.promises.access(folderPath, fs.constants.F_OK)
-    } catch (err) {
-        if (err) {
-            await fs.promises.mkdir(folderPath, { recursive: true })
-        }
-    }
-    try {
-        await fs.promises.access(folderPath, fs.constants.F_OK)
-    } catch (err) {
-        if (err) {
-            logger.error('trash dir not exist:', folderPath)
-            return `trash dir not exist: ${folderPath}`
-        }
-    }
-    return ''
+interface CutSplitInfo {
+    startTime: number
+    endTime: number
 }
 
 async function cutVideo(
@@ -219,19 +231,21 @@ async function cutVideo(
     if (!req.data?.filepath) {
         return resp.err('filepath is null')
     }
-    if (!req.data?.baseFolder || req.data?.baseFolder.length === 0) {
-        return resp.err('baseFolder is null')
-    }
     const filepath = req.data.filepath
-    const baseFolder = req.data.baseFolder
-    const trashFolderPath = path.join(baseFolder, '.trash')
-    const distFolderPath = path.join(appCfg.appData, 'video_cut_tmp')
+    const exportMode = req.data?.exportMode || Dty.ExportMode.Segment
+
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+    const exportFolderName = `streamseek_${timestamp}`
+    const userVideosPath = app.getPath('videos')
+    const distFolderPath = path.join(userVideosPath, exportFolderName)
 
     function makeDistFileName(
         filepath: string,
         startTimeIn: number,
-        endTimeIn: number
-    ): string | null {
+        endTimeIn: number,
+        index: number
+    ): string {
         const filename = path.basename(filepath)
         const startTime = Dty.FileTools.miFilenameParse(filename)?.startTime
         const baseStartTimeSec = Dty.FileTools.parse_timestr_2_seconds(
@@ -239,57 +253,38 @@ async function cutVideo(
         )
         const startTimeSec = startTimeIn + baseStartTimeSec
         const endTimeSec = endTimeIn + baseStartTimeSec
-        if (startTimeSec >= endTimeSec) {
-            logger.log(`Type of startTimeSec: ${typeof startTimeSec}`)
-            logger.log(`Type of endTimeSec: ${typeof endTimeSec}`)
-            logger.log(`startTimeSec > endTimeSec: ${startTimeSec}, ${endTimeSec}`)
-            logger.log(`startTimeIn > endTimeIn: ${startTimeIn}, ${endTimeIn}`)
-            return null
-        }
         const startTimeStr = Dty.FileTools.parse_seconds_2_timestr(startTimeSec)
         const endTimeStr = Dty.FileTools.parse_seconds_2_timestr(endTimeSec)
-        const distFilename = `10_${startTimeStr}_${endTimeStr}.mp4`
+        const distFilename = `clip_${String(index + 1).padStart(2, '0')}_${startTimeStr}_${endTimeStr}.mp4`
         logger.log(
             `cut parameter, src filename:${filename}, startTime:${startTime}(${baseStartTimeSec}), clip start:${startTimeStr}(${startTimeSec}), end:${endTimeStr}(${endTimeSec}); dest filename:${distFilename}`
         )
         return distFilename
     }
 
-    async function clean_tmp_folder(folderPath: string): Promise<string> {
+    async function ensureFolder(folderPath: string): Promise<string> {
         try {
-            await fs.promises.access(folderPath, fs.constants.F_OK)
-            try {
-                await fs.promises.rm(folderPath, { recursive: true })
-                await fs.promises.mkdir(folderPath, { recursive: true })
-            } catch (rmErr) {
-                console.error('remove dir err:', rmErr)
-                return `remove dir err: ${rmErr}`
-            }
+            await fs.promises.mkdir(folderPath, { recursive: true })
+            return ''
         } catch (err) {
-            if (err) {
-                console.error('dir not exist:', folderPath)
-            }
-            try {
-                await fs.promises.mkdir(folderPath, { recursive: true })
-            } catch (mkdirErr) {
-                console.error('create dir err:', mkdirErr)
-                return `create dir err: ${mkdirErr}`
-            }
+            return `create dir err: ${err}`
         }
-        return ''
     }
 
-    const resp_str = await make_trash_folder(trashFolderPath)
-    if (resp_str.length > 0) {
-        return resp.err(resp_str)
-    }
-    const respStr = await clean_tmp_folder(distFolderPath)
+    const respStr = await ensureFolder(distFolderPath)
     if (respStr.length > 0) {
         return resp.err(respStr)
     }
+    logger.info(`export folder: ${distFolderPath}`)
+
     let cutSplitInfo: CutSplitInfo[] = []
     {
-        const makeResp: Dty.Resp<CutSplitInfo[]> = await make_split_info(req)
+        let makeResp: Dty.Resp<CutSplitInfo[]>
+        if (exportMode === Dty.ExportMode.Merge) {
+            makeResp = await make_split_info(req)
+        } else {
+            makeResp = await make_segment_split_info(req)
+        }
         if (makeResp.code !== 0) {
             return resp.err(makeResp.status)
         }
@@ -306,99 +301,73 @@ async function cutVideo(
         }
     }
 
-    if (cutSplitInfo.length === 1) {
-        const filename = path.basename(filepath)
-        const distFilename = path.join(trashFolderPath, filename)
-        let attempts = 0
-        const maxAttempts = 3
-        async function attemptRename(): Promise<void> {
-            try {
-                await fs.promises.rename(filepath, distFilename)
-                logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
-            } catch (err) {
-                attempts++
-                if (attempts < maxAttempts) {
-                    logger.error(
-                        `move original video attempt ${attempts} failed, retrying in 1 second...`,
-                        err
-                    )
-                    await new Promise((resolve) => setTimeout(resolve, 1000))
-                    await attemptRename()
-                } else {
-                    logger.error('move original video err after multiple attempts:', err)
-                    throw err
-                }
-            }
-        }
-        try {
-            await attemptRename()
-        } catch (err) {
-            return resp.err(`move original video err ${err}`)
-        }
-        const respData: Dty.Resp_CutVideo = {
-            traversalResp: await traversalFolderByFolder(baseFolder)
-        }
-        resp.data = respData
-        return resp
-    }
-
     const splitFilepath: string[] = []
-    {
-        for (let i = 0; i < cutSplitInfo.length; i++) {
-            const item = cutSplitInfo[i]
-            let distFilename = makeDistFileName(filepath, item.startTime, item.endTime)
-            if (!distFilename) {
-                return resp.err('makeDistFileName err')
-            }
-            distFilename = path.join(distFolderPath, distFilename)
-            const cmd = `${appCfg.ffmpegExe} -i ${filepath} -v error -ss ${item.startTime} -to ${item.endTime} -c copy ${distFilename}`
-            logger.log(cmd)
-            await new Promise((resolve, reject) => {
-                exec(cmd, (error) => {
-                    if (error) {
-                        reject(error)
-                        return
-                    }
-                    splitFilepath.push(distFilename)
-                    resolve(undefined)
-                })
-            })
-        }
-    }
-
-    {
-        for (const item of splitFilepath) {
-            const filename = path.basename(item)
-            const distFilename = path.join(baseFolder, filename)
-            await fs.promises.rename(item, distFilename)
-            logger.info(`move cut video: ${item}, move to ${distFilename}`)
-        }
-        {
-            const filename = path.basename(filepath)
-            const distFilename = path.join(trashFolderPath, filename)
-
-            try {
-                await fs.promises.access(filepath, fs.constants.F_OK)
-            } catch (err) {
-                if (err) {
-                    console.error('original video not exist:', filepath)
+    for (let i = 0; i < cutSplitInfo.length; i++) {
+        const item = cutSplitInfo[i]
+        const distFilename = makeDistFileName(filepath, item.startTime, item.endTime, i)
+        const distFilePath = path.join(distFolderPath, distFilename)
+        const cmd = `${appCfg.ffmpegExe} -i "${filepath}" -v error -ss ${item.startTime} -to ${item.endTime} -c copy "${distFilePath}"`
+        logger.log(cmd)
+        await new Promise((resolve, reject) => {
+            exec(cmd, (error) => {
+                if (error) {
+                    reject(error)
+                    return
                 }
-                return resp.err('original video not exist')
-            }
-            try {
-                await fs.promises.rename(filepath, distFilename)
-            } catch (err) {
-                console.error('move original video err:', err)
-                return resp.err('move original video err')
-            }
-            logger.log(`delete original video: ${filepath}, move to ${distFilename}`)
-        }
+                splitFilepath.push(distFilePath)
+                resolve(undefined)
+            })
+        })
     }
-    {
-        const respData: Dty.Resp_CutVideo = {
-            traversalResp: await traversalFolderByFolder(baseFolder)
+
+    if (exportMode === Dty.ExportMode.Merge && splitFilepath.length > 1) {
+        const concatListPath = path.join(distFolderPath, 'concat_list.txt')
+        let concatContent = ''
+        for (const item of splitFilepath) {
+            concatContent += `file '${item.replace(/\\/g, '/')}'\n`
         }
-        resp.data = respData
+        await fs.promises.writeFile(concatListPath, concatContent, 'utf-8')
+        
+        const mergedFilename = `merged_${timestamp}.mp4`
+        const mergedFilePath = path.join(distFolderPath, mergedFilename)
+        const concatCmd = `${appCfg.ffmpegExe} -f concat -safe 0 -i "${concatListPath}" -c copy "${mergedFilePath}"`
+        logger.log(`merge command: ${concatCmd}`)
+        
+        await new Promise((resolve, reject) => {
+            exec(concatCmd, (error) => {
+                if (error) {
+                    reject(error)
+                    return
+                }
+                resolve(undefined)
+            })
+        })
+
+        for (const item of splitFilepath) {
+            await fs.promises.unlink(item)
+        }
+        await fs.promises.unlink(concatListPath)
+        
+        logger.info(`========== Export Completed ==========`)
+        logger.info(`Export mode: Merge`)
+        logger.info(`Export folder: ${distFolderPath}`)
+        logger.info(`Merged video: ${mergedFilePath}`)
+        logger.info(`======================================`)
+        resp.data = {
+            exportPath: distFolderPath
+        }
+    } else {
+        logger.info(`========== Export Completed ==========`)
+        logger.info(`Export mode: Segment`)
+        logger.info(`Export folder: ${distFolderPath}`)
+        logger.info(`Exported ${splitFilepath.length} video(s):`)
+        for (let i = 0; i < splitFilepath.length; i++) {
+            logger.info(`  [${i + 1}] ${splitFilepath[i]}`)
+        }
+        logger.info(`======================================`)
+        resp.data = {
+            exportPath: distFolderPath
+        }
     }
 
     return resp.success('success')

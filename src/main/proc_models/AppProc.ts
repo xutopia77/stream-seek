@@ -457,8 +457,8 @@ class AppProc {
         //     }
         // }
         respData.workRespose = workQueue.resps
-        // workQueue.resps = []
-        // workQueue.processing = false
+        workQueue.resps = []
+        workQueue.processing = false
         resp.data = respData
         return resp
     }

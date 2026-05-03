@@ -376,7 +376,7 @@ function update_bar_clips(): Dty.BarClip[] {
     return barClips
 }
 
-const export_cut_video = async (cutReq: Dty.CutVideoReq | null): Promise<void> => {
+const export_cut_video = async (exportMode: Dty.ExportMode | null): Promise<void> => {
     const prjInfo: Dty.Req_CutVideo | null = await util.make_prj_info()
     if (prjInfo === null) {
         util.addToastErr(`no project info`)
@@ -394,11 +394,7 @@ const export_cut_video = async (cutReq: Dty.CutVideoReq | null): Promise<void> =
     
     util.stop_play()
 
-    if (cutReq?.bDelFullVideo != null) {
-        if (prjInfo.fileInfo.splitInfo != null) {
-            prjInfo.fileInfo.splitInfo.splits[0].isDelete = true
-        }
-    }
+    prjInfo.exportMode = exportMode || Dty.ExportMode.Segment
 
     console.log('export_cut_video prjInfo:', prjInfo)
     
@@ -406,18 +402,26 @@ const export_cut_video = async (cutReq: Dty.CutVideoReq | null): Promise<void> =
         cmd: Dty.CmdType.videoCut,
         data: prjInfo
     }
-    const response = await IpcApi.trigger_event(req)
+    const response = await IpcApi.trigger_event<Dty.Req_CutVideo, Dty.Resp_CutVideo>(req)
     console.log('export_cut_video response:', response)
     if (response.code === 1001) {
         return
     }
     if (response.code !== 0) {
-        util.addToastInfo(`${t('util.clipFailed')}: ${response.status}`)
+        util.addToastErr(`${t('util.clipFailed')}: ${response.status}`)
     } else {
         if (response.bOver === false) {
             util.addToastInfo(t('util.processing'))
         } else {
-            util.addToastInfo(t('util.clipSuccess'))
+            const exportPath = response.data?.exportPath
+            if (exportPath) {
+                util.addToastInfo(`${t('util.clipSuccess')}! ${t('util.exportPath')}: ${exportPath}`)
+                console.log(`========== Export Completed ==========`)
+                console.log(`Export path: ${exportPath}`)
+                console.log(`======================================`)
+            } else {
+                util.addToastInfo(t('util.clipSuccess'))
+            }
         }
     }
 }
@@ -594,6 +598,9 @@ class Util {
             appStore.curWorks = respData.workRespose
             if (respData.workRespose.length > 0) {
                 // console.log('process heartbeat', respData.workRespose)
+                for (const workResp of respData.workRespose) {
+                    util.process_work_response(JSON.stringify(workResp))
+                }
             }
         } else {
             appStore.curWorks = []
@@ -1011,7 +1018,15 @@ class Util {
                         util.addToastErr(`${t('util.videoCropFailed')}: ${response.status}`)
                         console.log('cut video failed', response)
                     } else {
-                        util.addToastInfo(`${t('util.videoCropCompleted')}:${response.status}`)
+                        const exportPath = response.data?.exportPath
+                        if (exportPath) {
+                            util.addToastInfo(`${t('util.videoCropCompleted')}! ${t('util.exportPath')}: ${exportPath}`)
+                            console.log(`========== Export Completed ==========`)
+                            console.log(`Export path: ${exportPath}`)
+                            console.log(`======================================`)
+                        } else {
+                            util.addToastInfo(`${t('util.videoCropCompleted')}: ${response.status}`)
+                        }
                         if (response.data != null) {
                             const respData: Dty.Resp_CutVideo = response.data
                             if (respData.traversalResp != null) {

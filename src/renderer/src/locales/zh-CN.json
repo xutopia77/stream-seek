@@ -322,7 +322,13 @@
     "cannotDeleteSystemSegment": "不能删除系统片段",
     "confirmDeleteSegment": "确定要删除当前选中的片段信息记录吗？",
     "selectSegmentFirst": "请先选择要删除/恢复的片段",
-    "enterDescription": "请输入片段描述"
+    "enterDescription": "请输入片段描述",
+    "exportSettings": "导出设置",
+    "exportMode": "导出模式",
+    "segmentExport": "分段导出（每个片段单独保存）",
+    "mergeExport": "合并导出（所有片段合并为一个文件）",
+    "exportHint": "导出文件将保存到用户视频目录下的 streamseek_时间戳 文件夹中",
+    "export": "导出"
   },
   "createPrj": {
     "returnHome": "返回主页",
@@ -357,6 +363,7 @@
     "clipFailed": "剪辑失败",
     "clipSuccess": "剪辑成功",
     "noSplitInfo": "没有片段编辑信息，请先添加分割点",
+    "exportPath": "导出路径",
     "permanentlyDelete": "彻底删除",
     "moveToTrash": "移到回收站",
     "failed": "失败",

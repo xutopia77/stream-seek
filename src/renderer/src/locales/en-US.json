@@ -299,7 +299,13 @@
     "cannotDeleteSystemSegment": "Cannot delete system segment",
     "confirmDeleteSegment": "Are you sure you want to delete the selected segment record?",
     "selectSegmentFirst": "Please select a segment to delete/restore first",
-    "enterDescription": "Enter segment description"
+    "enterDescription": "Enter segment description",
+    "exportSettings": "Export Settings",
+    "exportMode": "Export Mode",
+    "segmentExport": "Segment Export (save each segment separately)",
+    "mergeExport": "Merge Export (merge all segments into one file)",
+    "exportHint": "Exported files will be saved to streamseek_timestamp folder in user's Videos directory",
+    "export": "Export"
   },
   "createPrj": {
     "returnHome": "Return Home",
@@ -334,6 +340,7 @@
     "clipFailed": "Clip failed",
     "clipSuccess": "Clip successful",
     "noSplitInfo": "No split info, please add split points first",
+    "exportPath": "Export path",
     "permanentlyDelete": "Permanently delete",
     "moveToTrash": "Move to trash",
     "failed": "failed",
