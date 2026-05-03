@@ -22,11 +22,12 @@ if (process.contextIsolated) {
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
-    // 监听主进程主动推送的事件
     onSystemNotify: (callback: (data: unknown) => void) => {
         ipcRenderer.on('msg-notify', (_event, data) => callback(data))
     },
-    // 获取拖拽文件的路径
+    onTaskNotify: (callback: (data: unknown) => void) => {
+        ipcRenderer.on('task-notify', (_event, data) => callback(data))
+    },
     getPathForFile: (file: File): string => {
         return webUtils.getPathForFile(file)
     }

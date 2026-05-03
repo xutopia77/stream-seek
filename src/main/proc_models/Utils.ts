@@ -87,6 +87,15 @@ class Util {
         }
         mainWindow.webContents.send('msg-notify', msg)
     }
+
+    static sendTaskNotify<T>(notify: Dty.TaskNotify<T>): void {
+        if (!mainWindow) {
+            console.log('main window err', mainWindow)
+            return
+        }
+        mainWindow.webContents.send('task-notify', JSON.stringify(notify))
+    }
+
     static mainWinSet(mainWin: Electron.BrowserWindow | null): void {
         mainWindow = mainWin
     }

@@ -40,7 +40,7 @@ function startTimer(): void {
             .catch((error: Error) => {
                 console.log('process_heartbeat failed', error)
             })
-    }, 500)
+    }, 2000)
 }
 
 watch(
@@ -83,6 +83,10 @@ onBeforeMount(async () => {
 
 window.electronAPI.onSystemNotify((data) => {
     util.processMsgNotify(data)
+})
+
+window.electronAPI.onTaskNotify((data) => {
+    util.processTaskNotify(data as string)
 })
 </script>
 

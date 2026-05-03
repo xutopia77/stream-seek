@@ -385,6 +385,7 @@
     "deleteCompleted": "删除完成",
     "getKeyFrameInfoFailed": "获取关键帧信息失败",
     "getKeyFrameInfoCompleted": "获取关键帧信息完成",
+    "taskFailed": "任务失败",
     "videoPlaybackMode": "视频播放模式",
     "thumbnailMode": "缩略图模式"
   },

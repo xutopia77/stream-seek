@@ -362,6 +362,7 @@
     "deleteCompleted": "Delete completed",
     "getKeyFrameInfoFailed": "Failed to get key frame info",
     "getKeyFrameInfoCompleted": "Key frame info retrieved",
+    "taskFailed": "Task failed",
     "videoPlaybackMode": "Video playback mode",
     "thumbnailMode": "Thumbnail mode"
   },

@@ -446,19 +446,6 @@ class AppProc {
         respData.time = Util.getCurTime()
         respData.appStatus = workQueue.status
         respData.processing = workQueue.isBusy()
-        // while (workQueue.processing) {
-        //     await new Promise((resolve) => setTimeout(resolve, 10))
-        // }
-        // workQueue.processing = true
-        // if (workQueue.resps.length != 0) {
-        //     workQueue.addTask(null)
-        //     for (const item of workQueue.resps) {
-        //         logger.info(`work resp:cmd: ${item.cmd}`)
-        //     }
-        // }
-        respData.workRespose = workQueue.resps
-        workQueue.resps = []
-        workQueue.processing = false
         resp.data = respData
         return resp
     }

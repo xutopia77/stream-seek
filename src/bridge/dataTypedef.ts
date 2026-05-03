@@ -467,6 +467,22 @@ export class HeartBeat {
     workRespose: WorkResp[] = []
 }
 
+export enum TaskStatus {
+    Pending = 'pending',
+    Running = 'running',
+    Completed = 'completed',
+    Failed = 'failed'
+}
+
+export interface TaskNotify<T = unknown> {
+    taskId: string
+    cmd: CmdType
+    status: TaskStatus
+    progress?: number
+    result?: T
+    error?: string
+}
+
 export interface Req_TraversalFolder {
     type?: string
     startTime?: string //2025-03-25 12:00:00

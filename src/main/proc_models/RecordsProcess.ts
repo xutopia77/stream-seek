@@ -10,6 +10,10 @@ import * as Dty from '../../bridge/dataTypedef'
 import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
 import { Util } from './Utils.js'
+
+function generateTaskId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+}
 // async function checkFileExists(filePath: string): Promise<boolean> {
 //     try {
 //         // 尝试访问文件
@@ -187,13 +191,31 @@ import { Util } from './Utils.js'
 async function start_cut_video(
     req: Dty.Req<Dty.Req_CutVideo>
 ): Promise<Dty.Resp<Dty.Resp_CutVideo>> {
+    const taskId = generateTaskId()
+    workQueue.addTask({ cmd: req.cmd })
+
     mediaProc
         .cutVideo(req)
         .then((resp) => {
-            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+            const notify: Dty.TaskNotify<Dty.Resp<Dty.Resp_CutVideo>> = {
+                taskId: taskId,
+                cmd: req.cmd,
+                status: resp.code === 0 ? Dty.TaskStatus.Completed : Dty.TaskStatus.Failed,
+                result: resp,
+                error: resp.code !== 0 ? resp.status : undefined
+            }
+            Util.sendTaskNotify(notify)
+            workQueue.addTask(null)
         })
         .catch((error) => {
-            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+            const notify: Dty.TaskNotify<Dty.Resp<Dty.Resp_CutVideo>> = {
+                taskId: taskId,
+                cmd: req.cmd,
+                status: Dty.TaskStatus.Failed,
+                error: String(error)
+            }
+            Util.sendTaskNotify(notify)
+            workQueue.addTask(null)
         })
     const resp = new Dty.Resp<Dty.Resp_CutVideo>()
     resp.code = 0

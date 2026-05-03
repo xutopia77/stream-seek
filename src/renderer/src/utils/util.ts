@@ -593,24 +593,29 @@ class Util {
         if (appStore) {
             appStore.documentTitle = titleStr
         }
-        // console.log('process heartbeat', appStore.documentTitle)
-        if (respData.workRespose != null) {
-            appStore.curWorks = respData.workRespose
-            if (respData.workRespose.length > 0) {
-                // console.log('process heartbeat', respData.workRespose)
-                for (const workResp of respData.workRespose) {
-                    util.process_work_response(JSON.stringify(workResp))
-                }
-            }
-        } else {
-            appStore.curWorks = []
-        }
     }
 
     processMsgNotify(data: string): void {
-        // console.log('收到主进程通知：', data)
-        // alert(`系统通知：${data.message}`)
         util.process_work_response(data)
+    }
+
+    processTaskNotify(data: string): void {
+        try {
+            const notify: Dty.TaskNotify = JSON.parse(data)
+            console.log(`Task [${notify.taskId}] ${notify.cmd} - ${notify.status}`)
+            
+            if (notify.status === Dty.TaskStatus.Completed && notify.result) {
+                const workResp: Dty.WorkResp = {
+                    cmd: notify.cmd,
+                    data: JSON.stringify(notify.result)
+                }
+                util.process_work_response(JSON.stringify(workResp))
+            } else if (notify.status === Dty.TaskStatus.Failed) {
+                util.addToastErr(`${t('util.taskFailed')}: ${notify.error || 'Unknown error'}`)
+            }
+        } catch (error) {
+            console.error('processTaskNotify error:', error)
+        }
     }
 
     async thumbsDel(reqInfo: Dty.DeleteFileReq): Promise<void> {
