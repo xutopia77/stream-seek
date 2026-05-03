@@ -461,30 +461,62 @@ class AppDb {
 
             // 处理标签过滤条件
             if (req.tags.length > 0) {
-                if (tblName === this.tbl_filesview) {
-                    // 对于 files_view 视图，直接使用 tagName 列进行过滤
-                    const tagPlaceholders = req.tags.map(() => '?').join(', ')
-                    conditionsParam.push(`tagName IN (${tagPlaceholders})`)
-                    countConditionsParam.push(`tagName IN (${tagPlaceholders})`)
-                    params.push(...req.tags)
-                    countParams.push(...req.tags)
-                } else {
-                    // 对于 files 表，使用子查询过滤包含指定标签名称的文件
-                    const tagPlaceholders = req.tags.map(() => '?').join(', ')
-                    conditionsParam.push(`id IN (
-                        SELECT DISTINCT fileId FROM ${this.tbl_fileTag} 
-                        WHERE tagId IN (
-                            SELECT id FROM ${this.tbl_tags} WHERE name IN (${tagPlaceholders})
+                const noScoreTag = 'sys_no_score'
+                const hasNoScoreFilter = req.tags.includes(noScoreTag)
+                const filteredTags = req.tags.filter((tag) => tag !== noScoreTag)
+
+                if (hasNoScoreFilter) {
+                    if (tblName === this.tbl_filesview) {
+                        conditionsParam.push(
+                            `(tagName IS NULL OR tagName NOT LIKE 'sys_score%')`
                         )
-                    )`)
-                    countConditionsParam.push(`id IN (
-                        SELECT DISTINCT fileId FROM ${this.tbl_fileTag} 
-                        WHERE tagId IN (
-                            SELECT id FROM ${this.tbl_tags} WHERE name IN (${tagPlaceholders})
+                        countConditionsParam.push(
+                            `(tagName IS NULL OR tagName NOT LIKE 'sys_score%')`
                         )
-                    )`)
-                    params.push(...req.tags)
-                    countParams.push(...req.tags)
+                    } else {
+                        conditionsParam.push(
+                            `id NOT IN (
+                                SELECT DISTINCT fileId FROM ${this.tbl_fileTag} 
+                                WHERE tagId IN (
+                                    SELECT id FROM ${this.tbl_tags} WHERE name LIKE 'sys_score%'
+                                )
+                            )`
+                        )
+                        countConditionsParam.push(
+                            `id NOT IN (
+                                SELECT DISTINCT fileId FROM ${this.tbl_fileTag} 
+                                WHERE tagId IN (
+                                    SELECT id FROM ${this.tbl_tags} WHERE name LIKE 'sys_score%'
+                                )
+                            )`
+                        )
+                    }
+                }
+
+                if (filteredTags.length > 0) {
+                    if (tblName === this.tbl_filesview) {
+                        const tagPlaceholders = filteredTags.map(() => '?').join(', ')
+                        conditionsParam.push(`tagName IN (${tagPlaceholders})`)
+                        countConditionsParam.push(`tagName IN (${tagPlaceholders})`)
+                        params.push(...filteredTags)
+                        countParams.push(...filteredTags)
+                    } else {
+                        const tagPlaceholders = filteredTags.map(() => '?').join(', ')
+                        conditionsParam.push(`id IN (
+                            SELECT DISTINCT fileId FROM ${this.tbl_fileTag} 
+                            WHERE tagId IN (
+                                SELECT id FROM ${this.tbl_tags} WHERE name IN (${tagPlaceholders})
+                            )
+                        )`)
+                        countConditionsParam.push(`id IN (
+                            SELECT DISTINCT fileId FROM ${this.tbl_fileTag} 
+                            WHERE tagId IN (
+                                SELECT id FROM ${this.tbl_tags} WHERE name IN (${tagPlaceholders})
+                            )
+                        )`)
+                        params.push(...filteredTags)
+                        countParams.push(...filteredTags)
+                    }
                 }
             }
 

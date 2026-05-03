@@ -216,6 +216,7 @@
     "selectAll": "全选",
     "selectLevel": "选择级别",
     "allLevels": "所有级别",
+    "noLevel": "无等级",
     "noLevelSelected": "未选择级别",
     "settings": "搜索设置",
     "levelFilter": "等级筛选",
@@ -223,7 +224,20 @@
     "cancel": "取消",
     "fileStatus": "文件状态",
     "normalFiles": "正常文件",
-    "trashFiles": "回收站文件"
+    "trashFiles": "回收站文件",
+    "sortBy": "排序字段",
+    "sortOrder": "排序方式",
+    "sortOptions": {
+      "name": "文件名",
+      "startTimeSec": "开始时间",
+      "endTimeSec": "结束时间",
+      "size": "大小",
+      "duration": "时长"
+    },
+    "sortOrderOptions": {
+      "asc": "升序",
+      "desc": "降序"
+    }
   },
   "recentMessages": {
     "title": "最近消息",

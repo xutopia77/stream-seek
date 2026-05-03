@@ -547,7 +547,7 @@ export class FilesReq {
     type: FileType[] = []
     // 升序，降序
     order: 'asc' | 'desc' = 'asc' // 枚举值直接传入数据库
-    orderBy: 'id' | 'name' | 'startTimeSec' | 'created_at' | 'updated_at' = 'startTimeSec' // 枚举值直接传入数据库
+    orderBy: 'name' | 'startTimeSec' | 'endTimeSec' | 'size' | 'duration' = 'startTimeSec' // 枚举值直接传入数据库
 
     static makeReqStatusNormal(path: string | null, repo: string | null): FilesReq {
         const req = new FilesReq()

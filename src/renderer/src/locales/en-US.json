@@ -193,6 +193,7 @@
     "selectAll": "Select All",
     "selectLevel": "Select Level",
     "allLevels": "All Levels",
+    "noLevel": "No Level",
     "noLevelSelected": "No Level Selected",
     "settings": "Search Settings",
     "levelFilter": "Level Filter",
@@ -200,7 +201,20 @@
     "cancel": "Cancel",
     "fileStatus": "File Status",
     "normalFiles": "Normal Files",
-    "trashFiles": "Trash Files"
+    "trashFiles": "Trash Files",
+    "sortBy": "Sort By",
+    "sortOrder": "Sort Order",
+    "sortOptions": {
+      "name": "File Name",
+      "startTimeSec": "Start Time",
+      "endTimeSec": "End Time",
+      "size": "Size",
+      "duration": "Duration"
+    },
+    "sortOrderOptions": {
+      "asc": "Ascending",
+      "desc": "Descending"
+    }
   },
   "recentMessages": {
     "title": "Recent Messages",

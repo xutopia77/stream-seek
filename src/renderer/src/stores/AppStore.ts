@@ -42,6 +42,8 @@ export type AppStore = {
     fileSearchPage: number
     fileSearchPageSize: number
     fileSearchStatus: Dty.Fstatus
+    fileSearchOrderBy: 'name' | 'startTimeSec' | 'endTimeSec' | 'size' | 'duration'
+    fileSearchOrder: 'asc' | 'desc'
     videoTotalNum: number
     thumbTotalNum: number
 
@@ -106,6 +108,8 @@ export const useAppStore = defineStore('app', {
         fileSearchPage: 1,
         fileSearchPageSize: 100,
         fileSearchStatus: Dty.Fstatus.Normal,
+        fileSearchOrderBy: 'startTimeSec',
+        fileSearchOrder: 'desc',
         videoTotalNum: 0,
         thumbTotalNum: 0,
         thumbList: [],

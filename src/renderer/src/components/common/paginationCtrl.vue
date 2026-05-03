@@ -120,28 +120,22 @@
                 <div class="modal-body">
                     <div class="setting-item">
                         <span class="xc-text">{{ t('pagination.fileStatus') }}</span>
-                        <div class="status-selector">
-                            <label class="radio-label">
-                                <input
-                                    v-model="modalFileStatus"
-                                    type="radio"
-                                    :value="Dty.Fstatus.Normal"
-                                />
-                                🗄️ {{ t('pagination.normalFiles') }}
-                            </label>
-                            <label class="radio-label">
-                                <input
-                                    v-model="modalFileStatus"
-                                    type="radio"
-                                    :value="Dty.Fstatus.Deleted"
-                                />
-                                🗑️ {{ t('pagination.trashFiles') }}
-                            </label>
-                        </div>
+                        <select v-model="modalFileStatus" class="size-select">
+                            <option :value="Dty.Fstatus.Normal">🗄️ {{ t('pagination.normalFiles') }}</option>
+                            <option :value="Dty.Fstatus.Deleted">🗑️ {{ t('pagination.trashFiles') }}</option>
+                        </select>
                     </div>
                     <div class="setting-item">
                         <span class="xc-text">{{ t('pagination.levelFilter') }}</span>
                         <div class="level-checkboxes">
+                            <label class="checkbox-label">
+                                <input
+                                    v-model="modalSelectedLevels"
+                                    type="checkbox"
+                                    :value="-2"
+                                />
+                                {{ t('pagination.noLevel') }}
+                            </label>
                             <label v-for="index in 5" :key="index" class="checkbox-label">
                                 <input
                                     v-model="modalSelectedLevels"
@@ -151,6 +145,23 @@
                                 {{ index }}☆
                             </label>
                         </div>
+                    </div>
+                    <div class="setting-item">
+                        <span class="xc-text">{{ t('pagination.sortBy') }}</span>
+                        <select v-model="modalOrderBy" class="size-select">
+                            <option value="name">{{ t('pagination.sortOptions.name') }}</option>
+                            <option value="startTimeSec">{{ t('pagination.sortOptions.startTimeSec') }}</option>
+                            <option value="endTimeSec">{{ t('pagination.sortOptions.endTimeSec') }}</option>
+                            <option value="size">{{ t('pagination.sortOptions.size') }}</option>
+                            <option value="duration">{{ t('pagination.sortOptions.duration') }}</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span class="xc-text">{{ t('pagination.sortOrder') }}</span>
+                        <select v-model="modalOrder" class="size-select">
+                            <option value="desc">{{ t('pagination.sortOrderOptions.desc') }}</option>
+                            <option value="asc">{{ t('pagination.sortOrderOptions.asc') }}</option>
+                        </select>
                     </div>
                     <div class="setting-item">
                         <span class="xc-text">{{ t('pagination.itemsPerPage') }}</span>
@@ -233,6 +244,8 @@ const showSettingsModal = ref(false)
 const modalSelectedLevels = ref<number[]>([])
 const modalPageSize = ref(50)
 const modalFileStatus = ref<Dty.Fstatus>(Dty.Fstatus.Normal)
+const modalOrderBy = ref<'name' | 'startTimeSec' | 'endTimeSec' | 'size' | 'duration'>('startTimeSec')
+const modalOrder = ref<'asc' | 'desc'>('desc')
 
 const toggleDropdown = (): void => {
     isDropdownOpen.value = !isDropdownOpen.value
@@ -281,15 +294,27 @@ const handleSearch = (): void => {
         let searchReq = new Dty.FilesReq()
         searchReq.status.push(Dty.Fstatus.Destroy)
         for (const lvl of selectedLevels.value) {
-            searchReq.tags.push(`sys_score${lvl + 1}`)
+            if (lvl === -2) {
+                searchReq.tags.push('sys_no_score')
+            } else {
+                searchReq.tags.push(`sys_score${lvl + 1}`)
+            }
         }
+        searchReq.orderBy = appStore.fileSearchOrderBy
+        searchReq.order = appStore.fileSearchOrder
         util.thumbsGet(searchReq)
     } else {
         let searchReq = new Dty.FilesReq()
         searchReq.status.push(appStore.fileSearchStatus)
         for (const lvl of selectedLevels.value) {
-            searchReq.tags.push(`sys_score${lvl + 1}`)
+            if (lvl === -2) {
+                searchReq.tags.push('sys_no_score')
+            } else {
+                searchReq.tags.push(`sys_score${lvl + 1}`)
+            }
         }
+        searchReq.orderBy = appStore.fileSearchOrderBy
+        searchReq.order = appStore.fileSearchOrder
         util.files_get(searchReq)
     }
 }
@@ -320,6 +345,8 @@ const openSettingsModal = (): void => {
     modalSelectedLevels.value = [...selectedLevels.value]
     modalPageSize.value = pageSize.value
     modalFileStatus.value = appStore.fileSearchStatus
+    modalOrderBy.value = appStore.fileSearchOrderBy
+    modalOrder.value = appStore.fileSearchOrder
     showSettingsModal.value = true
 }
 
@@ -328,8 +355,19 @@ const closeSettingsModal = (): void => {
 }
 
 const applySettings = (): void => {
+    const oldLevels = [...selectedLevels.value]
+    
     selectedLevels.value = [...modalSelectedLevels.value]
+    
     let needSearch = false
+
+    const levelsChanged = 
+        oldLevels.length !== selectedLevels.value.length ||
+        !oldLevels.every((level) => selectedLevels.value.includes(level))
+    
+    if (levelsChanged) {
+        needSearch = true
+    }
 
     if (appStore.fileSearchStatus !== modalFileStatus.value) {
         appStore.fileSearchStatus = modalFileStatus.value
@@ -343,7 +381,17 @@ const applySettings = (): void => {
         needSearch = true
     }
 
-    if (needSearch || modalSelectedLevels.value.length !== selectedLevels.value.length) {
+    if (appStore.fileSearchOrderBy !== modalOrderBy.value) {
+        appStore.fileSearchOrderBy = modalOrderBy.value
+        needSearch = true
+    }
+
+    if (appStore.fileSearchOrder !== modalOrder.value) {
+        appStore.fileSearchOrder = modalOrder.value
+        needSearch = true
+    }
+
+    if (needSearch) {
         handleSearch()
     }
 
@@ -520,19 +568,6 @@ const applySettings = (): void => {
     accent-color: #007fd4;
 }
 
-.radio-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--xc-text-color);
-    cursor: pointer;
-    font-size: small;
-}
-
-.radio-label input[type='radio'] {
-    accent-color: #007fd4;
-}
-
 .settings-modal-overlay {
     position: fixed;
     top: 0;
@@ -594,12 +629,6 @@ const applySettings = (): void => {
 .setting-item > span {
     display: block;
     margin-bottom: 8px;
-}
-
-.status-selector {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
 }
 
 .level-checkboxes {
