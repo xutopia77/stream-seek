@@ -94,6 +94,7 @@
                 🛢️
             </button>
             <button
+                v-if="!appStore.isProjectMode"
                 class="xc-button btn-noborder"
                 title="显示文件处理"
                 @click="btnclk_chg_panel(Dty.WorkPanel.Operate)"

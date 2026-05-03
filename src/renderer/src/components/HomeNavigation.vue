@@ -29,15 +29,6 @@
                     class="dropdown-menu"
                     :class="{ show: isDropdownOpen['view'] }"
                 >
-                    <button class="xc-button menu-button" @click.stop="btn_viewChange('list_show')">
-                        {{ t('navigation.menuItems.fileList') }}
-                    </button>
-                    <button
-                        class="xc-button menu-button"
-                        @click.stop="btn_viewChange('operate_show')"
-                    >
-                        {{ t('navigation.menuItems.operationPanel') }}
-                    </button>
                     <button
                         class="xc-button menu-button"
                         @click.stop="btn_viewChange('thumb_show')"
@@ -231,12 +222,6 @@ const btn_viewChange = (mode: string): void => {
             break
         case 'video_show':
             util.viewModelChange('video')
-            break
-        case 'operate_show':
-            appStore.rightPanel = Dty.WorkPanel.Operate
-            break
-        case 'list_show':
-            appStore.rightPanel = Dty.WorkPanel.List
             break
         case 'bck_home':
             router.push('/')

@@ -23,8 +23,8 @@
                 </div>
             </div>
             <div class="edit-panel">
-                <VideList v-if="appStore.isProjectMode && rightPanel === Dty.WorkPanel.List" />
-                <VideoOperatePanel v-if="!appStore.isProjectMode || rightPanel === Dty.WorkPanel.Operate" />
+                <VideList v-if="appStore.isProjectMode" />
+                <VideoOperatePanel v-if="!appStore.isProjectMode" />
                 <VideoInfo v-if="appStore.isProjectMode && rightPanel === Dty.WorkPanel.VideoInfo" />
             </div>
         </div>
