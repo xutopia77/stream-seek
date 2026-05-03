@@ -319,7 +319,8 @@
     "noSplitInfo": "没有分段信息",
     "cannotDeleteSystemSegment": "不能删除系统片段",
     "confirmDeleteSegment": "确定要删除当前选中的片段信息记录吗？",
-    "selectSegmentFirst": "请先选择要删除/恢复的片段"
+    "selectSegmentFirst": "请先选择要删除/恢复的片段",
+    "enterDescription": "请输入片段描述"
   },
   "createPrj": {
     "returnHome": "返回主页",

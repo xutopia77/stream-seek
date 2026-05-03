@@ -361,10 +361,11 @@ function update_bar_clips(): Dty.BarClip[] {
         const startPercentage = (startTime / duration) * 100
         const endPercentage = (endTime / duration) * 100
         const width = endPercentage - startPercentage
+        const color = splitInfo.isDelete ? '#555555' : splitInfo.color
         barClips.push({
             percent: startPercentage,
             width: width,
-            color: splitInfo.color,
+            color: color,
             tip: `Start: ${startTime.toFixed(3)}, End: ${endTime === duration ? 'End' : endTime.toFixed(3)}`
         })
     }

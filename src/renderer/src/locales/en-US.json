@@ -296,7 +296,8 @@
     "noSplitInfo": "No split information",
     "cannotDeleteSystemSegment": "Cannot delete system segment",
     "confirmDeleteSegment": "Are you sure you want to delete the selected segment record?",
-    "selectSegmentFirst": "Please select a segment to delete/restore first"
+    "selectSegmentFirst": "Please select a segment to delete/restore first",
+    "enterDescription": "Enter segment description"
   },
   "createPrj": {
     "returnHome": "Return Home",

@@ -294,14 +294,15 @@ export class CreatePrjResp {
 
 export interface SplitInfo {
     startTime: number
-    endTime: number // 原数据中为字符串，这里统一为数字类型，若需要字符串类型可修改
-    duration: number // 原数据中为字符串，这里统一为数字类型，若需要字符串类型可修改
+    endTime: number
+    duration: number
     percent: number
     color: string
     currentTime: number
     isDelete: boolean
     frameIdx: number
     frameNum: number
+    description?: string
 }
 
 export class SqlitInfos {
