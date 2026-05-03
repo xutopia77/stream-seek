@@ -4,6 +4,7 @@ import mediaProc from './MediaProcess.js'
 import logger from './Logger'
 import appDb from './AppDb'
 import recordsProc from './RecordsProcess.js'
+import mp4Parser from './Mp4Parser.js'
 import * as Dty from '../../bridge/dataTypedef'
 import appCfg from './AppCfg.js'
 import { workQueue } from './TaskEvent'
@@ -2232,12 +2233,25 @@ class AppProc {
                 logger.info(`cmd:${cmd}:${cseq}`)
                 return this.cmdRespMake(await this.handle_create_prj_with_path(cmdReq))
             }
+            case Dty.CmdType.parseMp4Box: {
+                const cmdReq = convertCmdRequest<Dty.ParseMp4BoxReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}, path:${cmdReq.data?.filePath}`)
+                return this.cmdRespMake(await this.handle_parse_mp4_box(cmdReq))
+            }
             default: {
                 console.log(`Unknown event: ${cmd}:${cseq}`)
                 const resp = new Dty.Resp()
                 return resp.err(`Unknown event: ${cmd}`)
             }
         }
+    }
+
+    async handle_parse_mp4_box(req: Dty.Req<Dty.ParseMp4BoxReq>): Promise<Dty.Resp<Dty.ParseMp4BoxResp>> {
+        const resp = new Dty.Resp<Dty.ParseMp4BoxResp>()
+        if (!req.data?.filePath) {
+            return resp.err('filePath is required')
+        }
+        return await mp4Parser.parseMp4Box(req.data.filePath)
     }
 }
 

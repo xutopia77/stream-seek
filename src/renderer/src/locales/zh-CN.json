@@ -475,6 +475,14 @@
     "openVideoHint": "请先打开视频文件或在项目中选择视频",
     "mono": "单声道",
     "stereo": "立体声",
-    "surround": "环绕声"
+    "surround": "环绕声",
+    "searchBox": "搜索 Box 名称...",
+    "noMp4Data": "暂无 MP4 数据",
+    "detailInfo": "详细信息",
+    "selectBoxHint": "请选择一个 Box 查看详情",
+    "boxBasic": "Box 基本信息",
+    "boxProperties": "Box 属性",
+    "childBoxes": "子 Box 列表",
+    "boxDescription": "Box 描述"
   }
 }

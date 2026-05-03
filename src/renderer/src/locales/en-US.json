@@ -452,6 +452,14 @@
     "openVideoHint": "Please open a video file or select a video in project",
     "mono": "Mono",
     "stereo": "Stereo",
-    "surround": "Surround"
+    "surround": "Surround",
+    "searchBox": "Search Box name...",
+    "noMp4Data": "No MP4 data available",
+    "detailInfo": "Detail Info",
+    "selectBoxHint": "Select a Box to view details",
+    "boxBasic": "Box Basic Info",
+    "boxProperties": "Box Properties",
+    "childBoxes": "Child Boxes",
+    "boxDescription": "Box Description"
   }
 }

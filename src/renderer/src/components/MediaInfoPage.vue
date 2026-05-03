@@ -1,37 +1,65 @@
 <template>
     <div class="media-info-container">
         <div class="sidebar">
-            <div class="sidebar-item active">
+            <div
+                class="sidebar-item"
+                :class="{ active: activeTab === 'overview' }"
+                @click="activeTab = 'overview'"
+            >
                 <span class="sidebar-icon">📊</span>
                 <span>{{ t('mediaInfo.overview') }}</span>
             </div>
-            <div class="sidebar-item" :class="{ disabled: true }">
+            <div
+                class="sidebar-item"
+                :class="{ active: activeTab === 'mp4', disabled: !videoFile }"
+                @click="videoFile && (activeTab = 'mp4')"
+            >
                 <span class="sidebar-icon">📁</span>
                 <span>MP4 {{ t('mediaInfo.structure') }}</span>
             </div>
-            <div class="sidebar-item" :class="{ disabled: true }">
+            <div
+                class="sidebar-item"
+                :class="{ active: activeTab === 'frame', disabled: true }"
+            >
                 <span class="sidebar-icon">📈</span>
                 <span>{{ t('mediaInfo.frameAnalysis') }}</span>
             </div>
-            <div class="sidebar-item" :class="{ disabled: true }">
+            <div
+                class="sidebar-item"
+                :class="{ active: activeTab === 'timestamp', disabled: true }"
+            >
                 <span class="sidebar-icon">🕐</span>
                 <span>{{ t('mediaInfo.timestamp') }}</span>
             </div>
-            <div class="sidebar-item" :class="{ disabled: true }">
+            <div
+                class="sidebar-item"
+                :class="{ active: activeTab === 'bitrate', disabled: true }"
+            >
                 <span class="sidebar-icon">〰️</span>
                 <span>{{ t('mediaInfo.bitrate') }}</span>
             </div>
-            <div class="sidebar-item" :class="{ disabled: true }">
+            <div
+                class="sidebar-item"
+                :class="{ active: activeTab === 'avsync', disabled: true }"
+            >
                 <span class="sidebar-icon">🔗</span>
                 <span>{{ t('mediaInfo.avSync') }}</span>
             </div>
-            <div class="sidebar-item" :class="{ disabled: true }">
+            <div
+                class="sidebar-item"
+                :class="{ active: activeTab === 'interval', disabled: true }"
+            >
                 <span class="sidebar-icon">⏱</span>
                 <span>{{ t('mediaInfo.frameInterval') }}</span>
             </div>
         </div>
 
-        <div class="content-area">
+        <div v-if="activeTab === 'mp4'" class="mp4-content-area">
+            <Mp4StructureView :boxes="mp4Boxes" @select="onBoxSelect" />
+            <Mp4DetailPanel :box="selectedBox" />
+        </div>
+
+        <div v-else class="content-area">
             <div v-if="!videoFile" class="no-media-selected">
                 <span class="hint-text">{{ t('mediaInfo.noMediaSelected') }}</span>
                 <span class="hint-subtext">{{ t('mediaInfo.openVideoHint') }}</span>
@@ -162,14 +190,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useAppStore } from '../stores/AppStore'
 import { useI18n } from 'vue-i18n'
+import Mp4StructureView from './Mp4StructureView.vue'
+import Mp4DetailPanel from './Mp4DetailPanel.vue'
+import { IpcApi } from '../utils/ipcApi'
 import '@renderer/assets/common.css'
 import * as Dty from '../../../bridge/dataTypedef'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+
+const activeTab = ref<'overview' | 'mp4' | 'frame' | 'timestamp' | 'bitrate' | 'avsync' | 'interval'>('overview')
+const selectedBox = ref<Dty.Mp4Box | null>(null)
+const mp4Boxes = ref<Dty.Mp4Box[]>([])
+const mp4Loading = ref(false)
+const mp4Error = ref('')
 
 const videoFile = computed<Dty.File | null>(() => {
     const file = appStore.curSltVideo
@@ -182,6 +219,69 @@ const hasMediaInfo = computed(() => {
     if (!info) return false
     return info.duration !== undefined && info.duration > 0
 })
+
+async function parseMp4Box() {
+    console.log('parseMp4Box called, videoFile:', videoFile.value?.path)
+    if (!videoFile.value?.path) {
+        mp4Boxes.value = []
+        console.log('No video file path, clearing mp4Boxes')
+        return
+    }
+
+    mp4Loading.value = true
+    mp4Error.value = ''
+
+    try {
+        const req: Dty.Req<Dty.ParseMp4BoxReq> = {
+            cmd: Dty.CmdType.parseMp4Box,
+            data: {
+                filePath: videoFile.value.path
+            }
+        }
+        console.log('Sending parseMp4Box request:', req)
+        const resp = await IpcApi.trigger_event<Dty.ParseMp4BoxReq, Dty.ParseMp4BoxResp>(req)
+        console.log('parseMp4Box resp:', resp)
+        if (resp.code === 0 && resp.data) {
+            mp4Boxes.value = resp.data.boxes
+            console.log('mp4Boxes loaded:', mp4Boxes.value.length, 'boxes')
+        } else {
+            mp4Error.value = resp.status
+            mp4Boxes.value = []
+            console.error('parseMp4Box error:', resp.status)
+        }
+    } catch (error) {
+        mp4Error.value = String(error)
+        mp4Boxes.value = []
+        console.error('parseMp4Box exception:', error)
+    } finally {
+        mp4Loading.value = false
+    }
+}
+
+watch(videoFile, (newFile, oldFile) => {
+    console.log('videoFile changed:', oldFile?.path, '->', newFile?.path)
+    if (newFile && newFile.path && activeTab.value === 'mp4') {
+        parseMp4Box()
+    }
+})
+
+watch(activeTab, (newTab, oldTab) => {
+    console.log('activeTab changed:', oldTab, '->', newTab)
+    if (newTab === 'mp4' && videoFile.value?.path) {
+        parseMp4Box()
+    }
+})
+
+onMounted(() => {
+    console.log('MediaInfoPage mounted, videoFile:', videoFile.value?.path, 'activeTab:', activeTab.value)
+    if (activeTab.value === 'mp4' && videoFile.value?.path) {
+        parseMp4Box()
+    }
+})
+
+function onBoxSelect(box: Dty.Mp4Box) {
+    selectedBox.value = box
+}
 
 function formatFileSize(bytes: number | undefined): string {
     if (!bytes) return '-'
@@ -290,6 +390,12 @@ function getFileExtension(filename: string | undefined): string {
     font-size: 14px;
     width: 18px;
     text-align: center;
+}
+
+.mp4-content-area {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
 }
 
 .content-area {

@@ -32,7 +32,8 @@ export enum CmdType {
     prjSave = 'prj_save',
     clipProjectSave = 'clip_project_save',
     clipProjectSaveAs = 'clip_project_save_as',
-    clipProjectOpen = 'clip_project_open'
+    clipProjectOpen = 'clip_project_open',
+    parseMp4Box = 'parse_mp4_box'
 }
 
 export class RecentItem {
@@ -357,6 +358,33 @@ export interface MediaInfo {
         bit_rate: number
         channel_layout: string
     }
+}
+
+export interface Mp4BoxProperty {
+    name: string
+    value: string | number | boolean
+    isHex?: boolean
+}
+
+export interface Mp4Box {
+    type: string
+    name: string
+    offset: number
+    size: number
+    headerSize: number
+    properties?: Mp4BoxProperty[]
+    children?: Mp4Box[]
+    expanded?: boolean
+}
+
+export class ParseMp4BoxReq {
+    filePath: string = ''
+}
+
+export class ParseMp4BoxResp {
+    boxes: Mp4Box[] = []
+    fileSize: number = 0
+    parseTime: number = 0
 }
 
 export interface SltMediaInfo {
