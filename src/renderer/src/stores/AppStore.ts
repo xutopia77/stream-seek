@@ -12,6 +12,7 @@ export interface ToastMessage {
 export type AppStore = {
     appInfo: Dty.AppInfo
     prj: Dty.Prj | null
+    clipProject: Dty.ClipProject | null
     recentFiles: Dty.RecentItem[]
     recentProjects: Dty.RecentItem[]
     serverUrlPrefix: string
@@ -75,6 +76,7 @@ export const useAppStore = defineStore('app', {
     state: (): AppStore => ({
         appInfo: new Dty.AppInfo(),
         prj: null,
+        clipProject: null,
         recentFiles: [],
         recentProjects: [],
         // utils

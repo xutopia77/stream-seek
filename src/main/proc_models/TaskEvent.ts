@@ -57,6 +57,10 @@ class WorkQueue {
         }
         this.curReq = req
     }
+
+    addResp(resp: Dty.WorkResp): void {
+        this.resps.push(resp)
+    }
 }
 
 const workQueue = new WorkQueue()

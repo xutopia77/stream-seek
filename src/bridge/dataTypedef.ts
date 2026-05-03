@@ -28,7 +28,11 @@ export enum CmdType {
     tinyFileDbStart = 'tinyFileDbStart',
     tinyFileDbStop = 'tinyFileDbStop',
     selectFolder = 'select_folder',
-    createPrjWithPath = 'create_prj_with_path'
+    createPrjWithPath = 'create_prj_with_path',
+    prjSave = 'prj_save',
+    clipProjectSave = 'clip_project_save',
+    clipProjectSaveAs = 'clip_project_save_as',
+    clipProjectOpen = 'clip_project_open'
 }
 
 export class RecentItem {
@@ -427,15 +431,20 @@ export enum ThumbType {
 
 export type LangType = 'zh-CN' | 'en-US'
 
-// 项目配置，存储在项目json文件中
+export enum ProjectType {
+    FileManagement = 'file_management',
+    ClipEdit = 'clip_edit'
+}
+
 export class Prj {
+    type: ProjectType = ProjectType.FileManagement
     name: string = ''
     version: string = '3.0.0'
-    path: string = '' //  project path
-    thumbStrategy: ThumbStrategy = ThumbStrategy.BySize // 缩略图策略
-    thumbEachSec: number = 0.1 // 每多少秒生成一张缩略图
-    thumbEachSize: number = 1024 * 1024 * 10 // 每多少字节生成一张缩略图
-    numEachFolder: number = 10 // 每个文件夹多少视频文件
+    path: string = ''
+    thumbStrategy: ThumbStrategy = ThumbStrategy.BySize
+    thumbEachSec: number = 0.1
+    thumbEachSize: number = 1024 * 1024 * 10
+    numEachFolder: number = 10
     dataRepo: DataRepo[] = []
     repoType: RepoType = RepoType.Normal
     language: LangType = 'zh-CN'
@@ -473,6 +482,7 @@ export interface Req_CutVideo {
     fileInfo: File
     filepath: string
     filename: string
+    baseFolder?: string
 }
 
 export interface Resp_CutVideo {
@@ -635,6 +645,20 @@ export class ClearSltInfoReq {
 
 export interface CutVideoReq {
     bDelFullVideo?: boolean
+}
+
+export interface ClipProject {
+    type: ProjectType
+    version: string
+    name: string
+    path: string
+    filePath: string
+    fileName: string
+    fileSize: number
+    duration: number
+    splitInfo: SplitInfo[]
+    createdAt: string
+    updatedAt: string
 }
 
 // ========================

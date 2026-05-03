@@ -11,8 +11,22 @@
                     <button class="xc-button menu-button" @click.stop="btn_createPrj">
                         {{ t('navigation.menuItems.createProject') }}
                     </button>
-                    <button class="xc-button menu-button" @click.stop="btn_openPrj">
+                    <button class="xc-button menu-button" @click.stop="btn_openProject">
                         {{ t('navigation.menuItems.openProject') }}
+                    </button>
+                    <button 
+                        v-if="appStore.isProjectMode || appStore.curSltVideo" 
+                        class="xc-button menu-button" 
+                        @click.stop="btn_closeProject"
+                    >
+                        {{ t('navigation.menuItems.closeProject') }}
+                    </button>
+                    <button 
+                        v-if="appStore.isProjectMode || appStore.curSltVideo" 
+                        class="xc-button menu-button" 
+                        @click.stop="btn_saveProject"
+                    >
+                        {{ t('navigation.menuItems.saveProject') }}
                     </button>
                     <button class="xc-button menu-button" @click.stop="btn_openVideoDialog">
                         {{ t('navigation.menuItems.openVideoFile') }}
@@ -146,31 +160,119 @@ const onProjectCreated = async (): Promise<void> => {
     router.push('/')
 }
 
-const btn_openPrj = async (): Promise<void> => {
+const btn_openProject = async (): Promise<void> => {
+    isDropdownOpen.value.home = false
     const req: Dty.Req = {
         cmd: Dty.CmdType.prjOpen
     }
-    const response: Dty.Resp<Dty.Prj> = await IpcApi.trigger_event(req)
+    const response: Dty.Resp<Dty.Prj | Dty.ClipProject> = await IpcApi.trigger_event(req)
     if (response.code != 0) {
-        util.addToastErr(`${t('navigation.openProjectFailed')}: ${response.status}`)
-    } else {
-        if (response.bOver == false) {
-            util.addToastInfo(t('navigation.backgroundExecuting'))
-        } else {
-            appStore.prj = response.data || null
-            appStore.appInfo.prjFile = response.data?.path || ''
-            
-            const startReq = await util.start_app()
-            if (startReq.code != 0) {
-                util.addToastErr(`${t('navigation.startupFailed')} ${startReq.status}`)
-                return
+        if (response.status !== 'user canceled') {
+            util.addToastErr(`${t('navigation.openProjectFailed')}: ${response.status}`)
+        }
+        return
+    }
+    
+    if (!response.data) return
+    
+    if (response.data.type === Dty.ProjectType.FileManagement) {
+        const prj = response.data as Dty.Prj
+        appStore.prj = prj
+        appStore.appInfo.prjFile = prj.path || ''
+        appStore.clipProject = null
+        
+        const startReq = await util.start_app()
+        if (startReq.code != 0) {
+            util.addToastErr(`${t('navigation.startupFailed')} ${startReq.status}`)
+            return
+        }
+
+        const searchReq = new Dty.FilesReq()
+        searchReq.status = [appStore.fileSearchStatus]
+        await util.files_get(searchReq)
+
+        util.addToastInfo(t('navigation.openProjectSuccess'))
+    } else if (response.data.type === Dty.ProjectType.ClipEdit) {
+        const clipProject = response.data as Dty.ClipProject
+        await openClipProjectData(clipProject)
+    }
+    
+    router.push('/')
+}
+
+const openClipProjectData = async (clipProject: Dty.ClipProject): Promise<void> => {
+    if (appStore.isProjectMode) {
+        const closeReq: Dty.Req = {
+            cmd: Dty.CmdType.prjClose
+        }
+        await IpcApi.trigger_event(closeReq)
+        appStore.prj = null
+        appStore.appInfo.prjFile = ''
+    }
+    
+    const openReq: Dty.Req<Dty.Req_SltFile> = {
+        cmd: Dty.CmdType.openExternalVideo,
+        data: { filepath: clipProject.filePath }
+    }
+    const openResp: Dty.Resp<Dty.File> = await IpcApi.trigger_event(openReq)
+    if (openResp.code === 0 && openResp.data) {
+        appStore.curSltVideo = openResp.data
+        appStore.curSltVideoName4Play = openResp.data.name
+        appStore.clipProject = clipProject
+        
+        if (clipProject.splitInfo && clipProject.splitInfo.length > 0) {
+            if (!appStore.curSltVideo.splitInfo) {
+                appStore.curSltVideo.splitInfo = new Dty.SqlitInfos()
             }
+            appStore.curSltVideo.splitInfo.splits = clipProject.splitInfo
+            util.update_bar_clips()
+        }
+        
+        util.addToastInfo(`${t('navigation.menuItems.openProject')} ${t('common.success')}`)
+    } else {
+        util.addToastErr(`${t('homeEditor.openVideoFailed')}: ${openResp.status}`)
+    }
+}
 
-            const searchReq = new Dty.FilesReq()
-            searchReq.status = [appStore.fileSearchStatus]
-            await util.files_get(searchReq)
+const btn_closeProject = async (): Promise<void> => {
+    isDropdownOpen.value.home = false
+    
+    if (appStore.isProjectMode) {
+        const closeReq: Dty.Req = {
+            cmd: Dty.CmdType.prjClose
+        }
+        await IpcApi.trigger_event(closeReq)
+        appStore.prj = null
+        appStore.appInfo.prjFile = ''
+    }
+    
+    if (appStore.curSltVideo) {
+        appStore.clipProject = null
+        appStore.curSltVideo = null
+        appStore.curSltVideoName4Play = ''
+        util.clear_cur_slt_video_info(null)
+    }
+    
+    router.push('/welcome')
+    util.addToastInfo(t('navigation.menuItems.closeProject'))
+}
 
-            util.addToastInfo(t('navigation.openProjectSuccess'))
+const btn_saveProject = async (): Promise<void> => {
+    isDropdownOpen.value.home = false
+    
+    if (appStore.isProjectMode) {
+        const response = await util.saveFileManagementProject()
+        if (response.code === 0) {
+            util.addToastInfo(`${t('navigation.menuItems.saveProject')} ${t('common.success')}`)
+        } else if (response.status !== 'user canceled') {
+            util.addToastErr(`${t('navigation.menuItems.saveProject')} ${t('common.failed')}: ${response.status}`)
+        }
+    } else if (appStore.curSltVideo) {
+        const response = await util.saveClipProject()
+        if (response.code === 0) {
+            util.addToastInfo(`${t('navigation.menuItems.saveProject')} ${t('common.success')}`)
+        } else if (response.status !== 'user canceled') {
+            util.addToastErr(`${t('navigation.menuItems.saveProject')} ${t('common.failed')}: ${response.status}`)
         }
     }
 }
@@ -184,7 +286,6 @@ const btn_openVideoDialog = async (): Promise<void> => {
     if (response.code === 0 && response.data) {
         router.push('/')
         
-        // If in project mode, close the project first
         if (appStore.isProjectMode) {
             const closeReq: Dty.Req = {
                 cmd: Dty.CmdType.prjClose
@@ -193,6 +294,8 @@ const btn_openVideoDialog = async (): Promise<void> => {
             appStore.prj = null
             appStore.appInfo.prjFile = ''
         }
+        
+        appStore.clipProject = null
         
         const openReq: Dty.Req<Dty.Req_SltFile> = {
             cmd: Dty.CmdType.openExternalVideo,
@@ -209,7 +312,6 @@ const btn_openVideoDialog = async (): Promise<void> => {
     }
 }
 
-// 退出应用的处理函数
 const exitApp = (): void => {
     isDropdownOpen.value.home = false
     window.close()

@@ -1,8 +1,8 @@
 import logger from './Logger.js'
-// import { workQueue } from './Utils.js'
+import { workQueue } from './TaskEvent.js'
 import appCfg from './AppCfg.js'
 import appDb from './AppDb'
-// import mediaProc from './MediaProcess.js'
+import mediaProc from './MediaProcess.js'
 import * as path from 'path'
 import * as fs from 'fs'
 import { execFile } from 'child_process'
@@ -184,24 +184,23 @@ import { Util } from './Utils.js'
 //     return resp.success('file classify success')
 // }
 
-// // 开始切割视频
-// async function start_cut_video(
-//     req: Dty.Req<Dty.Req_CutVideo>
-// ): Promise<Dty.Resp<Dty.Resp_CutVideo>> {
-//     mediaProc
-//         .cutVideo(req)
-//         .then((resp) => {
-//             workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
-//         })
-//         .catch((error) => {
-//             workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
-//         })
-//     const resp = new Dty.Resp<Dty.Resp_CutVideo>()
-//     resp.code = 0
-//     resp.status = 'success'
-//     resp.bOver = false
-//     return resp
-// }
+async function start_cut_video(
+    req: Dty.Req<Dty.Req_CutVideo>
+): Promise<Dty.Resp<Dty.Resp_CutVideo>> {
+    mediaProc
+        .cutVideo(req)
+        .then((resp) => {
+            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify(resp) })
+        })
+        .catch((error) => {
+            workQueue.addResp({ cmd: req.cmd, data: JSON.stringify({ code: 1, status: error }) })
+        })
+    const resp = new Dty.Resp<Dty.Resp_CutVideo>()
+    resp.code = 0
+    resp.status = 'success'
+    resp.bOver = false
+    return resp
+}
 
 // async function start_sync_trash(
 //     req: Dty.Req<Dty.Req_SyncTrash>
@@ -241,7 +240,7 @@ import { Util } from './Utils.js'
 
 class RecordsProc {
     // start_file_classify = file_classify
-    // start_cut_video = start_cut_video
+    start_cut_video = start_cut_video
     // start_sync_trash = start_sync_trash
 
     file_trash_path_get(fInfo: Dty.File): string {

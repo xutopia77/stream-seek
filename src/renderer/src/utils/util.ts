@@ -135,10 +135,14 @@ async function make_prj_info(): Promise<Dty.Req_CutVideo | null> {
         util.addToastInfo(t('util.noVideoFileSelected'))
         return null
     }
+    const videoPath = appStore.curSltVideo?.path || ''
+    const lastSepIndex = Math.max(videoPath.lastIndexOf('/'), videoPath.lastIndexOf('\\'))
+    const baseFolder = lastSepIndex > 0 ? videoPath.substring(0, lastSepIndex) : ''
     const prjInfo: Dty.Req_CutVideo = {
         fileInfo: appStore.curSltVideo,
-        filepath: appStore.curSltVideo?.path || '',
-        filename: util.getFilenameFromPath(appStore.curSltVideo?.path || '')
+        filepath: videoPath,
+        filename: util.getFilenameFromPath(videoPath),
+        baseFolder: baseFolder
     }
     return prjInfo
 }
@@ -382,19 +386,28 @@ const export_cut_video = async (cutReq: Dty.CutVideoReq | null): Promise<void> =
         util.addToastInfo(t('util.selectVideoFirst'))
         return
     }
+    
+    if (!prjInfo.fileInfo.splitInfo || prjInfo.fileInfo.splitInfo.splits.length === 0) {
+        util.addToastErr(t('util.noSplitInfo'))
+        return
+    }
+    
     util.stop_play()
 
     if (cutReq?.bDelFullVideo != null) {
         if (prjInfo.fileInfo.splitInfo != null) {
-            prjInfo.fileInfo.splitInfo[0].isDelete = true
+            prjInfo.fileInfo.splitInfo.splits[0].isDelete = true
         }
     }
 
+    console.log('export_cut_video prjInfo:', prjInfo)
+    
     const req: Dty.Req<Dty.Req_CutVideo> = {
         cmd: Dty.CmdType.videoCut,
         data: prjInfo
     }
     const response = await IpcApi.trigger_event(req)
+    console.log('export_cut_video response:', response)
     if (response.code === 1001) {
         return
     }
@@ -412,8 +425,62 @@ const export_cut_video = async (cutReq: Dty.CutVideoReq | null): Promise<void> =
 let heartbeatCnt = 0
 const runFlgArray: string[] = ['🏃🏼', '🚶🏼']
 
+function makeClipProject(): Dty.ClipProject | null {
+    if (!appStore.curSltVideo) {
+        return null
+    }
+    const video = appStore.curSltVideo
+    const existingProject = appStore.clipProject
+    return {
+        type: Dty.ProjectType.ClipEdit,
+        version: '1.0.0',
+        name: existingProject?.name || video.name.replace(/\.[^/.]+$/, ''),
+        path: existingProject?.path || '',
+        filePath: video.path,
+        fileName: video.name,
+        fileSize: video.size,
+        duration: video.mediaInfo?.duration || 0,
+        splitInfo: video.splitInfo?.splits || [],
+        createdAt: existingProject?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    }
+}
+
+async function saveClipProject(): Promise<Dty.Resp<string>> {
+    const resp = new Dty.Resp<string>()
+    const clipProject = makeClipProject()
+    if (!clipProject) {
+        return resp.err('no video selected')
+    }
+    const req: Dty.Req<Dty.ClipProject> = {
+        cmd: Dty.CmdType.clipProjectSave,
+        data: clipProject
+    }
+    const response = await IpcApi.trigger_event(req)
+    if (response.code === 0 && response.data) {
+        appStore.clipProject = clipProject
+        appStore.clipProject.path = response.data
+    }
+    return response
+}
+
+async function saveFileManagementProject(): Promise<Dty.Resp<string>> {
+    const resp = new Dty.Resp<string>()
+    if (!appStore.prj) {
+        return resp.err('no project opened')
+    }
+    const req: Dty.Req<Dty.Prj> = {
+        cmd: Dty.CmdType.prjSave,
+        data: appStore.prj
+    }
+    return await IpcApi.trigger_event(req)
+}
+
 class Util {
     export_cut_video = export_cut_video
+    saveClipProject = saveClipProject
+    saveFileManagementProject = saveFileManagementProject
+    makeClipProject = makeClipProject
     set_video_cur_time = set_video_cur_time
     update_bar_clips = update_bar_clips
     updateKeyframeSplitInfo(frameInfoReq: Dty.FrameInfo): Dty.SplitInfo[] {

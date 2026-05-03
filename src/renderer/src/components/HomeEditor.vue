@@ -303,7 +303,7 @@ watch(
 watch(
     () => appStore.barSeekTime,
     (newValue) => {
-        if (videoRef.value != null) {
+        if (videoRef.value != null && appStore.videoPlayCtrl.curSrc) {
             const targetTime = newValue + appStore.videoPlayCtrl.videoStartTime
 
             const wasPlaying = !videoRef.value.paused

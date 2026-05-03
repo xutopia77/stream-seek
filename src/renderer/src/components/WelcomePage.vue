@@ -160,14 +160,40 @@ const openRecentProject = async (projectPath: string): Promise<void> => {
         cmd: Dty.CmdType.prjOpenByPath,
         data: { prjFile: projectPath }
     }
-    const response: Dty.Resp<Dty.Prj> = await IpcApi.trigger_event(req)
+    const response: Dty.Resp<Dty.Prj | Dty.ClipProject> = await IpcApi.trigger_event(req)
     if (response.code === 0 && response.data) {
-        appStore.prj = response.data
-        appStore.appInfo.prjFile = projectPath
+        if (response.data.type === Dty.ProjectType.FileManagement) {
+            const prj = response.data as Dty.Prj
+            appStore.prj = prj
+            appStore.appInfo.prjFile = projectPath
+            appStore.clipProject = null
 
-        const searchReq = new Dty.FilesReq()
-        searchReq.status = [appStore.fileSearchStatus]
-        await util.files_get(searchReq)
+            const searchReq = new Dty.FilesReq()
+            searchReq.status = [appStore.fileSearchStatus]
+            await util.files_get(searchReq)
+        } else if (response.data.type === Dty.ProjectType.ClipEdit) {
+            const clipProject = response.data as Dty.ClipProject
+            appStore.clipProject = clipProject
+            appStore.prj = null
+            appStore.appInfo.prjFile = ''
+            
+            const openReq: Dty.Req<Dty.Req_SltFile> = {
+                cmd: Dty.CmdType.openExternalVideo,
+                data: { filepath: clipProject.filePath }
+            }
+            const openResp: Dty.Resp<Dty.File> = await IpcApi.trigger_event(openReq)
+            if (openResp.code === 0 && openResp.data) {
+                appStore.curSltVideo = openResp.data
+                appStore.curSltVideoName4Play = openResp.data.name
+                
+                if (clipProject.splitInfo && clipProject.splitInfo.length > 0) {
+                    if (!appStore.curSltVideo.splitInfo) {
+                        appStore.curSltVideo.splitInfo = new Dty.SqlitInfos()
+                    }
+                    appStore.curSltVideo.splitInfo.splits = clipProject.splitInfo
+                }
+            }
+        }
 
         router.push('/')
     } else {
