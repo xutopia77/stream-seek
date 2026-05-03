@@ -178,12 +178,18 @@ function splitInfoCorrect(splitInfos: Dty.SplitInfo[], videoDuration: number): v
     splitInfos.sort((a, b) => a.percent - b.percent)
 }
 
-function stop_play(): void {
+function stop_play(bClearCurSltVideo: boolean = true): void {
     if (appStore.videoPlayCtrl.isPlay == false && appStore.videoPlayCtrl.isStop == true) {
         return
     }
     console.log('stop_play')
-    util.clear_cur_slt_video_info(null)
+    if (bClearCurSltVideo) {
+        util.clear_cur_slt_video_info(null)
+    } else {
+        const clearReq = new Dty.ClearSltInfoReq()
+        clearReq.bNotClear_curSltVideo = true
+        util.clear_cur_slt_video_info(clearReq)
+    }
 }
 
 export class PlayReq {
@@ -973,6 +979,7 @@ class Util {
         appStore.barSeekTime = 0
         if (!(req?.bNotClear_curSltVideo == true)) {
             appStore.curSltVideo = null
+            appStore.curSltVideoName4Play = ''
         }
     }
     make_prj_info = make_prj_info

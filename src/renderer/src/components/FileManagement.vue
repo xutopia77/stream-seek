@@ -240,7 +240,7 @@ onBeforeUnmount(() => {
         console.log('video ref null')
         return
     }
-    util.stop_play()
+    util.stop_play(false)
     util.toggle_play(videoRef.value)
     videoRef.value.src = ''
 })
@@ -251,7 +251,9 @@ onUnmounted(() => {
         return
     }
     util.setupVideoEventListeners(videoRef.value, true)
-    util.clear_cur_slt_video_info(null)
+    const clearReq = new Dty.ClearSltInfoReq()
+    clearReq.bNotClear_curSltVideo = true
+    util.clear_cur_slt_video_info(clearReq)
 })
 </script>
 
