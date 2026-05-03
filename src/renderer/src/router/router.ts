@@ -6,6 +6,7 @@ import FileManagement from '../components/FileManagement.vue'
 import thumbMng from '@renderer/components/thumbMng/thumbMng.vue'
 import TinyFileDb from '@renderer/components/tinyFileDb/tinyFileDb.vue'
 import AppSetting from '@renderer/components/appSetting.vue'
+import MediaInfoPage from '@renderer/components/MediaInfoPage.vue'
 
 const routes: RouteRecordRaw[] = [
     { path: '/', component: HomeEditor },
@@ -40,6 +41,10 @@ const routes: RouteRecordRaw[] = [
     {
         path: '/app_setting',
         component: AppSetting
+    },
+    {
+        path: '/media_info',
+        component: MediaInfoPage
     }
 ]
 

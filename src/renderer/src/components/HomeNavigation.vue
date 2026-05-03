@@ -60,10 +60,35 @@
                     </button>
                 </div>
             </div>
-            <div v-if="appStore.isProjectMode" class="menu-item">
-                <span class="xc-text" @click="btn_function()">{{
-                    t('navigation.menuItems.function')
-                }}</span>
+            <div class="menu-item dropdown" @click="toggleDropdown($event, 'function')">
+                <span class="xc-text">{{ t('navigation.menuItems.function') }}</span>
+                <div
+                    ref="dropdownMenuRefFunction"
+                    class="dropdown-menu"
+                    :class="{ show: isDropdownOpen['function'] }"
+                >
+                    <button class="xc-button menu-button" @click.stop="btn_mediaInfo">
+                        {{ t('navigation.menuItems.mediaInfo') }}
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="btn_projectSettings">
+                        {{ t('navigation.menuItems.projectSettings') }}
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="btn_fileList">
+                        {{ t('navigation.menuItems.fileList') }}
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="btn_tagManagement">
+                        {{ t('navigation.menuItems.tagManagement') }}
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="btn_thumbnailManagement">
+                        {{ t('navigation.menuItems.thumbnailManagement') }}
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="btn_smallFileOrganization">
+                        {{ t('navigation.menuItems.smallFileOrganization') }}
+                    </button>
+                    <button class="xc-button menu-button" @click.stop="btn_settings">
+                        {{ t('navigation.menuItems.settings') }}
+                    </button>
+                </div>
             </div>
             <div class="menu-item" @click="showAboutModal">
                 <span class="xc-text">{{ t('navigation.menuItems.about') }}</span>
@@ -120,16 +145,18 @@ const showCreateModal = ref(false)
 // }
 
 // 控制下拉菜单是否显示
-const isDropdownOpen = ref<{ home: boolean; video: boolean; view: boolean }>({
+const isDropdownOpen = ref<{ home: boolean; video: boolean; view: boolean; function: boolean }>({
     home: false,
     video: false,
-    view: false
+    view: false,
+    function: false
 })
 
 // 用于存储下拉菜单的 DOM 引用
 const dropdownMenuRefHome = ref<HTMLElement | null>(null)
 const dropdownMenuRefVideo = ref<HTMLElement | null>(null)
 const dropdownMenuRefView = ref<HTMLElement | null>(null)
+const dropdownMenuRefFunction = ref<HTMLElement | null>(null)
 
 // 控制关于模态框是否显示
 const isAboutModalVisible = ref<boolean>(false)
@@ -355,10 +382,44 @@ const handleClickOutside = (event: MouseEvent): void => {
     if (dropdownMenuRefView.value && !dropdownMenuRefView.value.contains(event.target as Node)) {
         isDropdownOpen.value.view = false
     }
+    if (dropdownMenuRefFunction.value && !dropdownMenuRefFunction.value.contains(event.target as Node)) {
+        isDropdownOpen.value.function = false
+    }
 }
 
-function btn_function(): void {
-    router.push('/admin')
+const btn_mediaInfo = (): void => {
+    isDropdownOpen.value.function = false
+    router.push('/media_info')
+}
+
+const btn_projectSettings = (): void => {
+    isDropdownOpen.value.function = false
+    router.push('/admin/prj_set')
+}
+
+const btn_fileList = (): void => {
+    isDropdownOpen.value.function = false
+    router.push('/file_list')
+}
+
+const btn_tagManagement = (): void => {
+    isDropdownOpen.value.function = false
+    router.push('/admin/tag_mng')
+}
+
+const btn_thumbnailManagement = (): void => {
+    isDropdownOpen.value.function = false
+    router.push('/thumb_mng')
+}
+
+const btn_smallFileOrganization = (): void => {
+    isDropdownOpen.value.function = false
+    router.push('/tiny_file_db')
+}
+
+const btn_settings = (): void => {
+    isDropdownOpen.value.function = false
+    router.push('/app_setting')
 }
 
 onMounted(() => {

@@ -18,9 +18,6 @@
         <router-link to="/tiny_file_db" class="no-underline-link">
             <button class="xc-button">{{ t('adminNav.smallFileOrganization') }}</button>
         </router-link>
-        <router-link to="/app_setting" class="no-underline-link">
-            <button class="xc-button">{{ t('adminNav.settings') }}</button>
-        </router-link>
     </div>
 </template>
 
