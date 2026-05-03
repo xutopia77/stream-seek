@@ -29,17 +29,12 @@
                     {{ `${clip.tip}` }}
                 </div>
             </div>
-            <div class="played-progress" :style="{ width: playBarPercent }"></div>
             <div class="thumb" :style="{ left: playBarPercent }"></div>
             <div
-                v-for="splitInfo in videoSplitInfo"
-                :key="splitInfo.percent"
-                class="thumb"
-                :style="{
-                    left: `${splitInfo.percent}%`,
-                    backgroundColor: splitInfo.color,
-                    width: '1px'
-                }"
+                v-for="(splitInfo, index) in videoSplitInfo"
+                :key="index"
+                class="split-marker"
+                :style="{ left: `${splitInfo.percent}%` }"
             ></div>
         </div>
     </div>
@@ -103,7 +98,6 @@ let videoSplitInfo = computed(() => {
 
 // 生成进度条片段数据
 const barClips = ref<Dty.BarClip[]>([])
-// 监听 barColorCfg 和 curSltVideo 的变化
 watch(
     [
         (): Dty.File | null => appStore.curSltVideo,
@@ -115,7 +109,8 @@ watch(
             return
         }
         barClips.value = util.update_bar_clips()
-    }
+    },
+    { deep: true }
 )
 
 async function processShowKeyInfo(): Promise<void> {
@@ -273,26 +268,24 @@ onMounted(() => {
     opacity: 1;
 }
 
-.played-progress {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background-color: #212122;
-    opacity: 0.8;
-    transition: width 0.2s ease;
-}
-
 .thumb {
     position: absolute;
     top: 0;
     bottom: 0;
     width: 2px;
-    /* 调整宽度以模拟大写 I 的形状 */
     background: #eaeef1;
     box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
     cursor: pointer;
     transition: left 0.2s ease;
+}
+
+.split-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
 }
 
 .tooltip {

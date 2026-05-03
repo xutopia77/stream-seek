@@ -351,48 +351,23 @@ function update_bar_clips(): Dty.BarClip[] {
         return barClips
     }
 
-    interface timeSplitInfo {
-        startTime: number
-        endTime: number
-    }
-    const timeSplitInfo: timeSplitInfo[] = appStore.curSltVideo.splitInfo.splits.map((item) => {
-        return {
-            startTime: item.startTime,
-            endTime: item.endTime
-        }
-    })
-    if (timeSplitInfo.length <= 1) {
-        return barClips
-    }
-
+    const splits = appStore.curSltVideo.splitInfo.splits
     const duration = appStore.curSltVideo.mediaInfo.duration
-    for (let i = 0; i < timeSplitInfo.length; i++) {
-        const config = timeSplitInfo[i]
-        const startTime = config.startTime
-        const endTime = config.endTime
+
+    for (let i = 0; i < splits.length; i++) {
+        const splitInfo = splits[i]
+        const startTime = splitInfo.startTime
+        const endTime = splitInfo.endTime
         const startPercentage = (startTime / duration) * 100
         const endPercentage = (endTime / duration) * 100
         const width = endPercentage - startPercentage
         barClips.push({
             percent: startPercentage,
             width: width,
-            color: appStore.barColorDictionary[i % appStore.barColorDictionary.length],
+            color: splitInfo.color,
             tip: `Start: ${startTime.toFixed(3)}, End: ${endTime === duration ? 'End' : endTime.toFixed(3)}`
         })
     }
-    // for (const config of timeSplitInfo) {
-    //   const startTime = Math.min(config.startTime, duration)
-    //   const endTime = config.endTime === Infinity ? duration : Math.min(config.endTime, duration)
-    //   const startPercentage = (startTime / duration) * 100
-    //   const endPercentage = (endTime / duration) * 100
-    //   const width = endPercentage - startPercentage
-    //   barClips.push({
-    //     percent: startPercentage,
-    //     width: width,
-    //     color: config.color,
-    //     tip: `Start: ${startTime.toFixed(3)}, End: ${endTime === duration ? 'End' : endTime.toFixed(3)}`
-    //   })
-    // }
     return barClips
 }
 
@@ -622,14 +597,16 @@ class Util {
                 return
             }
             if (appStore?.curSltVideo?.splitInfo?.splits != null) {
-                // 从后台已经获取到了信息，就不用再处理了
                 if (appStore.curSltVideo.splitInfo.splits.length > 0) {
+                    for (let i = 0; i < appStore.curSltVideo.splitInfo.splits.length; i++) {
+                        const splitInfo = appStore.curSltVideo.splitInfo.splits[i]
+                        splitInfo.color = appStore.barColorDictionary[i % appStore.barColorDictionary.length]
+                    }
                     return
                 }
             }
-            // 如果后台没有标记信息，就需要把完整的视频分段添加到splitInfo中
             const duration = appStore?.curSltVideo?.mediaInfo?.duration || 0
-            const itemInfo = util.makeSplitInfo()
+            const itemInfo = util.makeSplitInfo(0)
             itemInfo.endTime = duration
             itemInfo.duration = duration
             itemInfo.percent = 100
@@ -1025,14 +1002,15 @@ class Util {
         const fileName = parts[parts.length - 1]
         return fileName
     }
-    makeSplitInfo(): Dty.SplitInfo {
-        // 进度条的分段信息，黄色表示是关键帧
+    makeSplitInfo(colorIndex?: number): Dty.SplitInfo {
+        const colors = appStore.barColorDictionary
+        const color = colors[colorIndex !== undefined ? colorIndex % colors.length : 0]
         const splitInfo: Dty.SplitInfo = {
             startTime: 0,
             endTime: 0,
             duration: 0,
             percent: 0,
-            color: 'green', //yellow
+            color: color,
             currentTime: 0,
             isDelete: false,
             frameIdx: 0,

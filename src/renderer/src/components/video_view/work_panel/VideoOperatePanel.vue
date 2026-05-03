@@ -25,6 +25,7 @@
                 selected: splitInfo === selectedSplitInfo,
                 deleted: splitInfo.isDelete
             }"
+            :style="{ borderLeftColor: splitInfo.color }"
             @click="selectSplitInfo(splitInfo)"
         >
             <span class="xc-text"
@@ -94,14 +95,17 @@ const btnclk_splitVideo = (): void => {
         if (splitInfo.startTime < currentTime && splitInfo.endTime > currentTime) {
             const oldEndTime = splitInfo.endTime
             splitInfo.endTime = currentTime
-            let itemInfo = util.makeSplitInfo()
-            itemInfo.startTime = currentTime
-            itemInfo.endTime = oldEndTime
-            appStore.curSltVideo.splitInfo.splits.push(itemInfo)
+            const newItemInfo = util.makeSplitInfo(appStore.curSltVideo.splitInfo.splits.length)
+            newItemInfo.startTime = currentTime
+            newItemInfo.endTime = oldEndTime
+            appStore.curSltVideo.splitInfo.splits.push(newItemInfo)
             break
         }
     }
     util.splitInfoCorrect(appStore.curSltVideo.splitInfo.splits, videoDuration)
+    for (let i = 0; i < appStore.curSltVideo.splitInfo.splits.length; i++) {
+        appStore.curSltVideo.splitInfo.splits[i].color = appStore.barColorDictionary[i % appStore.barColorDictionary.length]
+    }
 }
 
 const videoSplitInfo = computed(() => {
@@ -141,12 +145,26 @@ const removeVideosplit = (): void => {
     if (selectedSplitInfo.value) {
         const confirmDelete = confirm(t('videoOperatePanel.confirmDeleteSegment'))
         if (confirmDelete) {
-            const index = appStore.curSltVideo?.splitInfo.splits.findIndex(
+            const splits = appStore.curSltVideo.splitInfo.splits
+            splits.sort((a: Dty.SplitInfo, b: Dty.SplitInfo) => a.percent - b.percent)
+            const index = splits.findIndex(
                 (item: Dty.SplitInfo) => item.percent === selectedSplitInfo.value?.percent
             )
             if (index !== -1) {
-                appStore.curSltVideo.splitInfo.splits.splice(index, 1)
+                if (index === 0) {
+                    if (splits.length > 1) {
+                        splits[1].startTime = splits[0].startTime
+                    }
+                } else {
+                    splits[index - 1].endTime = splits[index].endTime
+                }
+                splits.splice(index, 1)
                 selectedSplitInfo.value = null
+                const videoDuration = appStore.curSltVideo?.mediaInfo?.duration || 0
+                util.splitInfoCorrect(splits, videoDuration)
+                for (let i = 0; i < splits.length; i++) {
+                    splits[i].color = appStore.barColorDictionary[i % appStore.barColorDictionary.length]
+                }
             }
         }
     }
@@ -251,6 +269,7 @@ const exportVideoRecord = async (): Promise<void> => {
     border-radius: 3px;
     background-color: #252526;
     border: 1px solid #333;
+    border-left: 4px solid #669999;
     transition: background-color 0.2s ease;
 }
 
