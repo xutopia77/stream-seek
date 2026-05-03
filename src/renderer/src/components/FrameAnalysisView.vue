@@ -3,26 +3,31 @@
         <div class="frame-toolbar">
             <div class="toolbar-left">
                 <span class="info-text" v-if="videoInfo">
-                    {{ videoInfo.codecName }} | {{ videoInfo.width }}x{{ videoInfo.height }} | {{ frameRateText }} | Total: {{ totalFrames }} frames
+                    {{ videoInfo.codecName }} | {{ videoInfo.width }}x{{ videoInfo.height }} | {{ frameRateText }} | Total: {{ videoInfo.totalFrames }} frames
                 </span>
+                <span class="loading-text" v-if="loading">Loading...</span>
             </div>
             <div class="toolbar-right">
-                <button class="tool-btn" :disabled="!selectedFrame || selectedFrame.index === 0" @click="goToPrevFrame" title="Previous Frame">
-                    ◀ Prev
-                </button>
-                <button class="tool-btn" :disabled="!selectedFrame || selectedFrame.index >= frames.length - 1" @click="goToNextFrame" title="Next Frame">
-                    Next ▶
-                </button>
+                <div class="pagination">
+                    <button class="tool-btn" :disabled="currentPage <= 1 || loading" @click="goToPage(1)" title="First Page">⏮</button>
+                    <button class="tool-btn" :disabled="currentPage <= 1 || loading" @click="goToPage(currentPage - 1)" title="Previous Page">◀</button>
+                    <span class="page-info">
+                        <input type="number" v-model.number="pageInput" class="page-input" @keyup.enter="jumpToPage" :disabled="loading">
+                        / {{ totalPages }}
+                    </span>
+                    <button class="tool-btn" :disabled="currentPage >= totalPages || loading" @click="goToPage(currentPage + 1)" title="Next Page">▶</button>
+                    <button class="tool-btn" :disabled="currentPage >= totalPages || loading" @click="goToPage(totalPages)" title="Last Page">⏭</button>
+                </div>
+                <select v-model="localPageSize" class="page-size-select" @change="onPageSizeChange">
+                    <option :value="100">100/page</option>
+                    <option :value="200">200/page</option>
+                    <option :value="500">500/page</option>
+                </select>
                 <select v-model="filterType" class="type-filter">
                     <option value="all">All Frames</option>
                     <option value="key">Key Frames (I)</option>
                     <option value="non-key">Non-Key (P/B)</option>
                 </select>
-                <input type="text" v-model="searchIndex" placeholder="Go to index..." class="index-input" @keyup.enter="jumpToIndex">
-                <span class="zoom-label">Zoom:</span>
-                <button class="tool-btn zoom-btn" @click="zoomOut">−</button>
-                <span class="zoom-value">{{ zoom }}%</span>
-                <button class="tool-btn zoom-btn" @click="zoomIn">+</button>
             </div>
         </div>
 
@@ -63,6 +68,9 @@
                         </tr>
                     </tbody>
                 </table>
+                <div v-if="filteredFrames.length === 0 && !loading" class="empty-hint">
+                    <span>No frames to display</span>
+                </div>
             </div>
 
             <div class="frame-detail-panel">
@@ -170,29 +178,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, defineProps, defineEmits, withDefaults } from 'vue'
 import * as Dty from '../../../bridge/dataTypedef'
 
-const props = defineProps<{
+interface VideoInfo {
+    codecName: string
+    width: number
+    height: number
+    frameRate: number
+    totalFrames: number
+    duration: number
+}
+
+const props = withDefaults(defineProps<{
     frames: Dty.VideoFrame[]
-    videoInfo?: {
-        codecName: string
-        width: number
-        height: number
-        frameRate: number
-        totalFrames: number
-        duration: number
-    }
-}>()
+    videoInfo?: VideoInfo
+    currentPage?: number
+    pageSize?: number
+    loading?: boolean
+}>(), {
+    currentPage: 1,
+    pageSize: 200,
+    loading: false
+})
 
 const emit = defineEmits<{
     (e: 'select', frame: Dty.VideoFrame): void
+    (e: 'page-change', page: number, pageSize: number): void
+    (e: 'jump-to-time', timeSec: number): void
 }>()
 
 const selectedFrame = ref<Dty.VideoFrame | null>(null)
 const filterType = ref<'all' | 'key' | 'non-key'>('all')
-const searchIndex = ref('')
-const zoom = ref(100)
+const localPageSize = ref(props.pageSize)
+const pageInput = ref(props.currentPage)
+
+watch(() => props.currentPage, (val) => {
+    pageInput.value = val
+})
+
+watch(() => props.pageSize, (val) => {
+    localPageSize.value = val
+})
+
+const currentPage = computed(() => props.currentPage)
+
+const totalPages = computed(() => {
+    if (!props.videoInfo || props.videoInfo.totalFrames === 0) return 1
+    return Math.ceil(props.videoInfo.totalFrames / localPageSize.value)
+})
 
 const filteredFrames = computed(() => {
     let result = props.frames
@@ -204,7 +238,6 @@ const filteredFrames = computed(() => {
     return result
 })
 
-const totalFrames = computed(() => props.videoInfo?.totalFrames || props.frames.length)
 const frameRateText = computed(() => {
     const fps = props.videoInfo?.frameRate
     if (!fps) return '-'
@@ -224,7 +257,7 @@ const avgFrameSize = computed(() => {
 
 const frameBitrate = computed(() => {
     if (!selectedFrame.value || selectedFrame.value.duration <= 0) return '-'
-    const bitsPerSec = (selectedFrame.value.size * 8) / selectedFrame.value.duration
+    const bitsPerSec = (selectedFrame.value.size * 8) / (selectedFrame.value.duration / 1000)
     if (bitsPerSec >= 1000000) return `${(bitsPerSec / 1000000).toFixed(2)} Mbps`
     if (bitsPerSec >= 1000) return `${(bitsPerSec / 1000).toFixed(2)} Kbps`
     return `${Math.round(bitsPerSec)} bps`
@@ -233,17 +266,19 @@ const frameBitrate = computed(() => {
 const keyFrameInterval = computed(() => {
     if (!selectedFrame.value) return '-'
     const idx = selectedFrame.value.index
-    for (let i = idx - 1; i >= 0; i--) {
-        if (props.frames[i]?.keyFrame) return `${idx - i} frames ago`
+    for (let i = idx - 1; i >= Math.max(0, idx - 500); i--) {
+        const frame = props.frames.find(f => f.index === i)
+        if (frame?.keyFrame) return `${idx - i} frames ago`
     }
-    return 'First keyframe'
+    return 'N/A'
 })
 
 const gopPosition = computed(() => {
     if (!selectedFrame.value) return '-'
     let pos = 0
-    for (let i = selectedFrame.value.index; i >= 0; i--) {
-        if (props.frames[i]?.keyFrame) break
+    for (let i = selectedFrame.value.index; i >= Math.max(0, selectedFrame.value.index - 500); i--) {
+        const frame = props.frames.find(f => f.index === i)
+        if (frame?.keyFrame && i !== selectedFrame.value.index) break
         pos++
     }
     return `#${pos} after last I-frame`
@@ -254,38 +289,22 @@ function onSelectFrame(frame: Dty.VideoFrame) {
     emit('select', frame)
 }
 
-function goToPrevFrame() {
-    if (!selectedFrame.value) return
-    const currentIdx = filteredFrames.value.findIndex(f => f.index === selectedFrame.value!.index)
-    if (currentIdx > 0) {
-        onSelectFrame(filteredFrames.value[currentIdx - 1])
+function goToPage(page: number) {
+    if (page < 1 || page > totalPages.value || props.loading) return
+    emit('page-change', page, localPageSize.value)
+}
+
+function jumpToPage() {
+    const page = pageInput.value
+    if (page >= 1 && page <= totalPages.value) {
+        goToPage(page)
+    } else {
+        pageInput.value = currentPage.value
     }
 }
 
-function goToNextFrame() {
-    if (!selectedFrame.value) return
-    const currentIdx = filteredFrames.value.findIndex(f => f.index === selectedFrame.value!.index)
-    if (currentIdx < filteredFrames.value.length - 1) {
-        onSelectFrame(filteredFrames.value[currentIdx + 1])
-    }
-}
-
-function jumpToIndex() {
-    const idx = parseInt(searchIndex.value, 10)
-    if (isNaN(idx)) return
-    const frame = props.frames.find(f => f.index === idx)
-    if (frame) {
-        onSelectFrame(frame)
-        searchIndex.value = ''
-    }
-}
-
-function zoomIn() {
-    zoom.value = Math.min(200, zoom.value + 10)
-}
-
-function zoomOut() {
-    zoom.value = Math.max(50, zoom.value - 10)
+function onPageSizeChange() {
+    emit('page-change', 1, localPageSize.value)
 }
 
 function formatTime(pts: number): string {
@@ -347,10 +366,46 @@ function formatHex(offset: number): string {
     color: #858585;
 }
 
+.loading-text {
+    font-size: 11px;
+    color: #569cd6;
+    font-style: italic;
+}
+
 .toolbar-right {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.page-info {
+    font-size: 11px;
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.page-input {
+    width: 45px;
+    padding: 2px 4px;
+    background-color: #252526;
+    border: 1px solid #555;
+    border-radius: 2px;
+    color: #ccc;
+    font-size: 11px;
+    text-align: center;
+    outline: none;
+}
+
+.page-input:focus {
+    border-color: #007acc;
 }
 
 .tool-btn {
@@ -374,7 +429,7 @@ function formatHex(offset: number): string {
     cursor: not-allowed;
 }
 
-.type-filter {
+.page-size-select, .type-filter {
     padding: 3px 6px;
     background-color: #3c3c3c;
     border: 1px solid #555;
@@ -384,42 +439,8 @@ function formatHex(offset: number): string {
     outline: none;
 }
 
-.type-filter:focus {
+.page-size-select:focus, .type-filter:focus {
     border-color: #007acc;
-}
-
-.index-input {
-    width: 80px;
-    padding: 3px 6px;
-    background-color: #252526;
-    border: 1px solid #555;
-    border-radius: 3px;
-    color: #ccc;
-    font-size: 11px;
-    outline: none;
-}
-
-.index-input:focus {
-    border-color: #007acc;
-}
-
-.zoom-label {
-    font-size: 11px;
-    color: #858585;
-    margin-left: 8px;
-}
-
-.zoom-btn {
-    width: 24px;
-    padding: 2px 0;
-    text-align: center;
-}
-
-.zoom-value {
-    font-size: 11px;
-    color: #9cdcfe;
-    min-width: 35px;
-    text-align: center;
 }
 
 .frame-main-area {
@@ -486,6 +507,15 @@ function formatHex(offset: number): string {
 
 .frame-table tbody tr.is-keyframe.selected {
     background-color: #094771;
+}
+
+.empty-hint {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: #5a5a5a;
+    font-size: 12px;
 }
 
 .col-index { width: 55px; text-align: right; color: #858585; }
@@ -632,8 +662,8 @@ function formatHex(offset: number): string {
 }
 
 .frame-preview-area {
-    height: 180px;
-    min-height: 120px;
+    height: 120px;
+    min-height: 80px;
     border-top: 1px solid #333;
     display: flex;
     flex-direction: column;

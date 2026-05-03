@@ -402,7 +402,9 @@ export interface VideoFrame {
 
 export class AnalyzeFramesReq {
     filePath: string = ''
-    maxFrames: number = 500
+    page: number = 1
+    pageSize: number = 200
+    startTime?: number
 }
 
 export class AnalyzeFramesResp {

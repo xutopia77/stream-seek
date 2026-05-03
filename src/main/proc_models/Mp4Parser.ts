@@ -664,20 +664,60 @@ interface FfprobeFrame {
     media_type?: string
     stream_index?: number
     key_frame?: number
+    pts?: number
+    pts_time?: string
+    dts?: number
+    dts_time?: string
     pkt_pts?: number
     pkt_dts?: number
     pkt_duration_time?: string
+    duration?: number
+    duration_time?: string
     pkt_size?: number
+    size?: number
     pkt_pos?: number
+    pos?: number
     pict_type?: string
+    time_base?: string
 }
 
-async function runFfprobeFrames(filePath: string, maxFrames: number): Promise<{ frames: FfprobeFrame[], format: FfprobeFormat, streams: FfprobeStream[] }> {
+async function runFfprobeFrameInfo(filePath: string): Promise<{ format: FfprobeFormat, streams: FfprobeStream[] }> {
     return new Promise((resolve, reject) => {
-        const cmd = `"${appCfg.ffprobeExe}" -v error -of json -show_format -show_streams -select_streams v:0 -show_frames "${filePath}"`
-        logger.info(`Running ffprobe for frames: ${cmd}`)
+        const cmd = `"${appCfg.ffprobeExe}" -v error -of json -show_format -show_streams -select_streams v:0 "${filePath}"`
+        logger.info(`Running ffprobe for frame info: ${cmd}`)
 
-        exec(cmd, { maxBuffer: 200 * 1024 * 1024 }, (error, stdout, stderr) => {
+        exec(cmd, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+            if (error) {
+                reject(new Error(`ffprobe error: ${error.message}`))
+                return
+            }
+            if (stderr && stderr.trim()) {
+                logger.warn(`ffprobe stderr: ${stderr}`)
+            }
+            try {
+                const jsonData = JSON.parse(stdout)
+                resolve({
+                    format: jsonData.format || {},
+                    streams: jsonData.streams || []
+                })
+            } catch (parseError) {
+                reject(new Error(`Failed to parse ffprobe output: ${parseError}`))
+            }
+        })
+    })
+}
+
+async function runFfprobeFramesByInterval(
+    filePath: string, 
+    startTimeSec: number, 
+    durationSec: number
+): Promise<FfprobeFrame[]> {
+    return new Promise((resolve, reject) => {
+        const interval = `${startTimeSec.toFixed(3)}%${(startTimeSec + durationSec).toFixed(3)}`
+        const cmd = `"${appCfg.ffprobeExe}" -v error -of json -select_streams v:0 -show_frames -read_intervals "${interval}" "${filePath}"`
+        logger.info(`Running ffprobe for frames interval: ${cmd}`)
+
+        exec(cmd, { maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
             if (error) {
                 reject(new Error(`ffprobe frames error: ${error.message}`))
                 return
@@ -687,26 +727,9 @@ async function runFfprobeFrames(filePath: string, maxFrames: number): Promise<{ 
             }
             try {
                 const jsonData = JSON.parse(stdout)
-                let frames = (jsonData.frames || []) as FfprobeFrame[]
+                const frames = (jsonData.frames || []) as FfprobeFrame[]
                 const videoFrames = frames.filter(f => f.media_type === 'video')
-                
-                if (videoFrames.length > maxFrames) {
-                    const step = Math.ceil(videoFrames.length / maxFrames)
-                    const sampled: FfprobeFrame[] = []
-                    for (let i = 0; i < videoFrames.length; i += step) {
-                        sampled.push(videoFrames[i])
-                        if (sampled.length >= maxFrames) break
-                    }
-                    frames = sampled
-                }
-
-                resolve({
-                    frames: videoFrames.length > maxFrames ? 
-                        videoFrames.filter((_, idx) => idx % Math.ceil(videoFrames.length / maxFrames) === 0).slice(0, maxFrames) : 
-                        videoFrames,
-                    format: jsonData.format || {},
-                    streams: jsonData.streams || []
-                })
+                resolve(videoFrames)
             } catch (parseError) {
                 reject(new Error(`Failed to parse ffprobe frame output: ${parseError}`))
             }
@@ -714,19 +737,19 @@ async function runFfprobeFrames(filePath: string, maxFrames: number): Promise<{ 
     })
 }
 
-async function analyzeFrames(filePath: string, maxFrames: number = 500): Promise<Dty.Resp<Dty.AnalyzeFramesResp>> {
+async function analyzeFrames(filePath: string, page: number = 1, pageSize: number = 200, startTime?: number): Promise<Dty.Resp<Dty.AnalyzeFramesResp>> {
     const resp = new Dty.Resp<Dty.AnalyzeFramesResp>()
-    const startTime = Date.now()
+    const parseStartTime = Date.now()
 
     try {
         if (!fs.existsSync(filePath)) {
             return resp.err(`File not found: ${filePath}`)
         }
 
-        const data = await runFfprobeFrames(filePath, maxFrames)
+        const info = await runFfprobeFrameInfo(filePath)
 
-        const videoStream = data.streams.find(s => s.codec_type === 'video')
-        const duration = parseFloat(data.format.duration || videoStream?.duration || '0')
+        const videoStream = info.streams.find(s => s.codec_type === 'video')
+        const duration = parseFloat(info.format.duration || videoStream?.duration || '0')
 
         const fpsParts = (videoStream?.r_frame_rate || '25/1').split('/')
         const fpsNum = parseFloat(fpsParts[0]) || 25
@@ -735,17 +758,67 @@ async function analyzeFrames(filePath: string, maxFrames: number = 500): Promise
 
         const totalFrames = parseInt(videoStream?.nb_frames || '0') || Math.round(duration * frameRate)
 
-        const frames: Dty.VideoFrame[] = data.frames.map((f, idx) => ({
-            index: idx,
-            type: f.pict_type || '?',
-            keyFrame: f.key_frame === 1,
-            pts: f.pkt_pts ?? 0,
-            dts: f.pkt_dts ?? 0,
-            duration: parseFloat(f.pkt_duration_time || '0') * 1000,
-            size: f.pkt_size || 0,
-            offset: f.pkt_pos || 0,
-            pictType: f.pict_type
-        }))
+        let streamTimeBaseNum = 1
+        let streamTimeBaseDen = 1000
+        if (videoStream?.time_base) {
+            const tbParts = videoStream.time_base.split('/')
+            streamTimeBaseNum = parseInt(tbParts[0]) || 1
+            streamTimeBaseDen = parseInt(tbParts[1]) || 1000
+        }
+
+        const frameDuration = 1 / frameRate
+        const pageDuration = pageSize * frameDuration
+        const actualStartTime = startTime !== undefined ? startTime : (page - 1) * pageDuration
+        const clampedStartTime = Math.max(0, Math.min(actualStartTime, duration - 0.1))
+        const actualDuration = Math.min(pageDuration, duration - clampedStartTime)
+
+        const rawFrames = await runFfprobeFramesByInterval(filePath, clampedStartTime, actualDuration + frameDuration)
+
+        const frames: Dty.VideoFrame[] = rawFrames.slice(0, pageSize).map((f) => {
+            let ptsTime = parseFloat(f.pts_time || '')
+            let dtsTime = parseFloat(f.dts_time || '')
+            
+            if (isNaN(ptsTime) || ptsTime === 0) {
+                if (f.pts !== undefined && f.pts !== null) {
+                    const tbNum = f.time_base ? parseInt(f.time_base.split('/')[0]) || streamTimeBaseNum : streamTimeBaseNum
+                    const tbDen = f.time_base ? parseInt(f.time_base.split('/')[1]) || streamTimeBaseDen : streamTimeBaseDen
+                    ptsTime = f.pts * tbNum / tbDen
+                } else if (f.pkt_pts !== undefined && f.pkt_pts !== null) {
+                    ptsTime = f.pkt_pts / 1000
+                }
+            }
+            
+            if (isNaN(dtsTime) || dtsTime === 0) {
+                if (f.dts !== undefined && f.dts !== null) {
+                    const tbNum = f.time_base ? parseInt(f.time_base.split('/')[0]) || streamTimeBaseNum : streamTimeBaseNum
+                    const tbDen = f.time_base ? parseInt(f.time_base.split('/')[1]) || streamTimeBaseDen : streamTimeBaseDen
+                    dtsTime = f.dts * tbNum / tbDen
+                } else if (f.pkt_dts !== undefined && f.pkt_dts !== null) {
+                    dtsTime = f.pkt_dts / 1000
+                } else {
+                    dtsTime = ptsTime
+                }
+            }
+            
+            let durationTime = parseFloat(f.duration_time || '')
+            if (isNaN(durationTime)) {
+                durationTime = parseFloat(f.pkt_duration_time || '0')
+            }
+            
+            const globalIndex = Math.round(ptsTime * frameRate)
+            
+            return {
+                index: globalIndex,
+                type: f.pict_type || '?',
+                keyFrame: f.key_frame === 1,
+                pts: ptsTime * 1000,
+                dts: dtsTime * 1000,
+                duration: durationTime * 1000,
+                size: f.size || f.pkt_size || 0,
+                offset: f.pos || f.pkt_pos || 0,
+                pictType: f.pict_type
+            }
+        })
 
         resp.data = {
             frames: frames,
@@ -755,11 +828,11 @@ async function analyzeFrames(filePath: string, maxFrames: number = 500): Promise
             codecName: videoStream?.codec_name || '',
             width: videoStream?.width || 0,
             height: videoStream?.height || 0,
-            parseTime: Date.now() - startTime
+            parseTime: Date.now() - parseStartTime
         }
         resp.success('success')
 
-        logger.info(`Frame analysis completed: ${frames.length}/${totalFrames} frames in ${Date.now() - startTime}ms`)
+        logger.info(`Frame analysis completed: page ${page}, ${frames.length} frames in ${Date.now() - parseStartTime}ms`)
     } catch (error) {
         logger.error(`Failed to analyze frames: ${error}`)
         resp.err(`Failed to analyze frames: ${error}`)

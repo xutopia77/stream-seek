@@ -2264,7 +2264,12 @@ class AppProc {
         if (!req.data?.filePath) {
             return resp.err('filePath is required')
         }
-        return await mp4Parser.analyzeFrames(req.data.filePath, req.data.maxFrames || 500)
+        return await mp4Parser.analyzeFrames(
+            req.data.filePath, 
+            req.data.page || 1, 
+            req.data.pageSize || 200,
+            req.data.startTime
+        )
     }
 }
 

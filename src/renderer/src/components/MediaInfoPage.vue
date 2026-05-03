@@ -32,17 +32,11 @@
                 <span class="sidebar-icon">🕐</span>
                 <span>{{ t('mediaInfo.timestamp') }}</span>
             </div>
-            <div
-                class="sidebar-item"
-                :class="{ active: activeTab === 'bitrate', disabled: true }"
-            >
+            <div class="sidebar-item" :class="{ active: activeTab === 'bitrate', disabled: true }">
                 <span class="sidebar-icon">〰️</span>
                 <span>{{ t('mediaInfo.bitrate') }}</span>
             </div>
-            <div
-                class="sidebar-item"
-                :class="{ active: activeTab === 'avsync', disabled: true }"
-            >
+            <div class="sidebar-item" :class="{ active: activeTab === 'avsync', disabled: true }">
                 <span class="sidebar-icon">🔗</span>
                 <span>{{ t('mediaInfo.avSync') }}</span>
             </div>
@@ -64,7 +58,11 @@
             <FrameAnalysisView
                 :frames="frameData.frames"
                 :video-info="frameVideoInfo"
+                :current-page="frameCurrentPage"
+                :page-size="framePageSize"
+                :loading="frameLoading"
                 @select="onFrameSelect"
+                @page-change="onFramePageChange"
             />
         </div>
 
@@ -229,6 +227,8 @@ const frameData = ref<Dty.AnalyzeFramesResp>({
 })
 const frameLoading = ref(false)
 const selectedFrame = ref<Dty.VideoFrame | null>(null)
+const frameCurrentPage = ref(1)
+const framePageSize = ref(200)
 
 const videoFile = computed<Dty.File | null>(() => {
     const file = appStore.curSltVideo
@@ -289,21 +289,24 @@ async function parseMp4Box() {
     }
 }
 
-async function analyzeFrames() {
-    console.log('analyzeFrames called, videoFile:', videoFile.value?.path)
+async function analyzeFrames(page: number = 1, pageSize: number = 200) {
+    console.log('analyzeFrames called, videoFile:', videoFile.value?.path, 'page:', page, 'pageSize:', pageSize)
     if (!videoFile.value?.path) {
         frameData.value = { frames: [], totalFrames: 0, duration: 0, frameRate: 0, codecName: '', width: 0, height: 0, parseTime: 0 }
         return
     }
 
     frameLoading.value = true
+    frameCurrentPage.value = page
+    framePageSize.value = pageSize
 
     try {
         const req: Dty.Req<Dty.AnalyzeFramesReq> = {
             cmd: Dty.CmdType.analyzeFrames,
             data: {
                 filePath: videoFile.value.path,
-                maxFrames: 500
+                page: page,
+                pageSize: pageSize
             }
         }
         console.log('Sending analyzeFrames request:', req)
@@ -330,7 +333,8 @@ watch(videoFile, (newFile, oldFile) => {
         parseMp4Box()
     }
     if (newFile && newFile.path && activeTab.value === 'frame') {
-        analyzeFrames()
+        frameCurrentPage.value = 1
+        analyzeFrames(1, framePageSize.value)
     }
 })
 
@@ -340,7 +344,8 @@ watch(activeTab, (newTab, oldTab) => {
         parseMp4Box()
     }
     if (newTab === 'frame' && videoFile.value?.path) {
-        analyzeFrames()
+        frameCurrentPage.value = 1
+        analyzeFrames(1, framePageSize.value)
     }
 })
 
@@ -350,7 +355,7 @@ onMounted(() => {
         parseMp4Box()
     }
     if (activeTab.value === 'frame' && videoFile.value?.path) {
-        analyzeFrames()
+        analyzeFrames(1, framePageSize.value)
     }
 })
 
@@ -360,6 +365,10 @@ function onBoxSelect(box: Dty.Mp4Box) {
 
 function onFrameSelect(frame: Dty.VideoFrame) {
     selectedFrame.value = frame
+}
+
+function onFramePageChange(page: number, pageSize: number) {
+    analyzeFrames(page, pageSize)
 }
 
 function formatFileSize(bytes: number | undefined): string {
