@@ -9,23 +9,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import '@renderer/assets/common.css'
 import util from '../../utils/util'
 import * as Dty from '../../../../bridge/dataTypedef'
-// import { IpcApi } from '../../utils/ipcApi'
 import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
 
 const { t } = useI18n()
 
-// 定义缩略图对象的类型
 class Thumbnail {
     path: string = ''
     name: string = ''
     indexTime: number = 0
-    checked: boolean = false // 由前端赋值
+    checked: boolean = false
     btnName: string = ''
     static makeDisplayName(thumbName: string): string {
         const timeStr = thumbName
@@ -39,9 +37,24 @@ class Thumbnail {
     }
 }
 
-// http://localhost:58080/thumb_get?video=00_20250301111454_20250301112302.mp4&thumb=20250301112134.jpg
+const thumbDataUrls = reactive<Map<string, string>>(new Map())
+
+async function loadThumbImage(thumb: Thumbnail): Promise<void> {
+    const videoName = appStore.curSltThumb?.name
+    if (!videoName) return
+    if (thumbDataUrls.has(thumb.path)) return
+
+    const dataUrl = await util.thumb_img_get(videoName, thumb.path)
+    if (dataUrl) {
+        thumbDataUrls.set(thumb.path, dataUrl)
+    }
+}
+
 function thumbUrlMake(thumb: Thumbnail): string {
-    return `http://localhost:${Dty.httpSrvPort}/thumb_get?video=${appStore.curSltThumb?.name}&thumb=${thumb.path}`
+    const cached = thumbDataUrls.get(thumb.path)
+    if (cached) return cached
+    loadThumbImage(thumb)
+    return ''
 }
 
 let thumbnailImages = ref<Thumbnail[]>([])
@@ -116,6 +129,7 @@ watch(
 watch(
     () => appStore.curSltThumb?.thumbnail,
     async (): Promise<void> => {
+        thumbDataUrls.clear()
         thumbnailImages.value = []
         update_thumbnail_images(thumbnailImages.value)
         console.log(t('thumbView.thumbnailCount', { count: thumbnailImages.value.length }))

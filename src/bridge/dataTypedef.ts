@@ -14,6 +14,7 @@ export enum CmdType {
     openVideoDialog = 'open_video_dialog',
     videoCut = 'cut_video',
     thumbGet = 'thumbGet',
+    thumbImgGet = 'thumb_img_get',
     thumbDel = 'thumbDel',
     prjOpen = 'open_prj',
     prjOpenByPath = 'open_prj_by_path',
@@ -29,8 +30,6 @@ export enum CmdType {
     selectFolder = 'select_folder',
     createPrjWithPath = 'create_prj_with_path'
 }
-
-export const httpSrvPort: number = 58080
 
 export class RecentItem {
     name: string = ''
@@ -62,6 +61,16 @@ export class MessageReq {
 
 export class ThumbnailInfo {
     path: string[] = []
+}
+
+export class ThumbImgGetReq {
+    videoName: string = ''
+    thumbName: string = ''
+}
+
+export class ThumbImgGetResp {
+    data: string = '' // base64 encoded image data
+    mimeType: string = 'image/jpeg'
 }
 
 export class FileInfo {

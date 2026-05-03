@@ -752,6 +752,19 @@ class Util {
         return response
     }
 
+    async thumb_img_get(videoName: string, thumbName: string): Promise<string | null> {
+        const req: Dty.Req<Dty.ThumbImgGetReq> = {
+            cmd: Dty.CmdType.thumbImgGet,
+            data: { videoName, thumbName }
+        }
+        const response: Dty.Resp<Dty.ThumbImgGetResp> = await IpcApi.trigger_event(req)
+        if (response.code !== 0 || !response.data) {
+            console.error(`get thumb image failed: ${response.status}`)
+            return null
+        }
+        return `data:${response.data.mimeType};base64,${response.data.data}`
+    }
+
     async files_get(reqParam: Dty.FilesReq | null): Promise<Dty.Resp<Dty.FilesResp>> {
         const req: Dty.Req<Dty.FilesReq> = {
             cmd: Dty.CmdType.filesGet,

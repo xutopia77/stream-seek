@@ -11,14 +11,13 @@
     />
      -->
 
-<!-- 修改 CSP 规则，添加 http://localhost:58080 到 img-src -->
-  <meta http-equiv="Content-Security-Policy" content="
+<meta http-equiv="Content-Security-Policy" content="
     default-src 'self' 'unsafe-inline' data:;
     script-src 'self' 'unsafe-inline' 'unsafe-eval';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' file: http://localhost:58080;
-    connect-src 'self' http://localhost:58080; 
-     media-src 'self' file: http://localhost:58080;
+    img-src 'self' file: data:;
+    connect-src 'self';
+    media-src 'self' file:;
   ">
 
   </head>

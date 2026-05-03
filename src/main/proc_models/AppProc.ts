@@ -1,16 +1,13 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import mediaProc from './MediaProcess.js'
-// import appCfg from './AppCfg.js'
 import logger from './Logger'
 import appDb from './AppDb'
 import recordsProc from './RecordsProcess.js'
-// // import type { WorkResp } from './Utils.js'
 import * as Dty from '../../bridge/dataTypedef'
 import appCfg from './AppCfg.js'
 import { workQueue } from './TaskEvent'
 import { Util } from './Utils.js'
-import express from 'express'
 import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
 import { dialog } from 'electron'
@@ -370,100 +367,6 @@ class TraversalFolder {
     }
 }
 
-async function startHttpSrv(port: number): Promise<void> {
-    const app = express()
-    app.use(express.static('public'))
-
-    app.use((req, res, next) => {
-        // 允许所有来源（开发环境）
-        res.header('Access-Control-Allow-Origin', '*')
-        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        res.header(
-            'Access-Control-Allow-Headers',
-            'Origin, X-Requested-With, Content-Type, Accept, Authorization'
-        )
-        // 关键：设置与前端匹配的 Referrer 策略
-        res.header('Referrer-Policy', 'strict-origin-when-cross-origin')
-
-        // 关闭严格的跨域隔离策略（Electron 不需要）
-        res.header('Cross-Origin-Embedder-Policy', 'unsafe-none')
-        res.header('Cross-Origin-Opener-Policy', 'unsafe-none')
-        res.header('Cross-Origin-Resource-Policy', 'cross-origin')
-
-        if (req.method === 'OPTIONS') {
-            res.sendStatus(200)
-            return
-        }
-        next()
-    })
-
-    // app.listen(port, 'localhost', () => {
-    app.listen(port, 'localhost', () => {
-        logger.error(`Server is running on port ${port}`)
-    })
-
-    // 请求示例 "http://localhost:58080/thumb_get?video=12345&thumb=1740797520"
-    app.get('/thumb_get', async (req, res) => {
-        const videoId = req.query.video
-        const timestamp = req.query.thumb
-        try {
-            if (videoId == null || timestamp == null) {
-                logger.error(
-                    `Invalid request: missing video or thumb parameter videoId=${videoId},timestamp=${timestamp}`
-                )
-                res.status(400).send('Invalid request: missing video or thumb parameter')
-                return
-            }
-
-            if (appCfg.prj.dataRepo.length == 0 || appCfg.prj.dataRepo[0].thumbnailPath == '') {
-                logger.error(
-                    `Invalid request: missing thumbnailPath ${appCfg.prj.dataRepo[0].thumbnailPath}`
-                )
-                res.status(400).send('Invalid request: missing thumbnailPath')
-                return
-            }
-            const thumbDbFilePath = Util.thumbDbPathGet(videoId, Dty.ThumbType.Thumb)
-            const trashThumbDbPath = Util.thumbTrashDbPathGet(videoId, Dty.ThumbType.Thumb)
-
-            let thumbDbPath = thumbDbFilePath
-            // 检查数据库文件是否存在
-            if (!fs.existsSync(thumbDbFilePath)) {
-                if (!trashThumbDbPath) {
-                    logger.error(`Database not found: ${thumbDbFilePath}`)
-                    res.status(404).send(`Database not found: ${thumbDbFilePath}`)
-                    return
-                }
-                thumbDbPath = trashThumbDbPath
-            }
-
-            const thumbDb: Database = await open({
-                filename: thumbDbPath,
-                driver: sqlite3.Database
-            })
-
-            // 从数据库中查询出对应的缩略图图片
-            const row = await thumbDb.get('SELECT raw FROM files WHERE filename =?', [timestamp])
-
-            await thumbDb.close()
-
-            if (row == null) {
-                res.status(404).send('Thumbnail not found')
-                return
-            }
-
-            const imageData = row.raw
-            res.setHeader('Content-Type', 'image/jpeg')
-            res.send(imageData)
-        } catch (error) {
-            console.error(
-                `Error handling thumb_get request:filename=${videoId},thum=${timestamp}`,
-                error
-            )
-            res.status(500).send('Internal server error')
-        }
-    })
-}
-
 let bTiny2DbStop = false
 let bSyncPrjStop = false
 
@@ -529,7 +432,6 @@ class AppProc {
 
     async initApp(): Promise<void> {
         await appCfg.initCfg()
-        await startHttpSrv(Dty.httpSrvPort)
     }
     mainWinSet(mainWin: Electron.BrowserWindow | null): void {
         Util.mainWinSet(mainWin)
@@ -775,6 +677,54 @@ class AppProc {
     }
     async handle_search_file(req: Dty.Req<Dty.FilesReq>): Promise<Dty.Resp<Dty.FilesResp>> {
         return appDb.fileViewSearch(req.data == null ? null : req.data)
+    }
+
+    async handle_thumb_img_get(req: Dty.Req<Dty.ThumbImgGetReq>): Promise<Dty.Resp<Dty.ThumbImgGetResp>> {
+        const resp = new Dty.Resp<Dty.ThumbImgGetResp>()
+        const reqData = req.data
+
+        if (reqData == null || reqData.videoName == '' || reqData.thumbName == '') {
+            return resp.err('Invalid request: missing videoName or thumbName')
+        }
+
+        if (appCfg.prj.dataRepo.length == 0 || appCfg.prj.dataRepo[0].thumbnailPath == '') {
+            return resp.err('Invalid request: missing thumbnailPath')
+        }
+
+        const thumbDbFilePath = Util.thumbDbPathGet(reqData.videoName, Dty.ThumbType.Thumb)
+        const trashThumbDbPath = Util.thumbTrashDbPathGet(reqData.videoName, Dty.ThumbType.Thumb)
+
+        let thumbDbPath = thumbDbFilePath
+        if (!fs.existsSync(thumbDbFilePath)) {
+            if (!trashThumbDbPath || !fs.existsSync(trashThumbDbPath)) {
+                return resp.err(`Database not found: ${thumbDbFilePath}`)
+            }
+            thumbDbPath = trashThumbDbPath
+        }
+
+        try {
+            const thumbDb: Database = await open({
+                filename: thumbDbPath,
+                driver: sqlite3.Database
+            })
+
+            const row = await thumbDb.get('SELECT raw FROM files WHERE filename =?', [reqData.thumbName])
+            await thumbDb.close()
+
+            if (row == null) {
+                return resp.err('Thumbnail not found')
+            }
+
+            const imageData = row.raw
+            const base64Data = imageData.toString('base64')
+            resp.data = new Dty.ThumbImgGetResp()
+            resp.data.data = base64Data
+            resp.data.mimeType = 'image/jpeg'
+            return resp.success('success')
+        } catch (error) {
+            logger.error(`Error handling thumb_img_get: ${error}`)
+            return resp.err('Internal server error')
+        }
     }
 
     async start_gen_thumbnail(): Promise<Dty.Resp> {
@@ -1949,6 +1899,15 @@ class AppProc {
             bSyncPrjStop = true
             logger.info(`cmd:${req.cmd}:${cseq}`)
             return this.cmdRespMake(new Dty.Resp())
+        }
+        if (req.cmd == Dty.CmdType.thumbImgGet) {
+            const cmdReq: Dty.Req<Dty.ThumbImgGetReq> = {
+                cmd: req.cmd,
+                cseq: req.cseq,
+                data: JSON.parse(req.data ? req.data : '{}') as Dty.ThumbImgGetReq
+            }
+            logger.info(`cmd:${cmd}:${cseq}, video=${cmdReq.data?.videoName}, thumb=${cmdReq.data?.thumbName}`)
+            return this.cmdRespMake(await this.handle_thumb_img_get(cmdReq))
         }
         if (workQueue.isBusy()) {
             logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${workQueue.curReq?.cmd}`)
