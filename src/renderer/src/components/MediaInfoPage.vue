@@ -19,7 +19,8 @@
             </div>
             <div
                 class="sidebar-item"
-                :class="{ active: activeTab === 'frame', disabled: true }"
+                :class="{ active: activeTab === 'frame', disabled: !videoFile }"
+                @click="videoFile && (activeTab = 'frame')"
             >
                 <span class="sidebar-icon">📈</span>
                 <span>{{ t('mediaInfo.frameAnalysis') }}</span>
@@ -57,6 +58,14 @@
         <div v-if="activeTab === 'mp4'" class="mp4-content-area">
             <Mp4StructureView :boxes="mp4Boxes" @select="onBoxSelect" />
             <Mp4DetailPanel :box="selectedBox" />
+        </div>
+
+        <div v-else-if="activeTab === 'frame'" class="frame-content-area">
+            <FrameAnalysisView
+                :frames="frameData.frames"
+                :video-info="frameVideoInfo"
+                @select="onFrameSelect"
+            />
         </div>
 
         <div v-else class="content-area">
@@ -195,6 +204,7 @@ import { useAppStore } from '../stores/AppStore'
 import { useI18n } from 'vue-i18n'
 import Mp4StructureView from './Mp4StructureView.vue'
 import Mp4DetailPanel from './Mp4DetailPanel.vue'
+import FrameAnalysisView from './FrameAnalysisView.vue'
 import { IpcApi } from '../utils/ipcApi'
 import '@renderer/assets/common.css'
 import * as Dty from '../../../bridge/dataTypedef'
@@ -207,6 +217,18 @@ const selectedBox = ref<Dty.Mp4Box | null>(null)
 const mp4Boxes = ref<Dty.Mp4Box[]>([])
 const mp4Loading = ref(false)
 const mp4Error = ref('')
+const frameData = ref<Dty.AnalyzeFramesResp>({
+    frames: [],
+    totalFrames: 0,
+    duration: 0,
+    frameRate: 0,
+    codecName: '',
+    width: 0,
+    height: 0,
+    parseTime: 0
+})
+const frameLoading = ref(false)
+const selectedFrame = ref<Dty.VideoFrame | null>(null)
 
 const videoFile = computed<Dty.File | null>(() => {
     const file = appStore.curSltVideo
@@ -219,6 +241,15 @@ const hasMediaInfo = computed(() => {
     if (!info) return false
     return info.duration !== undefined && info.duration > 0
 })
+
+const frameVideoInfo = computed(() => ({
+    codecName: frameData.value.codecName,
+    width: frameData.value.width,
+    height: frameData.value.height,
+    frameRate: frameData.value.frameRate,
+    totalFrames: frameData.value.totalFrames,
+    duration: frameData.value.duration
+}))
 
 async function parseMp4Box() {
     console.log('parseMp4Box called, videoFile:', videoFile.value?.path)
@@ -258,10 +289,48 @@ async function parseMp4Box() {
     }
 }
 
+async function analyzeFrames() {
+    console.log('analyzeFrames called, videoFile:', videoFile.value?.path)
+    if (!videoFile.value?.path) {
+        frameData.value = { frames: [], totalFrames: 0, duration: 0, frameRate: 0, codecName: '', width: 0, height: 0, parseTime: 0 }
+        return
+    }
+
+    frameLoading.value = true
+
+    try {
+        const req: Dty.Req<Dty.AnalyzeFramesReq> = {
+            cmd: Dty.CmdType.analyzeFrames,
+            data: {
+                filePath: videoFile.value.path,
+                maxFrames: 500
+            }
+        }
+        console.log('Sending analyzeFrames request:', req)
+        const resp = await IpcApi.trigger_event<Dty.AnalyzeFramesReq, Dty.AnalyzeFramesResp>(req)
+        console.log('analyzeFrames resp:', resp)
+        if (resp.code === 0 && resp.data) {
+            frameData.value = resp.data
+            console.log('frames loaded:', frameData.value.frames.length, '/', frameData.value.totalFrames)
+        } else {
+            frameData.value = { frames: [], totalFrames: 0, duration: 0, frameRate: 0, codecName: '', width: 0, height: 0, parseTime: 0 }
+            console.error('analyzeFrames error:', resp.status)
+        }
+    } catch (error) {
+        frameData.value = { frames: [], totalFrames: 0, duration: 0, frameRate: 0, codecName: '', width: 0, height: 0, parseTime: 0 }
+        console.error('analyzeFrames exception:', error)
+    } finally {
+        frameLoading.value = false
+    }
+}
+
 watch(videoFile, (newFile, oldFile) => {
     console.log('videoFile changed:', oldFile?.path, '->', newFile?.path)
     if (newFile && newFile.path && activeTab.value === 'mp4') {
         parseMp4Box()
+    }
+    if (newFile && newFile.path && activeTab.value === 'frame') {
+        analyzeFrames()
     }
 })
 
@@ -270,6 +339,9 @@ watch(activeTab, (newTab, oldTab) => {
     if (newTab === 'mp4' && videoFile.value?.path) {
         parseMp4Box()
     }
+    if (newTab === 'frame' && videoFile.value?.path) {
+        analyzeFrames()
+    }
 })
 
 onMounted(() => {
@@ -277,10 +349,17 @@ onMounted(() => {
     if (activeTab.value === 'mp4' && videoFile.value?.path) {
         parseMp4Box()
     }
+    if (activeTab.value === 'frame' && videoFile.value?.path) {
+        analyzeFrames()
+    }
 })
 
 function onBoxSelect(box: Dty.Mp4Box) {
     selectedBox.value = box
+}
+
+function onFrameSelect(frame: Dty.VideoFrame) {
+    selectedFrame.value = frame
 }
 
 function formatFileSize(bytes: number | undefined): string {
@@ -395,6 +474,11 @@ function getFileExtension(filename: string | undefined): string {
 .mp4-content-area {
     flex: 1;
     display: flex;
+    overflow: hidden;
+}
+
+.frame-content-area {
+    flex: 1;
     overflow: hidden;
 }
 

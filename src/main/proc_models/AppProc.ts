@@ -2238,6 +2238,11 @@ class AppProc {
                 logger.info(`cmd:${cmd}:${cseq}, path:${cmdReq.data?.filePath}`)
                 return this.cmdRespMake(await this.handle_parse_mp4_box(cmdReq))
             }
+            case Dty.CmdType.analyzeFrames: {
+                const cmdReq = convertCmdRequest<Dty.AnalyzeFramesReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}, path:${cmdReq.data?.filePath}`)
+                return this.cmdRespMake(await this.handle_analyze_frames(cmdReq))
+            }
             default: {
                 console.log(`Unknown event: ${cmd}:${cseq}`)
                 const resp = new Dty.Resp()
@@ -2252,6 +2257,14 @@ class AppProc {
             return resp.err('filePath is required')
         }
         return await mp4Parser.parseMp4Box(req.data.filePath)
+    }
+
+    async handle_analyze_frames(req: Dty.Req<Dty.AnalyzeFramesReq>): Promise<Dty.Resp<Dty.AnalyzeFramesResp>> {
+        const resp = new Dty.Resp<Dty.AnalyzeFramesResp>()
+        if (!req.data?.filePath) {
+            return resp.err('filePath is required')
+        }
+        return await mp4Parser.analyzeFrames(req.data.filePath, req.data.maxFrames || 500)
     }
 }
 

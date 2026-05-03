@@ -660,8 +660,117 @@ async function parseMp4Box(filePath: string): Promise<Dty.Resp<Dty.ParseMp4BoxRe
     return resp
 }
 
+interface FfprobeFrame {
+    media_type?: string
+    stream_index?: number
+    key_frame?: number
+    pkt_pts?: number
+    pkt_dts?: number
+    pkt_duration_time?: string
+    pkt_size?: number
+    pkt_pos?: number
+    pict_type?: string
+}
+
+async function runFfprobeFrames(filePath: string, maxFrames: number): Promise<{ frames: FfprobeFrame[], format: FfprobeFormat, streams: FfprobeStream[] }> {
+    return new Promise((resolve, reject) => {
+        const cmd = `"${appCfg.ffprobeExe}" -v error -of json -show_format -show_streams -select_streams v:0 -show_frames "${filePath}"`
+        logger.info(`Running ffprobe for frames: ${cmd}`)
+
+        exec(cmd, { maxBuffer: 200 * 1024 * 1024 }, (error, stdout, stderr) => {
+            if (error) {
+                reject(new Error(`ffprobe frames error: ${error.message}`))
+                return
+            }
+            if (stderr && stderr.trim()) {
+                logger.warn(`ffprobe frames stderr: ${stderr}`)
+            }
+            try {
+                const jsonData = JSON.parse(stdout)
+                let frames = (jsonData.frames || []) as FfprobeFrame[]
+                const videoFrames = frames.filter(f => f.media_type === 'video')
+                
+                if (videoFrames.length > maxFrames) {
+                    const step = Math.ceil(videoFrames.length / maxFrames)
+                    const sampled: FfprobeFrame[] = []
+                    for (let i = 0; i < videoFrames.length; i += step) {
+                        sampled.push(videoFrames[i])
+                        if (sampled.length >= maxFrames) break
+                    }
+                    frames = sampled
+                }
+
+                resolve({
+                    frames: videoFrames.length > maxFrames ? 
+                        videoFrames.filter((_, idx) => idx % Math.ceil(videoFrames.length / maxFrames) === 0).slice(0, maxFrames) : 
+                        videoFrames,
+                    format: jsonData.format || {},
+                    streams: jsonData.streams || []
+                })
+            } catch (parseError) {
+                reject(new Error(`Failed to parse ffprobe frame output: ${parseError}`))
+            }
+        })
+    })
+}
+
+async function analyzeFrames(filePath: string, maxFrames: number = 500): Promise<Dty.Resp<Dty.AnalyzeFramesResp>> {
+    const resp = new Dty.Resp<Dty.AnalyzeFramesResp>()
+    const startTime = Date.now()
+
+    try {
+        if (!fs.existsSync(filePath)) {
+            return resp.err(`File not found: ${filePath}`)
+        }
+
+        const data = await runFfprobeFrames(filePath, maxFrames)
+
+        const videoStream = data.streams.find(s => s.codec_type === 'video')
+        const duration = parseFloat(data.format.duration || videoStream?.duration || '0')
+
+        const fpsParts = (videoStream?.r_frame_rate || '25/1').split('/')
+        const fpsNum = parseFloat(fpsParts[0]) || 25
+        const fpsDen = parseFloat(fpsParts[1]) || 1
+        const frameRate = fpsNum / fpsDen
+
+        const totalFrames = parseInt(videoStream?.nb_frames || '0') || Math.round(duration * frameRate)
+
+        const frames: Dty.VideoFrame[] = data.frames.map((f, idx) => ({
+            index: idx,
+            type: f.pict_type || '?',
+            keyFrame: f.key_frame === 1,
+            pts: f.pkt_pts ?? 0,
+            dts: f.pkt_dts ?? 0,
+            duration: parseFloat(f.pkt_duration_time || '0') * 1000,
+            size: f.pkt_size || 0,
+            offset: f.pkt_pos || 0,
+            pictType: f.pict_type
+        }))
+
+        resp.data = {
+            frames: frames,
+            totalFrames: totalFrames,
+            duration: duration,
+            frameRate: frameRate,
+            codecName: videoStream?.codec_name || '',
+            width: videoStream?.width || 0,
+            height: videoStream?.height || 0,
+            parseTime: Date.now() - startTime
+        }
+        resp.success('success')
+
+        logger.info(`Frame analysis completed: ${frames.length}/${totalFrames} frames in ${Date.now() - startTime}ms`)
+    } catch (error) {
+        logger.error(`Failed to analyze frames: ${error}`)
+        resp.err(`Failed to analyze frames: ${error}`)
+    }
+
+    return resp
+}
+
 class Mp4Parser {
     parseMp4Box = parseMp4Box
+    analyzeFrames = analyzeFrames
 }
 
 const mp4Parser = new Mp4Parser()

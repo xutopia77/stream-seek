@@ -33,7 +33,8 @@ export enum CmdType {
     clipProjectSave = 'clip_project_save',
     clipProjectSaveAs = 'clip_project_save_as',
     clipProjectOpen = 'clip_project_open',
-    parseMp4Box = 'parse_mp4_box'
+    parseMp4Box = 'parse_mp4_box',
+    analyzeFrames = 'analyze_frames'
 }
 
 export class RecentItem {
@@ -384,6 +385,34 @@ export class ParseMp4BoxReq {
 export class ParseMp4BoxResp {
     boxes: Mp4Box[] = []
     fileSize: number = 0
+    parseTime: number = 0
+}
+
+export interface VideoFrame {
+    index: number
+    type: string
+    keyFrame: boolean
+    pts: number
+    dts: number
+    duration: number
+    size: number
+    offset: number
+    pictType?: string
+}
+
+export class AnalyzeFramesReq {
+    filePath: string = ''
+    maxFrames: number = 500
+}
+
+export class AnalyzeFramesResp {
+    frames: VideoFrame[] = []
+    totalFrames: number = 0
+    duration: number = 0
+    frameRate: number = 0
+    codecName: string = ''
+    width: number = 0
+    height: number = 0
     parseTime: number = 0
 }
 
