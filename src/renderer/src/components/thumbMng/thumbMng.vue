@@ -1,14 +1,14 @@
 <template>
-    <div class="video-preview-container">
-        <div class="preview-container">
-            <div class="preview-image">
+    <div class="thumb-mng-container">
+        <div class="preview-area">
+            <div class="preview-image xc-scrollbar">
                 <ThumbView></ThumbView>
             </div>
             <div class="work-panel">
                 <ThumbList v-if="rightPanel === Dty.WorkPanel.List" />
             </div>
         </div>
-        <div class="control-container">
+        <div class="control-bar">
             <ThumbInfoBar />
             <ThumbCtrlBar />
         </div>
@@ -35,56 +35,41 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.video-preview-container {
-    height: calc(100% - var(--xc-home-nac-height));
+.thumb-mng-container {
+    height: 100%;
     width: 100%;
-    padding: 0;
-    margin: 0;
-    background-color: #f0f2f7;
     display: flex;
     flex-direction: column;
+    background-color: var(--xc-background-color);
 }
 
-.preview-container {
-    width: 100%;
-    height: calc(100% - 60px);
-    padding: 0;
-    margin: 0;
+.preview-area {
+    flex: 1;
     display: flex;
+    overflow: hidden;
 }
 
 .preview-image {
-    height: 100%;
     flex: 1;
-    padding: 0;
-    margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: black;
+    background-color: #1a1a1a;
+    overflow: auto;
 }
 
 .work-panel {
-    height: 100%;
     width: 20%;
     max-width: 250px;
-    padding: 0;
-    margin: 0;
+    min-width: 200px;
+    background-color: #252526;
+    border-left: 1px solid #333;
+    overflow: hidden;
 }
 
-.preview-image video {
-    max-height: 100%;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    object-fit: contain;
-    /* 确保视频适应容器 */
-}
-
-.control-container {
+.control-bar {
     height: 60px;
-    width: 100%;
-    padding: 0;
-    margin: 0;
+    background-color: #252526;
+    border-top: 1px solid #333;
 }
 </style>

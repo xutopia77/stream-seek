@@ -1,48 +1,55 @@
 <template>
     <div class="media-info-container">
         <div class="sidebar">
-            <div
-                class="sidebar-item"
-                :class="{ active: activeTab === 'overview' }"
-                @click="activeTab = 'overview'"
-            >
-                <span class="sidebar-icon">📊</span>
-                <span>{{ t('mediaInfo.overview') }}</span>
+            <div class="sidebar-header">
+                <button class="back-btn" @click="goBack">
+                    ← {{ t('common.back') }}
+                </button>
             </div>
-            <div
-                class="sidebar-item"
-                :class="{ active: activeTab === 'mp4', disabled: !videoFile }"
-                @click="videoFile && (activeTab = 'mp4')"
-            >
-                <span class="sidebar-icon">📁</span>
-                <span>MP4 {{ t('mediaInfo.structure') }}</span>
-            </div>
-            <div
-                class="sidebar-item"
-                :class="{ active: activeTab === 'frame', disabled: !videoFile }"
-                @click="videoFile && (activeTab = 'frame')"
-            >
-                <span class="sidebar-icon">📈</span>
-                <span>{{ t('mediaInfo.frameAnalysis') }}</span>
-            </div>
-            <div
-                class="sidebar-item"
-                :class="{ active: activeTab === 'timestamp', disabled: true }"
-            >
-                <span class="sidebar-icon">🕐</span>
-                <span>{{ t('mediaInfo.timestamp') }}</span>
-            </div>
-            <div class="sidebar-item" :class="{ active: activeTab === 'bitrate', disabled: true }">
-                <span class="sidebar-icon">〰️</span>
-                <span>{{ t('mediaInfo.bitrate') }}</span>
-            </div>
-            <div class="sidebar-item" :class="{ active: activeTab === 'avsync', disabled: true }">
-                <span class="sidebar-icon">🔗</span>
-                <span>{{ t('mediaInfo.avSync') }}</span>
-            </div>
-            <div class="sidebar-item" :class="{ active: activeTab === 'interval', disabled: true }">
-                <span class="sidebar-icon">⏱</span>
-                <span>{{ t('mediaInfo.frameInterval') }}</span>
+            <div class="sidebar-menu">
+                <div
+                    class="sidebar-item"
+                    :class="{ active: activeTab === 'overview' }"
+                    @click="activeTab = 'overview'"
+                >
+                    <span class="sidebar-icon">📊</span>
+                    <span>{{ t('mediaInfo.overview') }}</span>
+                </div>
+                <div
+                    class="sidebar-item"
+                    :class="{ active: activeTab === 'mp4', disabled: !videoFile }"
+                    @click="videoFile && (activeTab = 'mp4')"
+                >
+                    <span class="sidebar-icon">📁</span>
+                    <span>MP4 {{ t('mediaInfo.structure') }}</span>
+                </div>
+                <div
+                    class="sidebar-item"
+                    :class="{ active: activeTab === 'frame', disabled: !videoFile }"
+                    @click="videoFile && (activeTab = 'frame')"
+                >
+                    <span class="sidebar-icon">📈</span>
+                    <span>{{ t('mediaInfo.frameAnalysis') }}</span>
+                </div>
+                <div
+                    class="sidebar-item"
+                    :class="{ active: activeTab === 'timestamp', disabled: true }"
+                >
+                    <span class="sidebar-icon">🕐</span>
+                    <span>{{ t('mediaInfo.timestamp') }}</span>
+                </div>
+                <div class="sidebar-item" :class="{ active: activeTab === 'bitrate', disabled: true }">
+                    <span class="sidebar-icon">〰️</span>
+                    <span>{{ t('mediaInfo.bitrate') }}</span>
+                </div>
+                <div class="sidebar-item" :class="{ active: activeTab === 'avsync', disabled: true }">
+                    <span class="sidebar-icon">🔗</span>
+                    <span>{{ t('mediaInfo.avSync') }}</span>
+                </div>
+                <div class="sidebar-item" :class="{ active: activeTab === 'interval', disabled: true }">
+                    <span class="sidebar-icon">⏱</span>
+                    <span>{{ t('mediaInfo.frameInterval') }}</span>
+                </div>
             </div>
         </div>
 
@@ -237,6 +244,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/AppStore'
 import { useI18n } from 'vue-i18n'
 import Mp4StructureView from './Mp4StructureView.vue'
@@ -247,6 +255,7 @@ import '@renderer/assets/common.css'
 import * as Dty from '../../../bridge/dataTypedef'
 
 const { t } = useI18n()
+const router = useRouter()
 const appStore = useAppStore()
 
 const activeTab = ref<
@@ -516,6 +525,10 @@ function getFileExtension(filename: string | undefined): string {
     const ext = filename.split('.').pop()?.toUpperCase() || ''
     return ext
 }
+
+function goBack(): void {
+    router.push('/')
+}
 </script>
 
 <style scoped>
@@ -533,10 +546,33 @@ function getFileExtension(filename: string | undefined): string {
     min-width: 160px;
     background-color: #252526;
     border-right: 1px solid #333;
-    padding: 8px 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+}
+
+.sidebar-header {
+    padding: 12px;
+    border-bottom: 1px solid #333;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: #007acc;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.back-btn:hover {
+    background-color: #37373d;
+}
+
+.sidebar-menu {
+    flex: 1;
+    padding: 8px 0;
+    overflow-y: auto;
 }
 
 .sidebar-item {

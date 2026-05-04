@@ -211,6 +211,41 @@ function tagNameShowMake(tagName: string): string {
     overflow: auto;
 }
 
+.path-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.path-table th,
+.path-table td {
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+    color: #ccc;
+}
+
+.path-table th {
+    background-color: #2d2d30;
+    font-weight: 600;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.path-table tr:hover {
+    background-color: #2a2d2e;
+}
+
+.path-table tr.selected {
+    background-color: #094771;
+}
+
+.index-col {
+    width: 60px;
+    text-align: center;
+}
+
 .description-col {
     max-width: 200px;
     overflow: hidden;

@@ -75,11 +75,13 @@ const goBack = (): void => {
     height: calc(100% - var(--xc-home-nac-height));
     display: flex;
     background-color: var(--xc-background-color);
+    border-top: 1px solid #333;
+    box-sizing: border-box;
 }
 
 .settings-sidebar {
-    width: 200px;
-    min-width: 200px;
+    width: 160px;
+    min-width: 160px;
     background-color: #252526;
     border-right: 1px solid #333;
     display: flex;

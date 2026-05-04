@@ -1,12 +1,5 @@
 <template>
     <div class="file-list-page">
-        <div class="page-header">
-            <h2 class="xc-text">{{ t('fileList.title') }}</h2>
-            <router-link to="/admin" class="no-underline-link">
-                <button class="xc-button">{{ t('fileList.backToAdmin') }}</button>
-            </router-link>
-        </div>
-
         <div class="project-info" v-if="appStore.prj">
             <span class="xc-text">{{ t('fileList.projectName') }}: {{ appStore.prj.name }}</span>
             <span class="xc-text">{{ t('fileList.totalFiles') }}: {{ appStore.videoTotalNum }}</span>
@@ -265,22 +258,10 @@ const getStatusText = (status: Dty.Fstatus): string => {
 .file-list-page {
     display: flex;
     flex-direction: column;
-    height: calc(100% - var(--xc-home-nac-height));
+    height: 100%;
     width: 100%;
     background-color: var(--xc-background-color);
     color: var(--xc-text-color);
-}
-
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #333;
-}
-
-.page-header h2 {
-    margin: 0;
 }
 
 .project-info {
@@ -392,9 +373,5 @@ const getStatusText = (status: Dty.Fstatus): string => {
     text-align: center;
     padding: 40px;
     color: #888;
-}
-
-.no-underline-link {
-    text-decoration: none;
 }
 </style>
