@@ -40,10 +40,7 @@
                 <span class="sidebar-icon">🔗</span>
                 <span>{{ t('mediaInfo.avSync') }}</span>
             </div>
-            <div
-                class="sidebar-item"
-                :class="{ active: activeTab === 'interval', disabled: true }"
-            >
+            <div class="sidebar-item" :class="{ active: activeTab === 'interval', disabled: true }">
                 <span class="sidebar-icon">⏱</span>
                 <span>{{ t('mediaInfo.frameInterval') }}</span>
             </div>
@@ -97,57 +94,87 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.duration') }}</span>
-                            <span class="info-value">{{ formatDuration(videoFile?.duration || videoFile?.mediaInfo?.duration) }}</span>
+                            <span class="info-value">{{
+                                formatDuration(
+                                    videoFile?.duration || videoFile?.mediaInfo?.duration
+                                )
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.overallBitRate') }}</span>
-                            <span class="info-value">{{ formatBitRate(videoFile?.mediaInfo?.bit_rate) }}</span>
+                            <span class="info-value">{{
+                                formatBitRate(videoFile?.mediaInfo?.bit_rate)
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.streamCount') }}</span>
-                            <span class="info-value">{{ videoFile?.mediaInfo?.nb_streams || '-' }}</span>
+                            <span class="info-value">{{
+                                videoFile?.mediaInfo?.nb_streams || '-'
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.totalFrames') }}</span>
-                            <span class="info-value">{{ videoFile?.mediaInfo?.video?.nb_frames ? Math.round(videoFile.mediaInfo.video.nb_frames) : '-' }}</span>
+                            <span class="info-value">{{
+                                videoFile?.mediaInfo?.video?.nb_frames
+                                    ? Math.round(videoFile.mediaInfo.video.nb_frames)
+                                    : '-'
+                            }}</span>
                         </div>
                     </div>
                 </section>
 
                 <section class="info-section">
                     <h3 class="section-title">{{ t('mediaInfo.videoInfo') }}</h3>
-                    <div class="info-table" v-if="videoFile?.mediaInfo?.video">
+                    <div v-if="videoFile?.mediaInfo?.video" class="info-table">
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.streamIndex') }}</span>
                             <span class="info-value">0</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.codec') }}</span>
-                            <span class="info-value">{{ videoFile.mediaInfo.video.codec_name || '-' }}</span>
+                            <span class="info-value">{{
+                                videoFile.mediaInfo.video.codec_name || '-'
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.codecType') }}</span>
-                            <span class="info-value">{{ videoFile.mediaInfo.video.codec_type || '-' }}</span>
+                            <span class="info-value">{{
+                                videoFile.mediaInfo.video.codec_type || '-'
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.resolution') }}</span>
-                            <span class="info-value">{{ videoFile.mediaInfo.video.width }} x {{ videoFile.mediaInfo.video.height }}</span>
+                            <span class="info-value"
+                                >{{ videoFile.mediaInfo.video.width }} x
+                                {{ videoFile.mediaInfo.video.height }}</span
+                            >
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.frameRate') }}</span>
-                            <span class="info-value">{{ videoFile.mediaInfo.video.frame_rate?.toFixed(3) || '-' }} fps</span>
+                            <span class="info-value"
+                                >{{
+                                    videoFile.mediaInfo.video.frame_rate?.toFixed(3) || '-'
+                                }}
+                                fps</span
+                            >
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.pixelFormat') }}</span>
-                            <span class="info-value">{{ videoFile.mediaInfo.video.pix_fmt || '-' }}</span>
+                            <span class="info-value">{{
+                                videoFile.mediaInfo.video.pix_fmt || '-'
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.bitRate') }}</span>
-                            <span class="info-value">{{ formatBitRate(videoFile.mediaInfo.video.bit_rate) }}</span>
+                            <span class="info-value">{{
+                                formatBitRate(videoFile.mediaInfo.video.bit_rate)
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.totalFrames') }}</span>
-                            <span class="info-value">{{ Math.round(videoFile.mediaInfo.video.nb_frames) || '-' }}</span>
+                            <span class="info-value">{{
+                                Math.round(videoFile.mediaInfo.video.nb_frames) || '-'
+                            }}</span>
                         </div>
                     </div>
                     <div v-else class="no-info">
@@ -157,34 +184,46 @@
 
                 <section class="info-section">
                     <h3 class="section-title">{{ t('mediaInfo.audioInfo') }}</h3>
-                    <div class="info-table" v-if="videoFile?.mediaInfo?.audio">
+                    <div v-if="videoFile?.mediaInfo?.audio" class="info-table">
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.streamIndex') }}</span>
                             <span class="info-value">1</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.codec') }}</span>
-                            <span class="info-value">{{ videoFile.mediaInfo.audio.codec_name || '-' }}</span>
+                            <span class="info-value">{{
+                                videoFile.mediaInfo.audio.codec_name || '-'
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.codecType') }}</span>
-                            <span class="info-value">{{ videoFile.mediaInfo.audio.codec_type || '-' }}</span>
+                            <span class="info-value">{{
+                                videoFile.mediaInfo.audio.codec_type || '-'
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.sampleRate') }}</span>
-                            <span class="info-value">{{ formatSampleRate(videoFile.mediaInfo.audio.sample_rate) }}</span>
+                            <span class="info-value">{{
+                                formatSampleRate(videoFile.mediaInfo.audio.sample_rate)
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.channels') }}</span>
-                            <span class="info-value">{{ getChannelName(videoFile.mediaInfo.audio.channels) }}</span>
+                            <span class="info-value">{{
+                                getChannelName(videoFile.mediaInfo.audio.channels)
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.channelLayout') }}</span>
-                            <span class="info-value">{{ videoFile.mediaInfo.audio.channel_layout || '-' }}</span>
+                            <span class="info-value">{{
+                                videoFile.mediaInfo.audio.channel_layout || '-'
+                            }}</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">{{ t('mediaInfo.bitRate') }}</span>
-                            <span class="info-value">{{ formatBitRate(videoFile.mediaInfo.audio.bit_rate) }}</span>
+                            <span class="info-value">{{
+                                formatBitRate(videoFile.mediaInfo.audio.bit_rate)
+                            }}</span>
                         </div>
                     </div>
                     <div v-else class="no-info">
@@ -210,7 +249,9 @@ import * as Dty from '../../../bridge/dataTypedef'
 const { t } = useI18n()
 const appStore = useAppStore()
 
-const activeTab = ref<'overview' | 'mp4' | 'frame' | 'timestamp' | 'bitrate' | 'avsync' | 'interval'>('overview')
+const activeTab = ref<
+    'overview' | 'mp4' | 'frame' | 'timestamp' | 'bitrate' | 'avsync' | 'interval'
+>('overview')
 const selectedBox = ref<Dty.Mp4Box | null>(null)
 const mp4Boxes = ref<Dty.Mp4Box[]>([])
 const mp4Loading = ref(false)
@@ -290,9 +331,25 @@ async function parseMp4Box() {
 }
 
 async function analyzeFrames(page: number = 1, pageSize: number = 200) {
-    console.log('analyzeFrames called, videoFile:', videoFile.value?.path, 'page:', page, 'pageSize:', pageSize)
+    console.log(
+        'analyzeFrames called, videoFile:',
+        videoFile.value?.path,
+        'page:',
+        page,
+        'pageSize:',
+        pageSize
+    )
     if (!videoFile.value?.path) {
-        frameData.value = { frames: [], totalFrames: 0, duration: 0, frameRate: 0, codecName: '', width: 0, height: 0, parseTime: 0 }
+        frameData.value = {
+            frames: [],
+            totalFrames: 0,
+            duration: 0,
+            frameRate: 0,
+            codecName: '',
+            width: 0,
+            height: 0,
+            parseTime: 0
+        }
         return
     }
 
@@ -314,13 +371,36 @@ async function analyzeFrames(page: number = 1, pageSize: number = 200) {
         console.log('analyzeFrames resp:', resp)
         if (resp.code === 0 && resp.data) {
             frameData.value = resp.data
-            console.log('frames loaded:', frameData.value.frames.length, '/', frameData.value.totalFrames)
+            console.log(
+                'frames loaded:',
+                frameData.value.frames.length,
+                '/',
+                frameData.value.totalFrames
+            )
         } else {
-            frameData.value = { frames: [], totalFrames: 0, duration: 0, frameRate: 0, codecName: '', width: 0, height: 0, parseTime: 0 }
+            frameData.value = {
+                frames: [],
+                totalFrames: 0,
+                duration: 0,
+                frameRate: 0,
+                codecName: '',
+                width: 0,
+                height: 0,
+                parseTime: 0
+            }
             console.error('analyzeFrames error:', resp.status)
         }
     } catch (error) {
-        frameData.value = { frames: [], totalFrames: 0, duration: 0, frameRate: 0, codecName: '', width: 0, height: 0, parseTime: 0 }
+        frameData.value = {
+            frames: [],
+            totalFrames: 0,
+            duration: 0,
+            frameRate: 0,
+            codecName: '',
+            width: 0,
+            height: 0,
+            parseTime: 0
+        }
         console.error('analyzeFrames exception:', error)
     } finally {
         frameLoading.value = false
@@ -350,7 +430,12 @@ watch(activeTab, (newTab, oldTab) => {
 })
 
 onMounted(() => {
-    console.log('MediaInfoPage mounted, videoFile:', videoFile.value?.path, 'activeTab:', activeTab.value)
+    console.log(
+        'MediaInfoPage mounted, videoFile:',
+        videoFile.value?.path,
+        'activeTab:',
+        activeTab.value
+    )
     if (activeTab.value === 'mp4' && videoFile.value?.path) {
         parseMp4Box()
     }
@@ -413,11 +498,16 @@ function formatSampleRate(sampleRate: number | undefined): string {
 function getChannelName(channels: number | undefined): string {
     if (!channels) return '-'
     switch (channels) {
-        case 1: return t('mediaInfo.mono')
-        case 2: return t('mediaInfo.stereo')
-        case 6: return '5.1'
-        case 8: return '7.1'
-        default: return `${channels}`
+        case 1:
+            return t('mediaInfo.mono')
+        case 2:
+            return t('mediaInfo.stereo')
+        case 6:
+            return '5.1'
+        case 8:
+            return '7.1'
+        default:
+            return `${channels}`
     }
 }
 

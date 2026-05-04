@@ -14,29 +14,35 @@
                     <button class="xc-button menu-button" @click.stop="btn_openProject">
                         {{ t('navigation.menuItems.openProject') }}
                     </button>
-                    <button 
-                        v-if="appStore.isProjectMode || appStore.curSltVideo" 
-                        class="xc-button menu-button" 
+                    <button
+                        v-if="appStore.isProjectMode || appStore.curSltVideo"
+                        class="xc-button menu-button"
                         @click.stop="btn_closeProject"
                     >
                         {{ t('navigation.menuItems.closeProject') }}
                     </button>
-                    <button 
-                        v-if="appStore.isProjectMode || appStore.curSltVideo" 
-                        class="xc-button menu-button" 
+                    <button
+                        v-if="appStore.isProjectMode || appStore.curSltVideo"
+                        class="xc-button menu-button"
                         @click.stop="btn_saveProject"
                     >
                         {{ t('navigation.menuItems.saveProject') }}
                     </button>
+                    <div class="menu-divider"></div>
                     <button class="xc-button menu-button" @click.stop="btn_openVideoDialog">
                         {{ t('navigation.menuItems.openVideoFile') }}
                     </button>
+                    <div class="menu-divider"></div>
                     <button class="xc-button menu-button" @click.stop="exitApp">
                         {{ t('navigation.menuItems.exit') }}
                     </button>
                 </div>
             </div>
-            <div v-if="appStore.isProjectMode" class="menu-item dropdown" @click="toggleDropdown($event, 'view')">
+            <div
+                v-if="appStore.isProjectMode"
+                class="menu-item dropdown"
+                @click="toggleDropdown($event, 'view')"
+            >
                 <span class="xc-text">{{ t('navigation.menuItems.view') }}</span>
                 <div
                     ref="dropdownMenuRefView"
@@ -47,46 +53,40 @@
                         class="xc-button menu-button"
                         @click.stop="btn_viewChange('thumb_show')"
                     >
-                        {{ t('navigation.menuItems.thumbnailView') }}🖼️
+                        🖼️ {{ t('navigation.menuItems.thumbnailView') }}
                     </button>
                     <button
                         class="xc-button menu-button"
                         @click.stop="btn_viewChange('video_show')"
                     >
-                        {{ t('navigation.menuItems.videoView') }}🎞️
+                        🎞️ {{ t('navigation.menuItems.videoView') }}
                     </button>
+                    <div class="menu-divider"></div>
                     <button class="xc-button menu-button" @click.stop="btn_viewChange('bck_home')">
-                        {{ t('navigation.menuItems.returnHome') }}
+                        🏠 {{ t('navigation.menuItems.returnHome') }}
                     </button>
                 </div>
             </div>
-            <div class="menu-item dropdown" @click="toggleDropdown($event, 'function')">
-                <span class="xc-text">{{ t('navigation.menuItems.function') }}</span>
+            <div class="menu-item dropdown" @click="toggleDropdown($event, 'tools')">
+                <span class="xc-text">{{ t('navigation.tools') }}</span>
                 <div
-                    ref="dropdownMenuRefFunction"
+                    ref="dropdownMenuRefTools"
                     class="dropdown-menu"
-                    :class="{ show: isDropdownOpen['function'] }"
+                    :class="{ show: isDropdownOpen['tools'] }"
                 >
                     <button class="xc-button menu-button" @click.stop="btn_mediaInfo">
-                        {{ t('navigation.menuItems.mediaInfo') }}
+                        📊 {{ t('navigation.menuItems.mediaInfo') }}
                     </button>
-                    <button class="xc-button menu-button" @click.stop="btn_projectSettings">
-                        {{ t('navigation.menuItems.projectSettings') }}
+                    <button
+                        v-if="appStore.isProjectMode"
+                        class="xc-button menu-button"
+                        @click.stop="btn_projectSettings"
+                    >
+                        ⚙️ {{ t('navigation.menuItems.projectSettings') }}
                     </button>
-                    <button class="xc-button menu-button" @click.stop="btn_fileList">
-                        {{ t('navigation.menuItems.fileList') }}
-                    </button>
-                    <button class="xc-button menu-button" @click.stop="btn_tagManagement">
-                        {{ t('navigation.menuItems.tagManagement') }}
-                    </button>
-                    <button class="xc-button menu-button" @click.stop="btn_thumbnailManagement">
-                        {{ t('navigation.menuItems.thumbnailManagement') }}
-                    </button>
-                    <button class="xc-button menu-button" @click.stop="btn_smallFileOrganization">
-                        {{ t('navigation.menuItems.smallFileOrganization') }}
-                    </button>
+                    <div class="menu-divider"></div>
                     <button class="xc-button menu-button" @click.stop="btn_settings">
-                        {{ t('navigation.menuItems.settings') }}
+                        ⚙️ {{ t('navigation.menuItems.settings') }}
                     </button>
                 </div>
             </div>
@@ -111,12 +111,11 @@
         @close="showCreateModal = false"
         @created="onProjectCreated"
     />
-    <!-- 关于模态框 -->
     <div v-if="isAboutModalVisible" class="modal-overlay" @click.self="hideAboutModal">
         <div class="modal-content">
             <h2>{{ t('navigation.menuItems.about') }} {{ t('common.info') }}</h2>
             <p>{{ t('common.currentVersion') }}：{{ appStore.prj?.version || '1.0.0' }}</p>
-            <button @click="hideAboutModal">{{ t('common.cancel') }}</button>
+            <button class="xc-button" @click="hideAboutModal">{{ t('common.cancel') }}</button>
         </div>
     </div>
 </template>
@@ -140,35 +139,25 @@ const { t } = useI18n()
 
 const showCreateModal = ref(false)
 
-// const changeLang = () => {
-//   locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
-// }
-
-// 控制下拉菜单是否显示
-const isDropdownOpen = ref<{ home: boolean; video: boolean; view: boolean; function: boolean }>({
+const isDropdownOpen = ref<{ home: boolean; video: boolean; view: boolean; tools: boolean }>({
     home: false,
     video: false,
     view: false,
-    function: false
+    tools: false
 })
 
-// 用于存储下拉菜单的 DOM 引用
 const dropdownMenuRefHome = ref<HTMLElement | null>(null)
 const dropdownMenuRefVideo = ref<HTMLElement | null>(null)
 const dropdownMenuRefView = ref<HTMLElement | null>(null)
-const dropdownMenuRefFunction = ref<HTMLElement | null>(null)
+const dropdownMenuRefTools = ref<HTMLElement | null>(null)
 
-// 控制关于模态框是否显示
 const isAboutModalVisible = ref<boolean>(false)
 
-// 切换下拉菜单的显示状态
 const toggleDropdown = (event: MouseEvent, menu: string): void => {
-    event.stopPropagation() // 阻止事件冒泡
-    // 先将所有下拉菜单隐藏
+    event.stopPropagation()
     Object.keys(isDropdownOpen.value).forEach((key) => {
         isDropdownOpen.value[key] = false
     })
-    // 再切换当前点击的下拉菜单显示状态
     isDropdownOpen.value[menu] = !isDropdownOpen.value[menu]
 }
 
@@ -199,15 +188,15 @@ const btn_openProject = async (): Promise<void> => {
         }
         return
     }
-    
+
     if (!response.data) return
-    
+
     if (response.data.type === Dty.ProjectType.FileManagement) {
         const prj = response.data as Dty.Prj
         appStore.prj = prj
         appStore.appInfo.prjFile = prj.path || ''
         appStore.clipProject = null
-        
+
         const startReq = await util.start_app()
         if (startReq.code != 0) {
             util.addToastErr(`${t('navigation.startupFailed')} ${startReq.status}`)
@@ -223,7 +212,7 @@ const btn_openProject = async (): Promise<void> => {
         const clipProject = response.data as Dty.ClipProject
         await openClipProjectData(clipProject)
     }
-    
+
     router.push('/')
 }
 
@@ -236,7 +225,7 @@ const openClipProjectData = async (clipProject: Dty.ClipProject): Promise<void> 
         appStore.prj = null
         appStore.appInfo.prjFile = ''
     }
-    
+
     const openReq: Dty.Req<Dty.Req_SltFile> = {
         cmd: Dty.CmdType.openExternalVideo,
         data: { filepath: clipProject.filePath }
@@ -246,7 +235,7 @@ const openClipProjectData = async (clipProject: Dty.ClipProject): Promise<void> 
         appStore.curSltVideo = openResp.data
         appStore.curSltVideoName4Play = openResp.data.name
         appStore.clipProject = clipProject
-        
+
         if (clipProject.splitInfo && clipProject.splitInfo.length > 0) {
             if (!appStore.curSltVideo.splitInfo) {
                 appStore.curSltVideo.splitInfo = new Dty.SqlitInfos()
@@ -254,7 +243,7 @@ const openClipProjectData = async (clipProject: Dty.ClipProject): Promise<void> 
             appStore.curSltVideo.splitInfo.splits = clipProject.splitInfo
             util.update_bar_clips()
         }
-        
+
         util.addToastInfo(`${t('navigation.menuItems.openProject')} ${t('common.success')}`)
     } else {
         util.addToastErr(`${t('homeEditor.openVideoFailed')}: ${openResp.status}`)
@@ -263,7 +252,7 @@ const openClipProjectData = async (clipProject: Dty.ClipProject): Promise<void> 
 
 const btn_closeProject = async (): Promise<void> => {
     isDropdownOpen.value.home = false
-    
+
     if (appStore.isProjectMode) {
         const closeReq: Dty.Req = {
             cmd: Dty.CmdType.prjClose
@@ -272,34 +261,38 @@ const btn_closeProject = async (): Promise<void> => {
         appStore.prj = null
         appStore.appInfo.prjFile = ''
     }
-    
+
     if (appStore.curSltVideo) {
         appStore.clipProject = null
         appStore.curSltVideo = null
         appStore.curSltVideoName4Play = ''
         util.clear_cur_slt_video_info(null)
     }
-    
+
     router.push('/welcome')
     util.addToastInfo(t('navigation.menuItems.closeProject'))
 }
 
 const btn_saveProject = async (): Promise<void> => {
     isDropdownOpen.value.home = false
-    
+
     if (appStore.isProjectMode) {
         const response = await util.saveFileManagementProject()
         if (response.code === 0) {
             util.addToastInfo(`${t('navigation.menuItems.saveProject')} ${t('common.success')}`)
         } else if (response.status !== 'user canceled') {
-            util.addToastErr(`${t('navigation.menuItems.saveProject')} ${t('common.failed')}: ${response.status}`)
+            util.addToastErr(
+                `${t('navigation.menuItems.saveProject')} ${t('common.failed')}: ${response.status}`
+            )
         }
     } else if (appStore.curSltVideo) {
         const response = await util.saveClipProject()
         if (response.code === 0) {
             util.addToastInfo(`${t('navigation.menuItems.saveProject')} ${t('common.success')}`)
         } else if (response.status !== 'user canceled') {
-            util.addToastErr(`${t('navigation.menuItems.saveProject')} ${t('common.failed')}: ${response.status}`)
+            util.addToastErr(
+                `${t('navigation.menuItems.saveProject')} ${t('common.failed')}: ${response.status}`
+            )
         }
     }
 }
@@ -312,7 +305,7 @@ const btn_openVideoDialog = async (): Promise<void> => {
     const response: Dty.Resp<string> = await IpcApi.trigger_event(req)
     if (response.code === 0 && response.data) {
         router.push('/')
-        
+
         if (appStore.isProjectMode) {
             const closeReq: Dty.Req = {
                 cmd: Dty.CmdType.prjClose
@@ -321,9 +314,9 @@ const btn_openVideoDialog = async (): Promise<void> => {
             appStore.prj = null
             appStore.appInfo.prjFile = ''
         }
-        
+
         appStore.clipProject = null
-        
+
         const openReq: Dty.Req<Dty.Req_SltFile> = {
             cmd: Dty.CmdType.openExternalVideo,
             data: { filepath: response.data }
@@ -361,17 +354,14 @@ const btn_viewChange = (mode: string): void => {
     isDropdownOpen.value.view = false
 }
 
-// 显示关于模态框
 const showAboutModal = (): void => {
     isAboutModalVisible.value = true
 }
 
-// 隐藏关于模态框
 const hideAboutModal = (): void => {
     isAboutModalVisible.value = false
 }
 
-// 点击页面其他地方隐藏下拉菜单
 const handleClickOutside = (event: MouseEvent): void => {
     if (dropdownMenuRefHome.value && !dropdownMenuRefHome.value.contains(event.target as Node)) {
         isDropdownOpen.value.home = false
@@ -382,43 +372,26 @@ const handleClickOutside = (event: MouseEvent): void => {
     if (dropdownMenuRefView.value && !dropdownMenuRefView.value.contains(event.target as Node)) {
         isDropdownOpen.value.view = false
     }
-    if (dropdownMenuRefFunction.value && !dropdownMenuRefFunction.value.contains(event.target as Node)) {
-        isDropdownOpen.value.function = false
+    if (
+        dropdownMenuRefTools.value &&
+        !dropdownMenuRefTools.value.contains(event.target as Node)
+    ) {
+        isDropdownOpen.value.tools = false
     }
 }
 
 const btn_mediaInfo = (): void => {
-    isDropdownOpen.value.function = false
+    isDropdownOpen.value.tools = false
     router.push('/media_info')
 }
 
 const btn_projectSettings = (): void => {
-    isDropdownOpen.value.function = false
-    router.push('/admin/prj_set')
-}
-
-const btn_fileList = (): void => {
-    isDropdownOpen.value.function = false
-    router.push('/file_list')
-}
-
-const btn_tagManagement = (): void => {
-    isDropdownOpen.value.function = false
-    router.push('/admin/tag_mng')
-}
-
-const btn_thumbnailManagement = (): void => {
-    isDropdownOpen.value.function = false
-    router.push('/thumb_mng')
-}
-
-const btn_smallFileOrganization = (): void => {
-    isDropdownOpen.value.function = false
-    router.push('/tiny_file_db')
+    isDropdownOpen.value.tools = false
+    router.push('/project_settings')
 }
 
 const btn_settings = (): void => {
-    isDropdownOpen.value.function = false
+    isDropdownOpen.value.tools = false
     router.push('/app_setting')
 }
 
@@ -432,7 +405,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* 整体导航栏样式 */
 .home-navigation {
     height: var(--xc-home-nac-height);
     width: 100%;
@@ -440,15 +412,14 @@ onUnmounted(() => {
     background-color: #252526;
     color: #ccc;
     align-items: center;
+    justify-content: space-between;
 }
 
 .btn-container {
     display: flex;
-    /*  防止按钮缩小 */
     flex-shrink: 0;
 }
 
-/* 菜单项样式 */
 .menu-item {
     padding: 0 10px;
     cursor: pointer;
@@ -461,47 +432,49 @@ onUnmounted(() => {
     background-color: #37373d;
 }
 
-/* 下拉菜单容器样式 */
 .dropdown {
     position: relative;
 }
 
-/* 下拉菜单样式 */
 .dropdown-menu {
     display: none;
     position: absolute;
     top: 30px;
     left: 0;
     background-color: #333;
-    min-width: 160px;
+    min-width: 180px;
     box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
     z-index: 100;
-    /* 添加圆角和边框 */
     border-radius: 4px;
     border: 1px solid #444;
 }
 
-/* 下拉菜单显示时的样式 */
 .dropdown-menu.show {
     display: block;
 }
 
 .menu-button {
     color: #ccc;
-    padding: 12px 16px;
+    padding: 10px 16px;
     text-decoration: none;
     display: block;
     background: none;
     border: none;
     text-align: left;
-    width: 95%;
+    width: 100%;
+    cursor: pointer;
 }
 
-.dropdown-menu button:hover {
+.menu-button:hover {
     background-color: #37373d;
 }
 
-/* 模态框遮罩层样式 */
+.menu-divider {
+    height: 1px;
+    background-color: #444;
+    margin: 4px 8px;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -512,31 +485,26 @@ onUnmounted(() => {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 2;
+    z-index: 1000;
 }
 
-/* 模态框内容样式 */
 .modal-content {
     background-color: #333;
     padding: 20px;
-    border-radius: 4px;
+    border-radius: 8px;
     border: 1px solid #444;
     color: #ccc;
-    width: 300px;
+    min-width: 300px;
     text-align: center;
 }
 
-.modal-content button {
-    margin-top: 20px;
-    padding: 8px 16px;
-    background-color: #37373d;
-    color: #ccc;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+.modal-content h2 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
 }
 
-.modal-content button:hover {
-    background-color: #444;
+.modal-content p {
+    margin: 0 0 20px 0;
+    color: #858585;
 }
 </style>

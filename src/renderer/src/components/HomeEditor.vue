@@ -1,11 +1,11 @@
 <template>
     <div
         class="home-editor-container"
+        :class="{ 'drag-over': isDragOver }"
         @dragenter.prevent="onDragEnter"
         @dragover.prevent="onDragOver"
         @dragleave.prevent="onDragLeave"
         @drop.prevent="onDrop"
-        :class="{ 'drag-over': isDragOver }"
     >
         <div class="editor-main">
             <div class="video-area">
@@ -16,7 +16,11 @@
                         :src="appStore.videoPlayCtrl.curSrc"
                     ></video>
                     <ThumbnailView v-show="viewModel === 'thumbnail'"></ThumbnailView>
-                    <div v-if="!appStore.curSltVideo && !isDragOver" class="drop-hint" @click="onHintClick">
+                    <div
+                        v-if="!appStore.curSltVideo && !isDragOver"
+                        class="drop-hint"
+                        @click="onHintClick"
+                    >
                         <span class="drop-hint-text">{{ t('homeEditor.dropVideoHint') }}</span>
                         <span class="drop-hint-sub">{{ t('homeEditor.clickToSelect') }}</span>
                     </div>
@@ -25,7 +29,9 @@
             <div class="edit-panel">
                 <VideList v-if="appStore.isProjectMode" />
                 <VideoOperatePanel v-if="!appStore.isProjectMode" />
-                <VideoInfo v-if="appStore.isProjectMode && rightPanel === Dty.WorkPanel.VideoInfo" />
+                <VideoInfo
+                    v-if="appStore.isProjectMode && rightPanel === Dty.WorkPanel.VideoInfo"
+                />
             </div>
         </div>
         <div class="control-area">
@@ -102,7 +108,7 @@ const onDrop = async (event: DragEvent): Promise<void> => {
     console.log('[HomeEditor] file:', file)
     console.log('[HomeEditor] file.name:', file.name)
     console.log('[HomeEditor] file.type:', file.type)
-    
+
     let filePath: string | null = null
     try {
         filePath = window.electronAPI.getPathForFile(file)
@@ -110,7 +116,7 @@ const onDrop = async (event: DragEvent): Promise<void> => {
     } catch (e) {
         console.log('[HomeEditor] getPathForFile failed:', e)
     }
-    
+
     if (!filePath) {
         console.log('[HomeEditor] filePath is empty, opening file dialog...')
         filePath = await openVideoDialog()
@@ -142,7 +148,7 @@ const onHintClick = async (): Promise<void> => {
 
 const openExternalVideo = async (filePath: string): Promise<void> => {
     console.log('[HomeEditor] openExternalVideo called with filePath:', filePath)
-    
+
     // If in project mode, close the project first
     if (appStore.isProjectMode) {
         console.log('[HomeEditor] Closing project before opening external video')
@@ -154,7 +160,7 @@ const openExternalVideo = async (filePath: string): Promise<void> => {
         appStore.prj = null
         appStore.appInfo.prjFile = ''
     }
-    
+
     const req: Dty.Req<Dty.Req_SltFile> = {
         cmd: Dty.CmdType.openExternalVideo,
         data: {

@@ -39,6 +39,7 @@
     "backgroundExecuting": "Executing in background...",
     "startupFailed": "Startup failed",
     "openProjectSuccess": "Project opened successfully",
+    "tools": "Tools",
     "menuItems": {
       "createProject": "Create Project",
       "openProject": "Open Project",
@@ -56,13 +57,19 @@
       "function": "Tools",
       "mediaInfo": "Media Info",
       "projectSettings": "Project Settings",
-      "fileList": "File List",
       "tagManagement": "Tag Management",
       "thumbnailManagement": "Thumbnail Management",
       "smallFileOrganization": "Small File Organization",
       "settings": "Settings",
       "about": "About"
     }
+  },
+  "projectSettings": {
+    "basicInfo": "Basic Info",
+    "fileList": "File List",
+    "tagManagement": "Tag Management",
+    "thumbnailManagement": "Thumbnail Management",
+    "smallFileOrganization": "Small File Organization"
   },
   "project": {
     "title": "Project",

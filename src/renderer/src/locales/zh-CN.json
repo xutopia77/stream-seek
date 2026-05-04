@@ -39,6 +39,7 @@
     "backgroundExecuting": "后台执行中...",
     "startupFailed": "启动失败",
     "openProjectSuccess": "打开项目成功",
+    "tools": "工具",
     "menuItems": {
       "createProject": "创建项目",
       "openProject": "打开项目",
@@ -56,13 +57,19 @@
       "function": "工具",
       "mediaInfo": "媒体信息",
       "projectSettings": "项目设置",
-      "fileList": "文件列表",
       "tagManagement": "标签管理",
       "thumbnailManagement": "缩略图管理",
       "smallFileOrganization": "小文件归整",
       "settings": "设置",
       "about": "关于"
     }
+  },
+  "projectSettings": {
+    "basicInfo": "基本信息",
+    "fileList": "文件列表",
+    "tagManagement": "标签管理",
+    "thumbnailManagement": "缩略图管理",
+    "smallFileOrganization": "小文件整理"
   },
   "settings": {
     "title": "应用设置",
