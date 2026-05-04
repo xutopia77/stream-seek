@@ -67,7 +67,11 @@
                     </div>
                     <div class="form-group">
                         <label>{{ t('adminTagMng.description') }}</label>
-                        <textarea v-model="editingTag.description" class="xc-input textarea" rows="3"></textarea>
+                        <textarea
+                            v-model="editingTag.description"
+                            class="xc-input textarea"
+                            rows="3"
+                        ></textarea>
                     </div>
                 </div>
                 <div class="dialog-footer">

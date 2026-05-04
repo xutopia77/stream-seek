@@ -372,10 +372,7 @@ const handleClickOutside = (event: MouseEvent): void => {
     if (dropdownMenuRefView.value && !dropdownMenuRefView.value.contains(event.target as Node)) {
         isDropdownOpen.value.view = false
     }
-    if (
-        dropdownMenuRefTools.value &&
-        !dropdownMenuRefTools.value.contains(event.target as Node)
-    ) {
+    if (dropdownMenuRefTools.value && !dropdownMenuRefTools.value.contains(event.target as Node)) {
         isDropdownOpen.value.tools = false
     }
 }

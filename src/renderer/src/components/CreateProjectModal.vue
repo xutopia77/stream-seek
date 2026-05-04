@@ -49,7 +49,7 @@
             </div>
             <div class="modal-footer">
                 <button class="xc-button" @click="close">{{ t('common.cancel') }}</button>
-                <button class="xc-button primary" @click="createProject" :disabled="!canCreate">
+                <button class="xc-button primary" :disabled="!canCreate" @click="createProject">
                     {{ t('createProject.create') }}
                 </button>
             </div>
@@ -80,7 +80,11 @@ const repoPath = ref('')
 const projectPath = ref('')
 
 const canCreate = computed(() => {
-    return repoName.value.trim() !== '' && repoPath.value.trim() !== '' && projectPath.value.trim() !== ''
+    return (
+        repoName.value.trim() !== '' &&
+        repoPath.value.trim() !== '' &&
+        projectPath.value.trim() !== ''
+    )
 })
 
 const selectFolder = async (): Promise<void> => {
@@ -103,16 +107,18 @@ const selectProjectFolder = async (): Promise<void> => {
 
 const createProject = async (): Promise<void> => {
     if (!canCreate.value) return
-    
-    const dataRepo: Dty.DataRepo[] = [{
-        name: repoName.value.trim(),
-        path: repoPath.value.trim(),
-        thumbnailPath: '',
-        framePath: ''
-    }]
-    
+
+    const dataRepo: Dty.DataRepo[] = [
+        {
+            name: repoName.value.trim(),
+            path: repoPath.value.trim(),
+            thumbnailPath: '',
+            framePath: ''
+        }
+    ]
+
     const response = await util.create_prj_with_path(dataRepo, projectPath.value.trim())
-    
+
     if (response.code === 0) {
         util.addToastInfo(t('createProject.createSuccess'))
         emit('created')

@@ -5,10 +5,10 @@
             :style="{ paddingLeft: depth * 16 + 8 + 'px' }"
             @click="onNodeClick"
         >
-            <span class="toggle-icon" v-if="hasChildren">
+            <span v-if="hasChildren" class="toggle-icon">
                 {{ node.expanded ? '▼' : '▶' }}
             </span>
-            <span class="toggle-icon placeholder" v-else></span>
+            <span v-else class="toggle-icon placeholder"></span>
             <span class="box-icon">{{ getBoxIcon(node.type) }}</span>
             <span class="box-name" :class="{ selected: isSelected, highlight: isSearchMatch }">
                 {{ node.name }}
@@ -53,8 +53,10 @@ const isSelected = computed(() => {
 const isSearchMatch = computed(() => {
     if (!props.searchText) return false
     const search = props.searchText.toLowerCase()
-    return props.node.name.toLowerCase().includes(search) ||
-           props.node.type.toLowerCase().includes(search)
+    return (
+        props.node.name.toLowerCase().includes(search) ||
+        props.node.type.toLowerCase().includes(search)
+    )
 })
 
 function onNodeClick() {

@@ -35,7 +35,11 @@
                             v-for="item in recentItems"
                             :key="item.path"
                             class="recent-item"
-                            @click="item.type === 'file' ? openRecentFile(item.path) : openRecentProject(item.path)"
+                            @click="
+                                item.type === 'file'
+                                    ? openRecentFile(item.path)
+                                    : openRecentProject(item.path)
+                            "
                         >
                             <span class="item-icon">{{ item.type === 'file' ? '📹' : '📁' }}</span>
                             <div class="item-info">
@@ -80,8 +84,11 @@ interface RecentItemWithType extends Dty.RecentItem {
 }
 
 const recentItems = computed((): RecentItemWithType[] => {
-    const files = (appStore.recentFiles || []).map(f => ({ ...f, type: 'file' as const }))
-    const projects = (appStore.recentProjects || []).map(p => ({ ...p, type: 'project' as const }))
+    const files = (appStore.recentFiles || []).map((f) => ({ ...f, type: 'file' as const }))
+    const projects = (appStore.recentProjects || []).map((p) => ({
+        ...p,
+        type: 'project' as const
+    }))
     return [...files, ...projects]
         .sort((a, b) => (b.lastOpened || 0) - (a.lastOpened || 0))
         .slice(0, 10)
@@ -93,7 +100,7 @@ const formatTime = (timestamp: number): string => {
     const now = new Date()
     const diff = now.getTime() - date.getTime()
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-    
+
     if (days === 0) {
         return t('welcome.today')
     } else if (days === 1) {
@@ -176,7 +183,7 @@ const openRecentProject = async (projectPath: string): Promise<void> => {
             appStore.clipProject = clipProject
             appStore.prj = null
             appStore.appInfo.prjFile = ''
-            
+
             const openReq: Dty.Req<Dty.Req_SltFile> = {
                 cmd: Dty.CmdType.openExternalVideo,
                 data: { filepath: clipProject.filePath }
@@ -185,7 +192,7 @@ const openRecentProject = async (projectPath: string): Promise<void> => {
             if (openResp.code === 0 && openResp.data) {
                 appStore.curSltVideo = openResp.data
                 appStore.curSltVideoName4Play = openResp.data.name
-                
+
                 if (clipProject.splitInfo && clipProject.splitInfo.length > 0) {
                     if (!appStore.curSltVideo.splitInfo) {
                         appStore.curSltVideo.splitInfo = new Dty.SqlitInfos()
@@ -206,12 +213,12 @@ const loadProjectData = async (): Promise<void> => {
     searchReq.status = [appStore.fileSearchStatus]
     searchReq.page = 1
     searchReq.pageSize = 100
-    
+
     const searchResp = await IpcApi.trigger_event<Dty.FilesReq, Dty.FilesResp>({
         cmd: Dty.CmdType.search_file,
         data: searchReq
     })
-    
+
     if (searchResp.code === 0 && searchResp.data) {
         appStore.videoList = searchResp.data.files
         appStore.videoTotalNum = searchResp.data.total

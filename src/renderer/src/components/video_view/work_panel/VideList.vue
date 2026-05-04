@@ -73,12 +73,13 @@ onUnmounted(() => {
 })
 
 // 切换视频的选中状态
-const toggleVideoSelection = (
-    video: Dty.File,
-    isChecked: boolean,
-    currentIndex: number
-): void => {
-    console.log(t('videoList.selectionChanged', { name: video.name, status: isChecked ? 'selected' : 'deselected' }))
+const toggleVideoSelection = (video: Dty.File, isChecked: boolean, currentIndex: number): void => {
+    console.log(
+        t('videoList.selectionChanged', {
+            name: video.name,
+            status: isChecked ? 'selected' : 'deselected'
+        })
+    )
     if (isShiftPressed.value && lastSelectedIndex.value !== -1) {
         const start = Math.min(lastSelectedIndex.value, currentIndex)
         const end = Math.max(lastSelectedIndex.value, currentIndex)

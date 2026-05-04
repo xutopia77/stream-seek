@@ -72,16 +72,16 @@
                         <div class="export-mode-options">
                             <label class="radio-label">
                                 <input
-                                    type="radio"
                                     v-model="exportMode"
+                                    type="radio"
                                     :value="Dty.ExportMode.Segment"
                                 />
                                 <span>{{ t('videoOperatePanel.segmentExport') }}</span>
                             </label>
                             <label class="radio-label">
                                 <input
-                                    type="radio"
                                     v-model="exportMode"
+                                    type="radio"
                                     :value="Dty.ExportMode.Merge"
                                 />
                                 <span>{{ t('videoOperatePanel.mergeExport') }}</span>
@@ -93,8 +93,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="xc-button" @click="confirmExport">{{ t('videoOperatePanel.export') }}</button>
-                    <button class="xc-button" @click="cancelExport">{{ t('common.cancel') }}</button>
+                    <button class="xc-button" @click="confirmExport">
+                        {{ t('videoOperatePanel.export') }}
+                    </button>
+                    <button class="xc-button" @click="cancelExport">
+                        {{ t('common.cancel') }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -201,7 +205,8 @@ const btnclk_splitVideo = (): void => {
     }
     util.splitInfoCorrect(appStore.curSltVideo.splitInfo.splits, videoDuration)
     for (let i = 0; i < appStore.curSltVideo.splitInfo.splits.length; i++) {
-        appStore.curSltVideo.splitInfo.splits[i].color = appStore.barColorDictionary[i % appStore.barColorDictionary.length]
+        appStore.curSltVideo.splitInfo.splits[i].color =
+            appStore.barColorDictionary[i % appStore.barColorDictionary.length]
     }
 }
 
@@ -260,7 +265,8 @@ const removeVideosplit = (): void => {
                 const videoDuration = appStore.curSltVideo?.mediaInfo?.duration || 0
                 util.splitInfoCorrect(splits, videoDuration)
                 for (let i = 0; i < splits.length; i++) {
-                    splits[i].color = appStore.barColorDictionary[i % appStore.barColorDictionary.length]
+                    splits[i].color =
+                        appStore.barColorDictionary[i % appStore.barColorDictionary.length]
                 }
             }
         }
@@ -455,7 +461,7 @@ const restoreVideoRecord = (): void => {
     font-size: 13px;
 }
 
-.radio-label input[type="radio"] {
+.radio-label input[type='radio'] {
     accent-color: #007acc;
 }
 

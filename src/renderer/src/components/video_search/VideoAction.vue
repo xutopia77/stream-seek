@@ -1,7 +1,7 @@
 <template>
-  <div class="video-action-contianer">
-    <button class="xc-button">{{ t('videoAction.startDetection') }}</button>
-  </div>
+    <div class="video-action-contianer">
+        <button class="xc-button">{{ t('videoAction.startDetection') }}</button>
+    </div>
 </template>
 
 <script lang="ts" setup>
@@ -13,9 +13,9 @@ const { t } = useI18n()
 
 <style scoped>
 .video-action-contianer {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
 </style>

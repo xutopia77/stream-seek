@@ -2,7 +2,11 @@
     <div class="play-ctrl">
         <span class="xc-text" style="padding-right: 3px">{{ t('thumbCtrlBar.totalFiles') }}</span>
         <div class="right-area-ctrl">
-            <button class="xc-button btn-noborder" :title="t('thumbCtrlBar.deleteFile')" @click="btn_thumbDel()">
+            <button
+                class="xc-button btn-noborder"
+                :title="t('thumbCtrlBar.deleteFile')"
+                @click="btn_thumbDel()"
+            >
                 {{ t('thumbCtrlBar.delete') }}
             </button>
         </div>

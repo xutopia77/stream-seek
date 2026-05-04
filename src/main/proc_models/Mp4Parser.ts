@@ -93,7 +93,7 @@ async function runFfprobe(filePath: string): Promise<FfprobeOutput> {
     return new Promise((resolve, reject) => {
         const cmd = `"${appCfg.ffprobeExe}" -v error -of json -show_format -show_streams "${filePath}"`
         logger.info(`Running ffprobe: ${cmd}`)
-        
+
         exec(cmd, { maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
             if (error) {
                 reject(new Error(`ffprobe error: ${error.message}`))
@@ -114,13 +114,13 @@ async function runFfprobe(filePath: string): Promise<FfprobeOutput> {
 
 function buildFtypBox(format: FfprobeFormat): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
-    
+
     const majorBrand = format.tags?.major_brand || 'isom'
     props.push({ name: 'major_brand', value: majorBrand })
-    
+
     const minorVersion = parseInt(format.tags?.minor_version || '512')
     props.push({ name: 'minor_version', value: minorVersion, isHex: true })
-    
+
     const compatibleBrands = format.tags?.compatible_brands || 'isom iso2 avc1 mp41'
     props.push({ name: 'compatible_brands', value: compatibleBrands })
 
@@ -139,7 +139,7 @@ function buildMvhdBox(format: FfprobeFormat): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
     const duration = parseFloat(format.duration || '0')
     const timescale = 1000
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'creation_time', value: format.tags?.creation_time || 'N/A' })
@@ -149,7 +149,10 @@ function buildMvhdBox(format: FfprobeFormat): Dty.Mp4Box {
     props.push({ name: 'duration_sec', value: duration.toFixed(3) + ' s' })
     props.push({ name: 'rate', value: '1.0' })
     props.push({ name: 'volume', value: '1.0' })
-    props.push({ name: 'matrix', value: '0x00010000 0x00000000 0x00000000 0x00000000 0x00010000 0x00000000 0x00000000 0x00000000 0x40000000' })
+    props.push({
+        name: 'matrix',
+        value: '0x00010000 0x00000000 0x00000000 0x00000000 0x00010000 0x00000000 0x00000000 0x00000000 0x40000000'
+    })
     props.push({ name: 'next_track_ID', value: (format.nb_streams || 2) + 1 })
 
     return {
@@ -166,22 +169,22 @@ function buildMvhdBox(format: FfprobeFormat): Dty.Mp4Box {
 function buildTkhdBox(stream: FfprobeStream, trackId: number): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
     const isVideo = stream.codec_type === 'video'
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 3, isHex: true })
     props.push({ name: 'track_ID', value: trackId })
     props.push({ name: 'duration', value: Math.round(parseFloat(stream.duration || '0') * 1000) })
-    
+
     if (isVideo && stream.width && stream.height) {
         props.push({ name: 'width', value: stream.width })
         props.push({ name: 'height', value: stream.height })
         props.push({ name: 'display_width', value: stream.width + '.00' })
         props.push({ name: 'display_height', value: stream.height + '.00' })
     }
-    
+
     props.push({ name: 'layer', value: 0 })
     props.push({ name: 'alternate_group', value: 0 })
-    
+
     if (!isVideo) {
         props.push({ name: 'volume', value: '1.0' })
     }
@@ -201,7 +204,7 @@ function buildMdhdBox(stream: FfprobeStream): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
     const isVideo = stream.codec_type === 'video'
     const duration = parseFloat(stream.duration || '0')
-    
+
     let timescale = 1000
     if (!isVideo && stream.sample_rate) {
         timescale = parseInt(stream.sample_rate)
@@ -209,7 +212,7 @@ function buildMdhdBox(stream: FfprobeStream): Dty.Mp4Box {
         const [, den] = stream.r_frame_rate.split('/').map(Number)
         timescale = den || 1000
     }
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'timescale', value: timescale })
@@ -231,10 +234,10 @@ function buildMdhdBox(stream: FfprobeStream): Dty.Mp4Box {
 function buildHdlrBox(stream: FfprobeStream): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
     const isVideo = stream.codec_type === 'video'
-    
+
     const handlerType = isVideo ? 'vide' : 'soun'
     const handlerName = stream.tags?.handler_name || (isVideo ? 'VideoHandler' : 'SoundHandler')
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'handler_type', value: handlerType })
@@ -253,7 +256,7 @@ function buildHdlrBox(stream: FfprobeStream): Dty.Mp4Box {
 
 function buildVmhdBox(_stream: FfprobeStream): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 1, isHex: true })
     props.push({ name: 'graphicsmode', value: 0, isHex: true })
@@ -272,7 +275,7 @@ function buildVmhdBox(_stream: FfprobeStream): Dty.Mp4Box {
 
 function buildSmhdBox(_stream: FfprobeStream): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'balance', value: '0.00' })
@@ -290,7 +293,7 @@ function buildSmhdBox(_stream: FfprobeStream): Dty.Mp4Box {
 
 function buildDrefBox(): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'entry_count', value: 1 })
@@ -336,14 +339,14 @@ function buildDinfBox(): Dty.Mp4Box {
 function buildStsdBox(stream: FfprobeStream): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
     const isVideo = stream.codec_type === 'video'
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'entry_count', value: 1 })
 
     const codecType = stream.codec_name || (isVideo ? 'avc1' : 'mp4a')
     const codecProps: Dty.Mp4BoxProperty[] = []
-    
+
     if (isVideo) {
         codecProps.push({ name: 'codec', value: codecType })
         codecProps.push({ name: 'width', value: stream.width || 0 })
@@ -392,14 +395,14 @@ function buildStsdBox(stream: FfprobeStream): Dty.Mp4Box {
 function buildSttsBox(stream: FfprobeStream): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
     const nbFrames = parseInt(stream.nb_frames || '0')
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'entry_count', value: nbFrames > 0 ? 1 : 0 })
     if (nbFrames > 0) {
         props.push({ name: 'sample_count', value: nbFrames })
         const duration = parseFloat(stream.duration || '0')
-        props.push({ name: 'sample_delta', value: Math.round(duration * 1000 / nbFrames) })
+        props.push({ name: 'sample_delta', value: Math.round((duration * 1000) / nbFrames) })
     }
 
     return {
@@ -415,7 +418,7 @@ function buildSttsBox(stream: FfprobeStream): Dty.Mp4Box {
 
 function buildStscBox(): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'entry_count', value: 1 })
@@ -438,13 +441,18 @@ function buildStszBox(stream: FfprobeStream): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
     const nbFrames = parseInt(stream.nb_frames || '0')
     const bitRate = parseInt(stream.bit_rate || '0')
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'sample_size', value: 0 })
     props.push({ name: 'sample_count', value: nbFrames })
     if (nbFrames > 0 && bitRate > 0) {
-        const avgSampleSize = Math.round(bitRate / 8 / (parseFloat(stream.r_frame_rate?.split('/')[0] || '25') / parseFloat(stream.r_frame_rate?.split('/')[1] || '1')))
+        const avgSampleSize = Math.round(
+            bitRate /
+                8 /
+                (parseFloat(stream.r_frame_rate?.split('/')[0] || '25') /
+                    parseFloat(stream.r_frame_rate?.split('/')[1] || '1'))
+        )
         props.push({ name: 'avg_sample_size', value: avgSampleSize + ' bytes' })
     }
 
@@ -461,7 +469,7 @@ function buildStszBox(stream: FfprobeStream): Dty.Mp4Box {
 
 function buildStcoBox(): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'entry_count', value: 0 })
@@ -481,9 +489,9 @@ function buildStssBox(stream: FfprobeStream): Dty.Mp4Box | null {
     if (stream.codec_type !== 'video') {
         return null
     }
-    
+
     const props: Dty.Mp4BoxProperty[] = []
-    
+
     props.push({ name: 'version', value: 0 })
     props.push({ name: 'flags', value: 0, isHex: true })
     props.push({ name: 'entry_count', value: 0 })
@@ -507,7 +515,7 @@ function buildStblBox(stream: FfprobeStream): Dty.Mp4Box {
         buildStszBox(stream),
         buildStcoBox()
     ]
-    
+
     const stssBox = buildStssBox(stream)
     if (stssBox) {
         children.push(stssBox)
@@ -527,13 +535,13 @@ function buildStblBox(stream: FfprobeStream): Dty.Mp4Box {
 function buildMinfBox(stream: FfprobeStream): Dty.Mp4Box {
     const isVideo = stream.codec_type === 'video'
     const children: Dty.Mp4Box[] = []
-    
+
     if (isVideo) {
         children.push(buildVmhdBox(stream))
     } else {
         children.push(buildSmhdBox(stream))
     }
-    
+
     children.push(buildDinfBox())
     children.push(buildStblBox(stream))
 
@@ -555,11 +563,7 @@ function buildMdiaBox(stream: FfprobeStream): Dty.Mp4Box {
         offset: 0,
         size: 0,
         headerSize: 8,
-        children: [
-            buildMdhdBox(stream),
-            buildHdlrBox(stream),
-            buildMinfBox(stream)
-        ],
+        children: [buildMdhdBox(stream), buildHdlrBox(stream), buildMinfBox(stream)],
         expanded: true
     }
 }
@@ -571,17 +575,14 @@ function buildTrakBox(stream: FfprobeStream, trackId: number): Dty.Mp4Box {
         offset: 0,
         size: 0,
         headerSize: 8,
-        children: [
-            buildTkhdBox(stream, trackId),
-            buildMdiaBox(stream)
-        ],
+        children: [buildTkhdBox(stream, trackId), buildMdiaBox(stream)],
         expanded: true
     }
 }
 
 function buildMdatBox(fileSize: number): Dty.Mp4Box {
     const props: Dty.Mp4BoxProperty[] = []
-    
+
     props.push({ name: 'size', value: fileSize })
     props.push({ name: 'size_formatted', value: formatBytes(fileSize) })
 
@@ -617,20 +618,20 @@ async function parseMp4Box(filePath: string): Promise<Dty.Resp<Dty.ParseMp4BoxRe
         const fileSize = stats.size
 
         const ffprobeData = await runFfprobe(filePath)
-        
+
         const boxes: Dty.Mp4Box[] = []
-        
+
         boxes.push(buildFtypBox(ffprobeData.format))
-        
+
         const moovChildren: Dty.Mp4Box[] = []
         moovChildren.push(buildMvhdBox(ffprobeData.format))
-        
+
         if (ffprobeData.streams && ffprobeData.streams.length > 0) {
             ffprobeData.streams.forEach((stream, index) => {
                 moovChildren.push(buildTrakBox(stream, index + 1))
             })
         }
-        
+
         const moovBox: Dty.Mp4Box = {
             type: 'moov',
             name: getBoxName('moov'),
@@ -641,7 +642,7 @@ async function parseMp4Box(filePath: string): Promise<Dty.Resp<Dty.ParseMp4BoxRe
             expanded: true
         }
         boxes.push(moovBox)
-        
+
         boxes.push(buildMdatBox(fileSize))
 
         resp.data = {
@@ -650,7 +651,7 @@ async function parseMp4Box(filePath: string): Promise<Dty.Resp<Dty.ParseMp4BoxRe
             parseTime: Date.now() - startTime
         }
         resp.success('success')
-        
+
         logger.info(`MP4 box parsing completed in ${Date.now() - startTime}ms`)
     } catch (error) {
         logger.error(`Failed to parse MP4 box: ${error}`)
@@ -681,7 +682,9 @@ interface FfprobeFrame {
     time_base?: string
 }
 
-async function runFfprobeFrameInfo(filePath: string): Promise<{ format: FfprobeFormat, streams: FfprobeStream[] }> {
+async function runFfprobeFrameInfo(
+    filePath: string
+): Promise<{ format: FfprobeFormat; streams: FfprobeStream[] }> {
     return new Promise((resolve, reject) => {
         const cmd = `"${appCfg.ffprobeExe}" -v error -of json -show_format -show_streams -select_streams v:0 "${filePath}"`
         logger.info(`Running ffprobe for frame info: ${cmd}`)
@@ -708,8 +711,8 @@ async function runFfprobeFrameInfo(filePath: string): Promise<{ format: FfprobeF
 }
 
 async function runFfprobeFramesByInterval(
-    filePath: string, 
-    startTimeSec: number, 
+    filePath: string,
+    startTimeSec: number,
     durationSec: number
 ): Promise<FfprobeFrame[]> {
     return new Promise((resolve, reject) => {
@@ -728,7 +731,7 @@ async function runFfprobeFramesByInterval(
             try {
                 const jsonData = JSON.parse(stdout)
                 const frames = (jsonData.frames || []) as FfprobeFrame[]
-                const videoFrames = frames.filter(f => f.media_type === 'video')
+                const videoFrames = frames.filter((f) => f.media_type === 'video')
                 resolve(videoFrames)
             } catch (parseError) {
                 reject(new Error(`Failed to parse ffprobe frame output: ${parseError}`))
@@ -737,7 +740,12 @@ async function runFfprobeFramesByInterval(
     })
 }
 
-async function analyzeFrames(filePath: string, page: number = 1, pageSize: number = 200, startTime?: number): Promise<Dty.Resp<Dty.AnalyzeFramesResp>> {
+async function analyzeFrames(
+    filePath: string,
+    page: number = 1,
+    pageSize: number = 200,
+    startTime?: number
+): Promise<Dty.Resp<Dty.AnalyzeFramesResp>> {
     const resp = new Dty.Resp<Dty.AnalyzeFramesResp>()
     const parseStartTime = Date.now()
 
@@ -748,7 +756,7 @@ async function analyzeFrames(filePath: string, page: number = 1, pageSize: numbe
 
         const info = await runFfprobeFrameInfo(filePath)
 
-        const videoStream = info.streams.find(s => s.codec_type === 'video')
+        const videoStream = info.streams.find((s) => s.codec_type === 'video')
         const duration = parseFloat(info.format.duration || videoStream?.duration || '0')
 
         const fpsParts = (videoStream?.r_frame_rate || '25/1').split('/')
@@ -756,7 +764,8 @@ async function analyzeFrames(filePath: string, page: number = 1, pageSize: numbe
         const fpsDen = parseFloat(fpsParts[1]) || 1
         const frameRate = fpsNum / fpsDen
 
-        const totalFrames = parseInt(videoStream?.nb_frames || '0') || Math.round(duration * frameRate)
+        const totalFrames =
+            parseInt(videoStream?.nb_frames || '0') || Math.round(duration * frameRate)
 
         let streamTimeBaseNum = 1
         let streamTimeBaseDen = 1000
@@ -772,41 +781,53 @@ async function analyzeFrames(filePath: string, page: number = 1, pageSize: numbe
         const clampedStartTime = Math.max(0, Math.min(actualStartTime, duration - 0.1))
         const actualDuration = Math.min(pageDuration, duration - clampedStartTime)
 
-        const rawFrames = await runFfprobeFramesByInterval(filePath, clampedStartTime, actualDuration + frameDuration)
+        const rawFrames = await runFfprobeFramesByInterval(
+            filePath,
+            clampedStartTime,
+            actualDuration + frameDuration
+        )
 
         const frames: Dty.VideoFrame[] = rawFrames.slice(0, pageSize).map((f) => {
             let ptsTime = parseFloat(f.pts_time || '')
             let dtsTime = parseFloat(f.dts_time || '')
-            
+
             if (isNaN(ptsTime) || ptsTime === 0) {
                 if (f.pts !== undefined && f.pts !== null) {
-                    const tbNum = f.time_base ? parseInt(f.time_base.split('/')[0]) || streamTimeBaseNum : streamTimeBaseNum
-                    const tbDen = f.time_base ? parseInt(f.time_base.split('/')[1]) || streamTimeBaseDen : streamTimeBaseDen
-                    ptsTime = f.pts * tbNum / tbDen
+                    const tbNum = f.time_base
+                        ? parseInt(f.time_base.split('/')[0]) || streamTimeBaseNum
+                        : streamTimeBaseNum
+                    const tbDen = f.time_base
+                        ? parseInt(f.time_base.split('/')[1]) || streamTimeBaseDen
+                        : streamTimeBaseDen
+                    ptsTime = (f.pts * tbNum) / tbDen
                 } else if (f.pkt_pts !== undefined && f.pkt_pts !== null) {
                     ptsTime = f.pkt_pts / 1000
                 }
             }
-            
+
             if (isNaN(dtsTime) || dtsTime === 0) {
                 if (f.dts !== undefined && f.dts !== null) {
-                    const tbNum = f.time_base ? parseInt(f.time_base.split('/')[0]) || streamTimeBaseNum : streamTimeBaseNum
-                    const tbDen = f.time_base ? parseInt(f.time_base.split('/')[1]) || streamTimeBaseDen : streamTimeBaseDen
-                    dtsTime = f.dts * tbNum / tbDen
+                    const tbNum = f.time_base
+                        ? parseInt(f.time_base.split('/')[0]) || streamTimeBaseNum
+                        : streamTimeBaseNum
+                    const tbDen = f.time_base
+                        ? parseInt(f.time_base.split('/')[1]) || streamTimeBaseDen
+                        : streamTimeBaseDen
+                    dtsTime = (f.dts * tbNum) / tbDen
                 } else if (f.pkt_dts !== undefined && f.pkt_dts !== null) {
                     dtsTime = f.pkt_dts / 1000
                 } else {
                     dtsTime = ptsTime
                 }
             }
-            
+
             let durationTime = parseFloat(f.duration_time || '')
             if (isNaN(durationTime)) {
                 durationTime = parseFloat(f.pkt_duration_time || '0')
             }
-            
+
             const globalIndex = Math.round(ptsTime * frameRate)
-            
+
             return {
                 index: globalIndex,
                 type: f.pict_type || '?',
@@ -832,7 +853,9 @@ async function analyzeFrames(filePath: string, page: number = 1, pageSize: numbe
         }
         resp.success('success')
 
-        logger.info(`Frame analysis completed: page ${page}, ${frames.length} frames in ${Date.now() - parseStartTime}ms`)
+        logger.info(
+            `Frame analysis completed: page ${page}, ${frames.length} frames in ${Date.now() - parseStartTime}ms`
+        )
     } catch (error) {
         logger.error(`Failed to analyze frames: ${error}`)
         resp.err(`Failed to analyze frames: ${error}`)

@@ -7,7 +7,9 @@
             <label for="end-date">{{ t('queryForm.end') }}:</label>
             <input id="end-date" v-model="endDate" type="date" value="2025-03-25" />
             <input id="end-time" v-model="endTime" type="time" value="23:59" />
-            <button class="xc-button" type="button" @click="handleQuery">{{ t('queryForm.query') }}</button>
+            <button class="xc-button" type="button" @click="handleQuery">
+                {{ t('queryForm.query') }}
+            </button>
         </form>
         <div id="display-option">
             <input
@@ -61,8 +63,7 @@ const displayOption = computed<string>({
 })
 
 // 定义 handleQuery 函数的返回值类型
-const handleQuery = async (): Promise<void> => {
-}
+const handleQuery = async (): Promise<void> => {}
 </script>
 
 <style scoped>

@@ -467,9 +467,7 @@ class AppDb {
 
                 if (hasNoScoreFilter) {
                     if (tblName === this.tbl_filesview) {
-                        conditionsParam.push(
-                            `(tagName IS NULL OR tagName NOT LIKE 'sys_score%')`
-                        )
+                        conditionsParam.push(`(tagName IS NULL OR tagName NOT LIKE 'sys_score%')`)
                         countConditionsParam.push(
                             `(tagName IS NULL OR tagName NOT LIKE 'sys_score%')`
                         )

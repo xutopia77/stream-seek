@@ -2,9 +2,7 @@
     <div class="project-settings-container">
         <div class="settings-sidebar">
             <div class="sidebar-header">
-                <button class="back-btn" @click="goBack">
-                    ← {{ t('common.back') }}
-                </button>
+                <button class="back-btn" @click="goBack">← {{ t('common.back') }}</button>
             </div>
 
             <div class="sidebar-menu">
@@ -61,7 +59,7 @@ const menuItems = [
 ]
 
 const currentTitle = computed(() => {
-    const item = menuItems.find(i => i.id === activeTab.value)
+    const item = menuItems.find((i) => i.id === activeTab.value)
     return item ? t(item.label) : ''
 })
 

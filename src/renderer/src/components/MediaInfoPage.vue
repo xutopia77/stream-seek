@@ -2,9 +2,7 @@
     <div class="media-info-container">
         <div class="sidebar">
             <div class="sidebar-header">
-                <button class="back-btn" @click="goBack">
-                    ← {{ t('common.back') }}
-                </button>
+                <button class="back-btn" @click="goBack">← {{ t('common.back') }}</button>
             </div>
             <div class="sidebar-menu">
                 <div
@@ -38,15 +36,24 @@
                     <span class="sidebar-icon">🕐</span>
                     <span>{{ t('mediaInfo.timestamp') }}</span>
                 </div>
-                <div class="sidebar-item" :class="{ active: activeTab === 'bitrate', disabled: true }">
+                <div
+                    class="sidebar-item"
+                    :class="{ active: activeTab === 'bitrate', disabled: true }"
+                >
                     <span class="sidebar-icon">〰️</span>
                     <span>{{ t('mediaInfo.bitrate') }}</span>
                 </div>
-                <div class="sidebar-item" :class="{ active: activeTab === 'avsync', disabled: true }">
+                <div
+                    class="sidebar-item"
+                    :class="{ active: activeTab === 'avsync', disabled: true }"
+                >
                     <span class="sidebar-icon">🔗</span>
                     <span>{{ t('mediaInfo.avSync') }}</span>
                 </div>
-                <div class="sidebar-item" :class="{ active: activeTab === 'interval', disabled: true }">
+                <div
+                    class="sidebar-item"
+                    :class="{ active: activeTab === 'interval', disabled: true }"
+                >
                     <span class="sidebar-icon">⏱</span>
                     <span>{{ t('mediaInfo.frameInterval') }}</span>
                 </div>

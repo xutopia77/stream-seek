@@ -3,7 +3,9 @@
         <div class="panel-header">
             <h3 class="panel-title">{{ t('recentMessages.title') }}</h3>
             <div class="header-actions">
-                <button class="xc-button small danger" @click="btn_clear_all_msg">{{ t('recentMessages.clearAll') }}</button>
+                <button class="xc-button small danger" @click="btn_clear_all_msg">
+                    {{ t('recentMessages.clearAll') }}
+                </button>
                 <button class="xc-button small primary" @click="appStore.bPageResentMsg = false">
                     {{ t('recentMessages.close') }}
                 </button>
@@ -22,7 +24,9 @@
                     <span class="message-time">{{ formatTime(message.timestamp) }}</span>
                 </div>
             </div>
-            <div v-if="recentMessages.length === 0" class="no-messages">{{ t('recentMessages.noMessages') }}</div>
+            <div v-if="recentMessages.length === 0" class="no-messages">
+                {{ t('recentMessages.noMessages') }}
+            </div>
         </div>
     </div>
 </template>

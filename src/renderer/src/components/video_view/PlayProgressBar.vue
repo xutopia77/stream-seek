@@ -132,7 +132,11 @@ async function processShowKeyInfo(): Promise<void> {
         util.addToastErr(`${t('playProgressBar.getKeyFrameError')}: ${response.status}`)
     } else {
         console.log('get key frame info success', response)
-        util.addToastInfo(response.bOver == false ? t('playProgressBar.processing') : t('playProgressBar.getKeyFrameSuccess'))
+        util.addToastInfo(
+            response.bOver == false
+                ? t('playProgressBar.processing')
+                : t('playProgressBar.getKeyFrameSuccess')
+        )
     }
 }
 

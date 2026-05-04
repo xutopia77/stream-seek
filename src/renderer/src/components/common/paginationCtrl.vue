@@ -111,7 +111,11 @@
             </div>
         </template>
 
-        <div v-if="showSettingsModal" class="settings-modal-overlay" @click.self="closeSettingsModal">
+        <div
+            v-if="showSettingsModal"
+            class="settings-modal-overlay"
+            @click.self="closeSettingsModal"
+        >
             <div class="settings-modal">
                 <div class="modal-header">
                     <span class="xc-text">{{ t('pagination.settings') }}</span>
@@ -121,19 +125,19 @@
                     <div class="setting-item">
                         <span class="xc-text">{{ t('pagination.fileStatus') }}</span>
                         <select v-model="modalFileStatus" class="size-select">
-                            <option :value="Dty.Fstatus.Normal">🗄️ {{ t('pagination.normalFiles') }}</option>
-                            <option :value="Dty.Fstatus.Deleted">🗑️ {{ t('pagination.trashFiles') }}</option>
+                            <option :value="Dty.Fstatus.Normal">
+                                🗄️ {{ t('pagination.normalFiles') }}
+                            </option>
+                            <option :value="Dty.Fstatus.Deleted">
+                                🗑️ {{ t('pagination.trashFiles') }}
+                            </option>
                         </select>
                     </div>
                     <div class="setting-item">
                         <span class="xc-text">{{ t('pagination.levelFilter') }}</span>
                         <div class="level-checkboxes">
                             <label class="checkbox-label">
-                                <input
-                                    v-model="modalSelectedLevels"
-                                    type="checkbox"
-                                    :value="-2"
-                                />
+                                <input v-model="modalSelectedLevels" type="checkbox" :value="-2" />
                                 {{ t('pagination.noLevel') }}
                             </label>
                             <label v-for="index in 5" :key="index" class="checkbox-label">
@@ -150,16 +154,24 @@
                         <span class="xc-text">{{ t('pagination.sortBy') }}</span>
                         <select v-model="modalOrderBy" class="size-select">
                             <option value="name">{{ t('pagination.sortOptions.name') }}</option>
-                            <option value="startTimeSec">{{ t('pagination.sortOptions.startTimeSec') }}</option>
-                            <option value="endTimeSec">{{ t('pagination.sortOptions.endTimeSec') }}</option>
+                            <option value="startTimeSec">
+                                {{ t('pagination.sortOptions.startTimeSec') }}
+                            </option>
+                            <option value="endTimeSec">
+                                {{ t('pagination.sortOptions.endTimeSec') }}
+                            </option>
                             <option value="size">{{ t('pagination.sortOptions.size') }}</option>
-                            <option value="duration">{{ t('pagination.sortOptions.duration') }}</option>
+                            <option value="duration">
+                                {{ t('pagination.sortOptions.duration') }}
+                            </option>
                         </select>
                     </div>
                     <div class="setting-item">
                         <span class="xc-text">{{ t('pagination.sortOrder') }}</span>
                         <select v-model="modalOrder" class="size-select">
-                            <option value="desc">{{ t('pagination.sortOrderOptions.desc') }}</option>
+                            <option value="desc">
+                                {{ t('pagination.sortOrderOptions.desc') }}
+                            </option>
                             <option value="asc">{{ t('pagination.sortOrderOptions.asc') }}</option>
                         </select>
                     </div>
@@ -176,8 +188,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="xc-button" @click="applySettings">{{ t('pagination.apply') }}</button>
-                    <button class="xc-button" @click="closeSettingsModal">{{ t('pagination.cancel') }}</button>
+                    <button class="xc-button" @click="applySettings">
+                        {{ t('pagination.apply') }}
+                    </button>
+                    <button class="xc-button" @click="closeSettingsModal">
+                        {{ t('pagination.cancel') }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -244,7 +260,9 @@ const showSettingsModal = ref(false)
 const modalSelectedLevels = ref<number[]>([])
 const modalPageSize = ref(50)
 const modalFileStatus = ref<Dty.Fstatus>(Dty.Fstatus.Normal)
-const modalOrderBy = ref<'name' | 'startTimeSec' | 'endTimeSec' | 'size' | 'duration'>('startTimeSec')
+const modalOrderBy = ref<'name' | 'startTimeSec' | 'endTimeSec' | 'size' | 'duration'>(
+    'startTimeSec'
+)
 const modalOrder = ref<'asc' | 'desc'>('desc')
 
 const toggleDropdown = (): void => {
@@ -356,15 +374,15 @@ const closeSettingsModal = (): void => {
 
 const applySettings = (): void => {
     const oldLevels = [...selectedLevels.value]
-    
+
     selectedLevels.value = [...modalSelectedLevels.value]
-    
+
     let needSearch = false
 
-    const levelsChanged = 
+    const levelsChanged =
         oldLevels.length !== selectedLevels.value.length ||
         !oldLevels.every((level) => selectedLevels.value.includes(level))
-    
+
     if (levelsChanged) {
         needSearch = true
     }

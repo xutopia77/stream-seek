@@ -25,7 +25,9 @@
             <button class="xc-button primary" type="button" @click="btnclk_sync_work()">
                 {{ t('adminSetting.syncProject') }}
             </button>
-            <button class="xc-button" type="button" @click="btnclk_syncStop()">{{ t('adminSetting.stopSync') }}</button>
+            <button class="xc-button" type="button" @click="btnclk_syncStop()">
+                {{ t('adminSetting.stopSync') }}
+            </button>
         </div>
     </div>
 </template>

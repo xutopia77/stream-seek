@@ -1,9 +1,7 @@
 <template>
     <div class="app-setting-container">
         <div class="setting-header">
-            <button class="back-btn" @click="goBack">
-                ← {{ t('common.back') }}
-            </button>
+            <button class="back-btn" @click="goBack">← {{ t('common.back') }}</button>
             <h2>{{ t('appSetting.title') }}</h2>
         </div>
 

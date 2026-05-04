@@ -33,9 +33,7 @@ async function getFrameInfo(filepath: string): Promise<Dty.Resp<Dty.FrameInfo>> 
     })
 }
 
-async function make_split_info(
-    req: Dty.Req<Dty.Req_CutVideo>
-): Promise<Dty.Resp<CutSplitInfo[]>> {
+async function make_split_info(req: Dty.Req<Dty.Req_CutVideo>): Promise<Dty.Resp<CutSplitInfo[]>> {
     function processSplitInKeyFrame(
         splitInfo: CutSplitInfo[],
         keyFrameSplitInfo: Dty.Frame[]
@@ -160,10 +158,7 @@ async function make_split_info(
 async function make_segment_split_info(
     req: Dty.Req<Dty.Req_CutVideo>
 ): Promise<Dty.Resp<CutSplitInfo[]>> {
-    function findKeyFrameBefore(
-        time: number,
-        keyFrameSplitInfo: Dty.Frame[]
-    ): number {
+    function findKeyFrameBefore(time: number, keyFrameSplitInfo: Dty.Frame[]): number {
         let lastKeyFrameTime = 0
         for (const frame of keyFrameSplitInfo) {
             if (frame.pts_time <= time) {
@@ -203,7 +198,7 @@ async function make_segment_split_info(
 
     splitInfo.sort((a, b) => a.startTime - b.startTime)
     const resvSplitInfo: CutSplitInfo[] = []
-    
+
     for (const item of splitInfo) {
         if (!item.isDelete) {
             const startTime = findKeyFrameBefore(item.startTime, keyFrameSplitInfo)
@@ -224,9 +219,7 @@ interface CutSplitInfo {
     endTime: number
 }
 
-async function cutVideo(
-    req: Dty.Req<Dty.Req_CutVideo>
-): Promise<Dty.Resp<Dty.Resp_CutVideo>> {
+async function cutVideo(req: Dty.Req<Dty.Req_CutVideo>): Promise<Dty.Resp<Dty.Resp_CutVideo>> {
     const resp = new Dty.Resp<Dty.Resp_CutVideo>()
     if (!req.data?.filepath) {
         return resp.err('filepath is null')
@@ -327,12 +320,12 @@ async function cutVideo(
             concatContent += `file '${item.replace(/\\/g, '/')}'\n`
         }
         await fs.promises.writeFile(concatListPath, concatContent, 'utf-8')
-        
+
         const mergedFilename = `merged_${timestamp}.mp4`
         const mergedFilePath = path.join(distFolderPath, mergedFilename)
         const concatCmd = `${appCfg.ffmpegExe} -f concat -safe 0 -i "${concatListPath}" -c copy "${mergedFilePath}"`
         logger.log(`merge command: ${concatCmd}`)
-        
+
         await new Promise((resolve, reject) => {
             exec(concatCmd, (error) => {
                 if (error) {
@@ -347,7 +340,7 @@ async function cutVideo(
             await fs.promises.unlink(item)
         }
         await fs.promises.unlink(concatListPath)
-        
+
         logger.info(`========== Export Completed ==========`)
         logger.info(`Export mode: Merge`)
         logger.info(`Export folder: ${distFolderPath}`)

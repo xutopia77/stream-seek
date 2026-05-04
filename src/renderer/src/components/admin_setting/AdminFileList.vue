@@ -1,12 +1,14 @@
 <template>
     <div class="file-list-page">
-        <div class="project-info" v-if="appStore.prj">
+        <div v-if="appStore.prj" class="project-info">
             <span class="xc-text">{{ t('fileList.projectName') }}: {{ appStore.prj.name }}</span>
-            <span class="xc-text">{{ t('fileList.totalFiles') }}: {{ appStore.videoTotalNum }}</span>
+            <span class="xc-text"
+                >{{ t('fileList.totalFiles') }}: {{ appStore.videoTotalNum }}</span
+            >
         </div>
 
         <div class="file-list-container xc-scrollbar">
-            <table class="file-table" ref="tableRef">
+            <table ref="tableRef" class="file-table">
                 <thead>
                     <tr>
                         <th
@@ -36,8 +38,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(file, index) in sortedFileList" :key="file.path" :class="{ 'trash-mode': isTrashMode }">
-                        <td class="xc-text">{{ (appStore.fileSearchPage - 1) * appStore.fileSearchPageSize + index + 1 }}</td>
+                    <tr
+                        v-for="(file, index) in sortedFileList"
+                        :key="file.path"
+                        :class="{ 'trash-mode': isTrashMode }"
+                    >
+                        <td class="xc-text">
+                            {{
+                                (appStore.fileSearchPage - 1) * appStore.fileSearchPageSize +
+                                index +
+                                1
+                            }}
+                        </td>
                         <td class="xc-text">{{ file.name }}</td>
                         <td class="xc-text">{{ formatTime(file.startTimeSec) }}</td>
                         <td class="xc-text">{{ formatTime(file.endTimeSec) }}</td>
@@ -151,9 +163,7 @@ const sortedFileList = computed((): Dty.File[] => {
         }
 
         if (typeof valueA === 'string' && typeof valueB === 'string') {
-            return order === 'asc'
-                ? valueA.localeCompare(valueB)
-                : valueB.localeCompare(valueA)
+            return order === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA)
         }
 
         if (typeof valueA === 'number' && typeof valueB === 'number') {

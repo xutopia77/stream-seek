@@ -5,7 +5,12 @@
             <button class="expand-btn" @click="toggleExpandAll">
                 {{ isAllExpanded ? '−' : '+' }}
             </button>
-            <input type="text" class="search-input" :placeholder="t('mediaInfo.searchBox')" v-model="searchText">
+            <input
+                v-model="searchText"
+                type="text"
+                class="search-input"
+                :placeholder="t('mediaInfo.searchBox')"
+            />
         </div>
         <div class="tree-area xc-scrollbar">
             <div v-if="!boxes || boxes.length === 0" class="empty-hint">

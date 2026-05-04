@@ -388,19 +388,19 @@ class AppProc {
             appCfg.appInfo.recentFiles = []
         }
         const fileName = path.basename(filePath)
-        const existingIndex = appCfg.appInfo.recentFiles.findIndex(f => f.path === filePath)
-        
+        const existingIndex = appCfg.appInfo.recentFiles.findIndex((f) => f.path === filePath)
+
         if (existingIndex >= 0) {
             appCfg.appInfo.recentFiles.splice(existingIndex, 1)
         }
-        
+
         const item: Dty.RecentItem = {
             name: fileName,
             path: filePath,
             lastOpened: Date.now()
         }
         appCfg.appInfo.recentFiles.unshift(item)
-        
+
         if (appCfg.appInfo.recentFiles.length > 10) {
             appCfg.appInfo.recentFiles = appCfg.appInfo.recentFiles.slice(0, 10)
         }
@@ -412,19 +412,19 @@ class AppProc {
             appCfg.appInfo.recentProjects = []
         }
         const prjName = path.basename(prjFile, '.json')
-        const existingIndex = appCfg.appInfo.recentProjects.findIndex(p => p.path === prjFile)
-        
+        const existingIndex = appCfg.appInfo.recentProjects.findIndex((p) => p.path === prjFile)
+
         if (existingIndex >= 0) {
             appCfg.appInfo.recentProjects.splice(existingIndex, 1)
         }
-        
+
         const item: Dty.RecentItem = {
             name: prjName,
             path: prjFile,
             lastOpened: Date.now()
         }
         appCfg.appInfo.recentProjects.unshift(item)
-        
+
         if (appCfg.appInfo.recentProjects.length > 10) {
             appCfg.appInfo.recentProjects = appCfg.appInfo.recentProjects.slice(0, 10)
         }
@@ -667,7 +667,9 @@ class AppProc {
         return appDb.fileViewSearch(req.data == null ? null : req.data)
     }
 
-    async handle_thumb_img_get(req: Dty.Req<Dty.ThumbImgGetReq>): Promise<Dty.Resp<Dty.ThumbImgGetResp>> {
+    async handle_thumb_img_get(
+        req: Dty.Req<Dty.ThumbImgGetReq>
+    ): Promise<Dty.Resp<Dty.ThumbImgGetResp>> {
         const resp = new Dty.Resp<Dty.ThumbImgGetResp>()
         const reqData = req.data
 
@@ -696,7 +698,9 @@ class AppProc {
                 driver: sqlite3.Database
             })
 
-            const row = await thumbDb.get('SELECT raw FROM files WHERE filename =?', [reqData.thumbName])
+            const row = await thumbDb.get('SELECT raw FROM files WHERE filename =?', [
+                reqData.thumbName
+            ])
             await thumbDb.close()
 
             if (row == null) {
@@ -1164,22 +1168,24 @@ class AppProc {
         if (!req.data) {
             return resp.err('clip project data is null')
         }
-        
+
         const clipProject = req.data
         const now = new Date().toISOString()
         clipProject.updatedAt = now
-        
+
         if (!clipProject.createdAt) {
             clipProject.createdAt = now
         }
-        
+
         let savePath = clipProject.path
-        
+
         if (!savePath) {
             const videoDir = path.dirname(clipProject.filePath)
-            const defaultName = clipProject.name || path.basename(clipProject.filePath, path.extname(clipProject.filePath))
+            const defaultName =
+                clipProject.name ||
+                path.basename(clipProject.filePath, path.extname(clipProject.filePath))
             const defaultPath = path.join(videoDir, `${defaultName}.clip.json`)
-            
+
             const result = await dialog.showSaveDialog({
                 title: '保存剪辑项目',
                 defaultPath: defaultPath,
@@ -1188,13 +1194,13 @@ class AppProc {
                     { name: 'All Files', extensions: ['*'] }
                 ]
             })
-            
+
             if (result.canceled || !result.filePath) {
                 return resp.err('user canceled')
             }
             savePath = result.filePath
         }
-        
+
         try {
             clipProject.path = savePath
             await fs.promises.writeFile(savePath, JSON.stringify(clipProject, null, 2), 'utf-8')
@@ -1212,12 +1218,15 @@ class AppProc {
         if (!req.data) {
             return resp.err('clip project data is null')
         }
-        
+
         const clipProject = req.data
         const videoDir = path.dirname(clipProject.filePath)
-        const videoBasename = path.basename(clipProject.filePath, path.extname(clipProject.filePath))
+        const videoBasename = path.basename(
+            clipProject.filePath,
+            path.extname(clipProject.filePath)
+        )
         const defaultPath = path.join(videoDir, `${videoBasename}.clip.json`)
-        
+
         const result = await dialog.showSaveDialog({
             title: '保存剪辑项目',
             defaultPath: defaultPath,
@@ -1226,19 +1235,23 @@ class AppProc {
                 { name: 'JSON 文件', extensions: ['json'] }
             ]
         })
-        
+
         if (result.canceled || !result.filePath) {
             return resp.err('user canceled')
         }
-        
+
         const now = new Date().toISOString()
         clipProject.updatedAt = now
         if (!clipProject.createdAt) {
             clipProject.createdAt = now
         }
-        
+
         try {
-            await fs.promises.writeFile(result.filePath, JSON.stringify(clipProject, null, 2), 'utf-8')
+            await fs.promises.writeFile(
+                result.filePath,
+                JSON.stringify(clipProject, null, 2),
+                'utf-8'
+            )
             resp.data = result.filePath
             return resp.success('success')
         } catch (err) {
@@ -1249,29 +1262,27 @@ class AppProc {
 
     async handle_clip_project_open(): Promise<Dty.Resp<Dty.ClipProject>> {
         const resp = new Dty.Resp<Dty.ClipProject>()
-        
+
         const result = await dialog.showOpenDialog({
             title: '打开剪辑项目',
-            filters: [
-                { name: '剪辑项目文件', extensions: ['clip.json', 'json'] }
-            ],
+            filters: [{ name: '剪辑项目文件', extensions: ['clip.json', 'json'] }],
             properties: ['openFile']
         })
-        
+
         if (result.canceled || result.filePaths.length === 0) {
             return resp.err('user canceled')
         }
-        
+
         const filePath = result.filePaths[0]
-        
+
         try {
             const content = await fs.promises.readFile(filePath, 'utf-8')
             const clipProject: Dty.ClipProject = JSON.parse(content)
-            
+
             if (!fs.existsSync(clipProject.filePath)) {
                 return resp.err(`video file not found: ${clipProject.filePath}`)
             }
-            
+
             resp.data = clipProject
             return resp.success('success')
         } catch (err) {
@@ -1301,16 +1312,16 @@ class AppProc {
             return resp.err('req.data is null')
         }
         const { dataRepo, projectPath } = req.data
-        
+
         if (!projectPath || !fs.existsSync(projectPath)) {
             return resp.err('project path is invalid')
         }
-        
+
         const folderContent = fs.readdirSync(projectPath)
         if (folderContent.length > 0) {
             return resp.err('The selected folder is not empty')
         }
-        
+
         return await this.create_prj(
             { cmd: Dty.CmdType.createPrjWithPath, data: { dataRepo, projectPath } },
             Util.pathToLinuxStyle(projectPath)
@@ -1918,7 +1929,9 @@ class AppProc {
         return resp.success('tiny process over')
     }
 
-    async handle_open_prj(mainWindow: Electron.BrowserWindow): Promise<Dty.Resp<Dty.Prj | Dty.ClipProject>> {
+    async handle_open_prj(
+        mainWindow: Electron.BrowserWindow
+    ): Promise<Dty.Resp<Dty.Prj | Dty.ClipProject>> {
         const resp = new Dty.Resp<Dty.Prj | Dty.ClipProject>()
         try {
             const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
@@ -1936,7 +1949,7 @@ class AppProc {
             const filePath = filePaths[0]
             const fileContent = await fs.promises.readFile(filePath, 'utf-8')
             const projectData = JSON.parse(fileContent)
-            
+
             if (projectData.type === Dty.ProjectType.ClipEdit) {
                 const clipProject = projectData as Dty.ClipProject
                 if (!fs.existsSync(clipProject.filePath)) {
@@ -1962,10 +1975,10 @@ class AppProc {
             if (!fs.existsSync(prjFile)) {
                 return resp.err('Project file not found')
             }
-            
+
             const fileContent = await fs.promises.readFile(prjFile, 'utf-8')
             const projectData = JSON.parse(fileContent)
-            
+
             if (projectData.type === Dty.ProjectType.ClipEdit) {
                 const clipProject = projectData as Dty.ClipProject
                 if (!fs.existsSync(clipProject.filePath)) {
@@ -1975,18 +1988,18 @@ class AppProc {
                 resp.data = clipProject
                 return resp.success('success')
             }
-            
+
             const prjInfo = projectData as Dty.Prj
             appCfg.prj = prjInfo
             appCfg.appInfo.prjFile = prjFile
             this.addRecentProject(prjFile)
-            
+
             const prjFilePath = path.dirname(prjFile)
             const respDb = await appDb.initDb(path.join(prjFilePath, 'db'))
             if (!respDb.isSuccess()) {
                 return resp.err('init db error')
             }
-            
+
             for (let i = 1; i < 11; i++) {
                 const tag: Dty.Tag = {
                     id: 0,
@@ -1996,7 +2009,7 @@ class AppProc {
                 }
                 await appDb.tag_insert(tag)
             }
-            
+
             resp.success('File opened successfully').data = prjInfo
             return resp
         } catch (error) {
@@ -2083,7 +2096,9 @@ class AppProc {
                 cseq: req.cseq,
                 data: JSON.parse(req.data ? req.data : '{}') as Dty.ThumbImgGetReq
             }
-            logger.info(`cmd:${cmd}:${cseq}, video=${cmdReq.data?.videoName}, thumb=${cmdReq.data?.thumbName}`)
+            logger.info(
+                `cmd:${cmd}:${cseq}, video=${cmdReq.data?.videoName}, thumb=${cmdReq.data?.thumbName}`
+            )
             return this.cmdRespMake(await this.handle_thumb_img_get(cmdReq))
         }
         if (workQueue.isBusy()) {
@@ -2251,7 +2266,9 @@ class AppProc {
         }
     }
 
-    async handle_parse_mp4_box(req: Dty.Req<Dty.ParseMp4BoxReq>): Promise<Dty.Resp<Dty.ParseMp4BoxResp>> {
+    async handle_parse_mp4_box(
+        req: Dty.Req<Dty.ParseMp4BoxReq>
+    ): Promise<Dty.Resp<Dty.ParseMp4BoxResp>> {
         const resp = new Dty.Resp<Dty.ParseMp4BoxResp>()
         if (!req.data?.filePath) {
             return resp.err('filePath is required')
@@ -2259,14 +2276,16 @@ class AppProc {
         return await mp4Parser.parseMp4Box(req.data.filePath)
     }
 
-    async handle_analyze_frames(req: Dty.Req<Dty.AnalyzeFramesReq>): Promise<Dty.Resp<Dty.AnalyzeFramesResp>> {
+    async handle_analyze_frames(
+        req: Dty.Req<Dty.AnalyzeFramesReq>
+    ): Promise<Dty.Resp<Dty.AnalyzeFramesResp>> {
         const resp = new Dty.Resp<Dty.AnalyzeFramesResp>()
         if (!req.data?.filePath) {
             return resp.err('filePath is required')
         }
         return await mp4Parser.analyzeFrames(
-            req.data.filePath, 
-            req.data.page || 1, 
+            req.data.filePath,
+            req.data.page || 1,
             req.data.pageSize || 200,
             req.data.startTime
         )

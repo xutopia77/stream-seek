@@ -2,21 +2,56 @@
     <div class="frame-analysis-container">
         <div class="frame-toolbar">
             <div class="toolbar-left">
-                <span class="info-text" v-if="videoInfo">
-                    {{ videoInfo.codecName }} | {{ videoInfo.width }}x{{ videoInfo.height }} | {{ frameRateText }} | Total: {{ videoInfo.totalFrames }} frames
+                <span v-if="videoInfo" class="info-text">
+                    {{ videoInfo.codecName }} | {{ videoInfo.width }}x{{ videoInfo.height }} |
+                    {{ frameRateText }} | Total: {{ videoInfo.totalFrames }} frames
                 </span>
-                <span class="loading-text" v-if="loading">Loading...</span>
+                <span v-if="loading" class="loading-text">Loading...</span>
             </div>
             <div class="toolbar-right">
                 <div class="pagination">
-                    <button class="tool-btn" :disabled="currentPage <= 1 || loading" @click="goToPage(1)" title="First Page">⏮</button>
-                    <button class="tool-btn" :disabled="currentPage <= 1 || loading" @click="goToPage(currentPage - 1)" title="Previous Page">◀</button>
+                    <button
+                        class="tool-btn"
+                        :disabled="currentPage <= 1 || loading"
+                        title="First Page"
+                        @click="goToPage(1)"
+                    >
+                        ⏮
+                    </button>
+                    <button
+                        class="tool-btn"
+                        :disabled="currentPage <= 1 || loading"
+                        title="Previous Page"
+                        @click="goToPage(currentPage - 1)"
+                    >
+                        ◀
+                    </button>
                     <span class="page-info">
-                        <input type="number" v-model.number="pageInput" class="page-input" @keyup.enter="jumpToPage" :disabled="loading">
+                        <input
+                            v-model.number="pageInput"
+                            type="number"
+                            class="page-input"
+                            :disabled="loading"
+                            @keyup.enter="jumpToPage"
+                        />
                         / {{ totalPages }}
                     </span>
-                    <button class="tool-btn" :disabled="currentPage >= totalPages || loading" @click="goToPage(currentPage + 1)" title="Next Page">▶</button>
-                    <button class="tool-btn" :disabled="currentPage >= totalPages || loading" @click="goToPage(totalPages)" title="Last Page">⏭</button>
+                    <button
+                        class="tool-btn"
+                        :disabled="currentPage >= totalPages || loading"
+                        title="Next Page"
+                        @click="goToPage(currentPage + 1)"
+                    >
+                        ▶
+                    </button>
+                    <button
+                        class="tool-btn"
+                        :disabled="currentPage >= totalPages || loading"
+                        title="Last Page"
+                        @click="goToPage(totalPages)"
+                    >
+                        ⏭
+                    </button>
                 </div>
                 <select v-model="localPageSize" class="page-size-select" @change="onPageSizeChange">
                     <option :value="100">100/page</option>
@@ -50,12 +85,18 @@
                         <tr
                             v-for="frame in filteredFrames"
                             :key="frame.index"
-                            :class="{ 'selected': selectedFrame?.index === frame.index, 'is-keyframe': frame.keyFrame }"
+                            :class="{
+                                selected: selectedFrame?.index === frame.index,
+                                'is-keyframe': frame.keyFrame
+                            }"
                             @click="onSelectFrame(frame)"
                         >
                             <td class="col-index">{{ frame.index }}</td>
                             <td class="col-type">
-                                <span class="type-badge" :class="'type-' + frame.pictType?.toLowerCase()">
+                                <span
+                                    class="type-badge"
+                                    :class="'type-' + frame.pictType?.toLowerCase()"
+                                >
                                     {{ frame.pictType || '-' }}
                                 </span>
                             </td>
@@ -76,7 +117,9 @@
             <div class="frame-detail-panel">
                 <div class="panel-header">
                     <span class="header-title">Frame Detail</span>
-                    <span class="header-subtitle" v-if="selectedFrame">#{{ selectedFrame?.index }}</span>
+                    <span v-if="selectedFrame" class="header-subtitle"
+                        >#{{ selectedFrame?.index }}</span
+                    >
                 </div>
                 <div class="panel-content xc-scrollbar">
                     <div v-if="!selectedFrame" class="no-selection">
@@ -93,36 +136,55 @@
                                 <div class="detail-row">
                                     <span class="detail-label">Type</span>
                                     <span class="detail-value">
-                                        <span class="type-badge" :class="'type-' + (selectedFrame.pictType?.toLowerCase() || 'unknown')">
+                                        <span
+                                            class="type-badge"
+                                            :class="
+                                                'type-' +
+                                                (selectedFrame.pictType?.toLowerCase() || 'unknown')
+                                            "
+                                        >
                                             {{ selectedFrame.pictType || '-' }}
                                         </span>
                                     </span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">Key Frame</span>
-                                    <span class="detail-value" :class="{ 'val-true': selectedFrame.keyFrame }">
+                                    <span
+                                        class="detail-value"
+                                        :class="{ 'val-true': selectedFrame.keyFrame }"
+                                    >
                                         {{ selectedFrame.keyFrame ? 'Yes' : 'No' }}
                                     </span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">PTS</span>
-                                    <span class="detail-value val-time">{{ formatTime(selectedFrame.pts) }}</span>
+                                    <span class="detail-value val-time">{{
+                                        formatTime(selectedFrame.pts)
+                                    }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">DTS</span>
-                                    <span class="detail-value val-time">{{ formatTime(selectedFrame.dts) }}</span>
+                                    <span class="detail-value val-time">{{
+                                        formatTime(selectedFrame.dts)
+                                    }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">Duration</span>
-                                    <span class="detail-value">{{ formatDuration(selectedFrame.duration) }}</span>
+                                    <span class="detail-value">{{
+                                        formatDuration(selectedFrame.duration)
+                                    }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">Size</span>
-                                    <span class="detail-value">{{ formatSize(selectedFrame.size) }}</span>
+                                    <span class="detail-value">{{
+                                        formatSize(selectedFrame.size)
+                                    }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">File Offset</span>
-                                    <span class="detail-value val-hex">{{ formatHex(selectedFrame.offset) }}</span>
+                                    <span class="detail-value val-hex">{{
+                                        formatHex(selectedFrame.offset)
+                                    }}</span>
                                 </div>
                             </div>
                         </div>
@@ -156,20 +218,29 @@
         <div class="frame-preview-area">
             <div class="preview-header">
                 <span class="preview-title">Video Preview</span>
-                <span class="preview-info" v-if="selectedFrame">
+                <span v-if="selectedFrame" class="preview-info">
                     Frame #{{ selectedFrame.index }} @ {{ formatTime(selectedFrame.pts) }}
                 </span>
             </div>
             <div class="preview-content">
-                <div class="no-preview" v-if="!selectedFrame">
+                <div v-if="!selectedFrame" class="no-preview">
                     <span>Click a frame to preview</span>
                 </div>
-                <div class="hex-preview" v-else>
+                <div v-else class="hex-preview">
                     <div class="hex-info">
-                        <span>Offset: {{ formatHex(selectedFrame.offset) }} | Size: {{ formatSize(selectedFrame.size) }} bytes</span>
+                        <span
+                            >Offset: {{ formatHex(selectedFrame.offset) }} | Size:
+                            {{ formatSize(selectedFrame.size) }} bytes</span
+                        >
                     </div>
                     <div class="hex-visual">
-                        <div class="hex-bar" :style="{ width: Math.min(100, (selectedFrame.size / maxFrameSize) * 100) + '%' }"></div>
+                        <div
+                            class="hex-bar"
+                            :style="{
+                                width:
+                                    Math.min(100, (selectedFrame.size / maxFrameSize) * 100) + '%'
+                            }"
+                        ></div>
                     </div>
                 </div>
             </div>
@@ -190,17 +261,20 @@ interface VideoInfo {
     duration: number
 }
 
-const props = withDefaults(defineProps<{
-    frames: Dty.VideoFrame[]
-    videoInfo?: VideoInfo
-    currentPage?: number
-    pageSize?: number
-    loading?: boolean
-}>(), {
-    currentPage: 1,
-    pageSize: 200,
-    loading: false
-})
+const props = withDefaults(
+    defineProps<{
+        frames: Dty.VideoFrame[]
+        videoInfo?: VideoInfo
+        currentPage?: number
+        pageSize?: number
+        loading?: boolean
+    }>(),
+    {
+        currentPage: 1,
+        pageSize: 200,
+        loading: false
+    }
+)
 
 const emit = defineEmits<{
     (e: 'select', frame: Dty.VideoFrame): void
@@ -213,13 +287,19 @@ const filterType = ref<'all' | 'key' | 'non-key'>('all')
 const localPageSize = ref(props.pageSize)
 const pageInput = ref(props.currentPage)
 
-watch(() => props.currentPage, (val) => {
-    pageInput.value = val
-})
+watch(
+    () => props.currentPage,
+    (val) => {
+        pageInput.value = val
+    }
+)
 
-watch(() => props.pageSize, (val) => {
-    localPageSize.value = val
-})
+watch(
+    () => props.pageSize,
+    (val) => {
+        localPageSize.value = val
+    }
+)
 
 const currentPage = computed(() => props.currentPage)
 
@@ -231,9 +311,9 @@ const totalPages = computed(() => {
 const filteredFrames = computed(() => {
     let result = props.frames
     if (filterType.value === 'key') {
-        result = result.filter(f => f.keyFrame)
+        result = result.filter((f) => f.keyFrame)
     } else if (filterType.value === 'non-key') {
-        result = result.filter(f => !f.keyFrame)
+        result = result.filter((f) => !f.keyFrame)
     }
     return result
 })
@@ -246,7 +326,7 @@ const frameRateText = computed(() => {
 
 const maxFrameSize = computed(() => {
     if (props.frames.length === 0) return 1
-    return Math.max(...props.frames.map(f => f.size))
+    return Math.max(...props.frames.map((f) => f.size))
 })
 
 const avgFrameSize = computed(() => {
@@ -267,7 +347,7 @@ const keyFrameInterval = computed(() => {
     if (!selectedFrame.value) return '-'
     const idx = selectedFrame.value.index
     for (let i = idx - 1; i >= Math.max(0, idx - 500); i--) {
-        const frame = props.frames.find(f => f.index === i)
+        const frame = props.frames.find((f) => f.index === i)
         if (frame?.keyFrame) return `${idx - i} frames ago`
     }
     return 'N/A'
@@ -276,8 +356,12 @@ const keyFrameInterval = computed(() => {
 const gopPosition = computed(() => {
     if (!selectedFrame.value) return '-'
     let pos = 0
-    for (let i = selectedFrame.value.index; i >= Math.max(0, selectedFrame.value.index - 500); i--) {
-        const frame = props.frames.find(f => f.index === i)
+    for (
+        let i = selectedFrame.value.index;
+        i >= Math.max(0, selectedFrame.value.index - 500);
+        i--
+    ) {
+        const frame = props.frames.find((f) => f.index === i)
         if (frame?.keyFrame && i !== selectedFrame.value.index) break
         pos++
     }
@@ -314,7 +398,7 @@ function formatTime(pts: number): string {
     const m = Math.floor((seconds % 3600) / 60)
     const s = Math.floor(seconds % 60)
     const ms = Math.round((seconds % 1) * 1000)
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(3,'0')}`
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`
 }
 
 function formatDuration(dur: number): string {
@@ -429,7 +513,8 @@ function formatHex(offset: number): string {
     cursor: not-allowed;
 }
 
-.page-size-select, .type-filter {
+.page-size-select,
+.type-filter {
     padding: 3px 6px;
     background-color: #3c3c3c;
     border: 1px solid #555;
@@ -439,7 +524,8 @@ function formatHex(offset: number): string {
     outline: none;
 }
 
-.page-size-select:focus, .type-filter:focus {
+.page-size-select:focus,
+.type-filter:focus {
     border-color: #007acc;
 }
 
@@ -518,14 +604,43 @@ function formatHex(offset: number): string {
     font-size: 12px;
 }
 
-.col-index { width: 55px; text-align: right; color: #858585; }
-.col-type { width: 55px; text-align: center; }
-.col-pts { width: 130px; font-family: 'Consolas', monospace; color: #b5cea8; }
-.col-dts { width: 130px; font-family: 'Consolas', monospace; color: #b5cea8; }
-.col-duration { width: 85px; font-family: 'Consolas', monospace; }
-.col-size { width: 75px; text-align: right; font-family: 'Consolas', monospace; }
-.col-offset { width: 110px; font-family: 'Consolas', monospace; color: #569cd6; }
-.col-pict { width: 40px; text-align: center; }
+.col-index {
+    width: 55px;
+    text-align: right;
+    color: #858585;
+}
+.col-type {
+    width: 55px;
+    text-align: center;
+}
+.col-pts {
+    width: 130px;
+    font-family: 'Consolas', monospace;
+    color: #b5cea8;
+}
+.col-dts {
+    width: 130px;
+    font-family: 'Consolas', monospace;
+    color: #b5cea8;
+}
+.col-duration {
+    width: 85px;
+    font-family: 'Consolas', monospace;
+}
+.col-size {
+    width: 75px;
+    text-align: right;
+    font-family: 'Consolas', monospace;
+}
+.col-offset {
+    width: 110px;
+    font-family: 'Consolas', monospace;
+    color: #569cd6;
+}
+.col-pict {
+    width: 40px;
+    text-align: center;
+}
 
 .type-badge {
     display: inline-block;
@@ -536,11 +651,26 @@ function formatHex(offset: number): string {
     font-family: 'Consolas', monospace;
 }
 
-.type-i { background-color: #2e7d32; color: #a5d6a7; }
-.type-p { background-color: #1565c0; color: #90caf9; }
-.type-b { background-color: #e65100; color: #ffcc80; }
-.type-s { background-color: #6a1b9a; color: #ce93d8; }
-.type-unknown { background-color: #455a64; color: #b0bec5; }
+.type-i {
+    background-color: #2e7d32;
+    color: #a5d6a7;
+}
+.type-p {
+    background-color: #1565c0;
+    color: #90caf9;
+}
+.type-b {
+    background-color: #e65100;
+    color: #ffcc80;
+}
+.type-s {
+    background-color: #6a1b9a;
+    color: #ce93d8;
+}
+.type-unknown {
+    background-color: #455a64;
+    color: #b0bec5;
+}
 
 .frame-detail-panel {
     width: 300px;

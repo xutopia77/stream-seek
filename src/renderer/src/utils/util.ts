@@ -392,18 +392,18 @@ const export_cut_video = async (exportMode: Dty.ExportMode | null): Promise<void
         util.addToastInfo(t('util.selectVideoFirst'))
         return
     }
-    
+
     if (!prjInfo.fileInfo.splitInfo || prjInfo.fileInfo.splitInfo.splits.length === 0) {
         util.addToastErr(t('util.noSplitInfo'))
         return
     }
-    
+
     util.stop_play()
 
     prjInfo.exportMode = exportMode || Dty.ExportMode.Segment
 
     console.log('export_cut_video prjInfo:', prjInfo)
-    
+
     const req: Dty.Req<Dty.Req_CutVideo> = {
         cmd: Dty.CmdType.videoCut,
         data: prjInfo
@@ -421,7 +421,9 @@ const export_cut_video = async (exportMode: Dty.ExportMode | null): Promise<void
         } else {
             const exportPath = response.data?.exportPath
             if (exportPath) {
-                util.addToastInfo(`${t('util.clipSuccess')}! ${t('util.exportPath')}: ${exportPath}`)
+                util.addToastInfo(
+                    `${t('util.clipSuccess')}! ${t('util.exportPath')}: ${exportPath}`
+                )
                 console.log(`========== Export Completed ==========`)
                 console.log(`Export path: ${exportPath}`)
                 console.log(`======================================`)
@@ -609,7 +611,7 @@ class Util {
         try {
             const notify: Dty.TaskNotify = JSON.parse(data)
             console.log(`Task [${notify.taskId}] ${notify.cmd} - ${notify.status}`)
-            
+
             if (notify.status === Dty.TaskStatus.Completed && notify.result) {
                 const workResp: Dty.WorkResp = {
                     cmd: notify.cmd,
@@ -686,7 +688,8 @@ class Util {
                 if (appStore.curSltVideo.splitInfo.splits.length > 0) {
                     for (let i = 0; i < appStore.curSltVideo.splitInfo.splits.length; i++) {
                         const splitInfo = appStore.curSltVideo.splitInfo.splits[i]
-                        splitInfo.color = appStore.barColorDictionary[i % appStore.barColorDictionary.length]
+                        splitInfo.color =
+                            appStore.barColorDictionary[i % appStore.barColorDictionary.length]
                     }
                     return
                 }
@@ -1032,7 +1035,9 @@ class Util {
                     } else {
                         const exportPath = response.data?.exportPath
                         if (exportPath) {
-                            util.addToastInfo(`${t('util.videoCropCompleted')}! ${t('util.exportPath')}: ${exportPath}`)
+                            util.addToastInfo(
+                                `${t('util.videoCropCompleted')}! ${t('util.exportPath')}: ${exportPath}`
+                            )
                             console.log(`========== Export Completed ==========`)
                             console.log(`Export path: ${exportPath}`)
                             console.log(`======================================`)
