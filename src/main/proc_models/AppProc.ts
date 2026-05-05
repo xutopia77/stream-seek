@@ -1991,13 +1991,13 @@ class AppProc {
             }
 
             const prjInfo = projectData as Dty.Prj
-            prjInfo.path = prjFile
+            const prjFilePath = path.dirname(prjFile)
+            prjInfo.path = prjFilePath
             appCfg.prj = prjInfo
             appCfg.appInfo.prjFile = prjFile
             this.addRecentProject(prjFile)
             this.saveAppCfg()
 
-            const prjFilePath = path.dirname(prjFile)
             const respDb = await appDb.initDb(path.join(prjFilePath, 'db'))
             if (!respDb.isSuccess()) {
                 return resp.err('init db error')
