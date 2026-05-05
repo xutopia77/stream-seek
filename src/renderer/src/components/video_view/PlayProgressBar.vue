@@ -105,7 +105,8 @@ watch(
         (): Dty.SplitInfo[] | undefined => appStore.curSltVideo?.splitInfo?.splits
     ],
     () => {
-        if (appStore.curSltVideo?.mediaInfo?.duration == null) {
+        if (appStore.curSltVideo == null || appStore.curSltVideo?.mediaInfo?.duration == null) {
+            barClips.value = []
             return
         }
         barClips.value = util.update_bar_clips()

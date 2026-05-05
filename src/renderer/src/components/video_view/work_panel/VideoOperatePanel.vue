@@ -8,12 +8,12 @@
                 `${util.getFilenameFromPath(appStore.curSltVideo ? appStore.curSltVideo.path : null)}`
             }} </span
         ><br />
-        <button class="xc-button" title="在光标处拆分片段" @click="btnclk_splitVideo">➕</button>
-        <button class="xc-button" title="去掉此片段的拆分信息" @click="removeVideosplit">➖</button>
-        <button class="xc-button" title="去掉此片段" @click="removeVideoRecord">❌</button>
-        <button class="xc-button" title="恢复此片段" @click="restoreVideoRecord">🔃</button>
-        <button class="xc-button" title="导出剪辑" @click="showExportDialog">📤</button>
-        <button class="xc-button" title="添加标签" @click="showTagDialog">🏷️</button>
+        <button class="xc-button" :title="t('videoOperatePanel.splitAtCursor')" @click="btnclk_splitVideo">➕</button>
+        <button class="xc-button" :title="t('videoOperatePanel.removeSplit')" @click="removeVideosplit">➖</button>
+        <button class="xc-button" :title="t('videoOperatePanel.removeSegment')" @click="removeVideoRecord">❌</button>
+        <button class="xc-button" :title="t('videoOperatePanel.restoreSegment')" @click="restoreVideoRecord">🔃</button>
+        <button class="xc-button" :title="t('videoOperatePanel.exportClip')" @click="showExportDialog">📤</button>
+        <button class="xc-button" :title="t('videoOperatePanel.addTag')" @click="showTagDialog">🏷️</button>
         <div
             v-for="splitInfo in videoSplitInfo"
             :key="splitInfo.percent"
@@ -31,9 +31,9 @@
                 }} </span
             ><br />
             <span class="xc-text" style="margin-right: 2px; color: #669999"
-                >{{ `时长:${util.formatTime(splitInfo.duration)}` }}
+                >{{ `${t('videoOperatePanel.duration')}:${util.formatTime(splitInfo.duration)}` }}
             </span>
-            <span class="xc-text" style="color: #990033">{{ `${splitInfo.frameNum}帧` }} </span>
+            <span class="xc-text" style="color: #990033">{{ `${splitInfo.frameNum}${t('videoOperatePanel.frames')}` }} </span>
             <br />
             <span v-if="splitInfo.description" class="xc-text description-text">{{
                 splitInfo.description
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, nextTick } from 'vue'
+import { computed, ref, nextTick, watch } from 'vue'
 import { useAppStore } from '../../../stores/AppStore'
 import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
@@ -229,6 +229,13 @@ const selectedSplitInfo = ref<Dty.SplitInfo | null>({
     currentTime: 0,
     frameIdx: 0
 })
+
+watch(
+    () => appStore.curSltVideo,
+    () => {
+        selectedSplitInfo.value = null
+    }
+)
 
 const selectSplitInfo = (splitInfo: Dty.SplitInfo): void => {
     selectedSplitInfo.value = splitInfo

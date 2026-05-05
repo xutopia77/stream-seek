@@ -146,6 +146,15 @@ const onProjectCreated = async (): Promise<void> => {
 }
 
 const openRecentFile = async (filePath: string): Promise<void> => {
+    if (appStore.curSltVideo) {
+        appStore.curSltVideo = null
+        appStore.curSltVideoName4Play = ''
+        util.clear_cur_slt_video_info(null)
+    }
+    appStore.videoList = []
+    appStore.videoTotalNum = 0
+    appStore.clipProject = null
+
     const req: Dty.Req<Dty.Req_SltFile> = {
         cmd: Dty.CmdType.openExternalVideo,
         data: { filepath: filePath }
@@ -169,6 +178,14 @@ const openRecentProject = async (projectPath: string): Promise<void> => {
     }
     const response: Dty.Resp<Dty.Prj | Dty.ClipProject> = await IpcApi.trigger_event(req)
     if (response.code === 0 && response.data) {
+        if (appStore.curSltVideo) {
+            appStore.curSltVideo = null
+            appStore.curSltVideoName4Play = ''
+            util.clear_cur_slt_video_info(null)
+        }
+        appStore.videoList = []
+        appStore.videoTotalNum = 0
+
         if (response.data.type === Dty.ProjectType.FileManagement) {
             const prj = response.data as Dty.Prj
             appStore.prj = prj

@@ -167,6 +167,15 @@ const btn_createPrj = (): void => {
 }
 
 const onProjectCreated = async (): Promise<void> => {
+    if (appStore.curSltVideo) {
+        appStore.curSltVideo = null
+        appStore.curSltVideoName4Play = ''
+        util.clear_cur_slt_video_info(null)
+    }
+    appStore.videoList = []
+    appStore.videoTotalNum = 0
+    appStore.clipProject = null
+
     const req = await util.start_app()
     if (req.code != 0) {
         util.addToastErr(`${t('navigation.startupFailed')} ${req.status}`)
@@ -191,11 +200,26 @@ const btn_openProject = async (): Promise<void> => {
 
     if (!response.data) return
 
+    if (appStore.isProjectMode) {
+        const closeReq: Dty.Req = {
+            cmd: Dty.CmdType.prjClose
+        }
+        await IpcApi.trigger_event(closeReq)
+    }
+
+    if (appStore.curSltVideo) {
+        appStore.curSltVideo = null
+        appStore.curSltVideoName4Play = ''
+        util.clear_cur_slt_video_info(null)
+    }
+    appStore.videoList = []
+    appStore.videoTotalNum = 0
+    appStore.clipProject = null
+
     if (response.data.type === Dty.ProjectType.FileManagement) {
         const prj = response.data as Dty.Prj
         appStore.prj = prj
         appStore.appInfo.prjFile = prj.path || ''
-        appStore.clipProject = null
 
         const startReq = await util.start_app()
         if (startReq.code != 0) {
@@ -315,6 +339,13 @@ const btn_openVideoDialog = async (): Promise<void> => {
             appStore.appInfo.prjFile = ''
         }
 
+        if (appStore.curSltVideo) {
+            appStore.curSltVideo = null
+            appStore.curSltVideoName4Play = ''
+            util.clear_cur_slt_video_info(null)
+        }
+        appStore.videoList = []
+        appStore.videoTotalNum = 0
         appStore.clipProject = null
 
         const openReq: Dty.Req<Dty.Req_SltFile> = {

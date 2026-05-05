@@ -2,13 +2,18 @@
     <div class="admin-setting-container">
         <div class="setting-card">
             <h3 class="setting-title">{{ t('adminSetting.projectInfo') }}</h3>
-            <div class="info-item">
-                <span class="info-label">{{ t('adminSetting.projectPath') }}:</span>
-                <span class="info-value">{{ appStore.prj?.path }}</span>
+            <div v-if="appStore.prj" class="project-info">
+                <div class="info-item">
+                    <span class="info-label">{{ t('adminSetting.projectPath') }}:</span>
+                    <span class="info-value">{{ appStore.prj.path }}</span>
+                </div>
+                <div v-for="(repo, index) in appStore.prj.dataRepo" :key="index" class="repo-item">
+                    <span class="info-label">{{ t('adminSetting.repoPath') }}:</span>
+                    <span class="info-value">{{ repo.path }}</span>
+                </div>
             </div>
-            <div v-for="(repo, index) in dataRepo" :key="index" class="repo-item">
-                <span class="info-label">{{ t('adminSetting.repoPath') }}:</span>
-                <span class="info-value">{{ repo.path }}</span>
+            <div v-else class="no-project">
+                <span class="hint-text">{{ t('adminSetting.noProjectOpened') }}</span>
             </div>
         </div>
 
@@ -33,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import '@renderer/assets/common.css'
 import { IpcApi } from '../../utils/ipcApi'
 import * as Dty from '../../../../bridge/dataTypedef'
@@ -43,26 +48,6 @@ const appStore = useAppStore()
 import util from '@renderer/utils/util'
 
 const { t } = useI18n()
-
-const dataRepo = ref<Dty.DataRepo[]>([
-    {
-        name: 'test_data',
-        path: 'D:/02_workspace/05_timeCapsule/02_stream_manager/test_data',
-        thumbnailPath: '',
-        framePath: ''
-    },
-    { name: '', path: '', thumbnailPath: '', framePath: '' },
-    { name: '', path: '', thumbnailPath: '', framePath: '' }
-])
-
-watch(
-    () => appStore.prj,
-    (prj: Dty.Prj | null) => {
-        if (prj) {
-            dataRepo.value = prj.dataRepo
-        }
-    }
-)
 
 const bNeedGenThumbnail = ref<boolean>(false)
 const bNeedClassifyFile = ref<boolean>(true)
@@ -85,6 +70,10 @@ async function btnclk_syncStop(): Promise<void> {
 }
 
 async function btnclk_sync_work(types: Dty.SyncType[] = []): Promise<void> {
+    if (!appStore.prj) {
+        util.addToastErr(t('adminSetting.pleaseOpenProject'))
+        return
+    }
     let syncTypes: Dty.SyncType[] = []
     if (types != null && types.length > 0) {
         syncTypes = types
@@ -106,15 +95,14 @@ async function btnclk_sync_work(types: Dty.SyncType[] = []): Promise<void> {
         } else {
             util.addToastInfo(`${t('adminSetting.syncProject')}: ${response.status}`)
             await util.start_app()
+            const searchReq = new Dty.FilesReq()
+            searchReq.status = [appStore.fileSearchStatus]
+            await util.files_get(searchReq)
         }
     }
 }
 
-onMounted(() => {
-    if (appStore.prj) {
-        dataRepo.value = appStore.prj.dataRepo
-    }
-})
+onMounted(() => {})
 </script>
 
 <style scoped>
@@ -174,8 +162,20 @@ onMounted(() => {
 
 .repo-item {
     display: flex;
-    margin-bottom: 4px; /* 减少底部边距 */
+    margin-bottom: 4px;
     align-items: flex-start;
+}
+
+.no-project {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.hint-text {
+    color: #666;
+    font-size: 13px;
 }
 
 .option-item {

@@ -47,10 +47,10 @@ watch(
     () => appStore.documentTitle,
     (docTitle: string | null) => {
         if (docTitle === '' || docTitle === null) {
-            document.title = 'VideoPlayer'
+            document.title = 'StreamSeek'
             return
         }
-        document.title = 'VideoPlayer' + '  ' + docTitle
+        document.title = 'StreamSeek' + '  ' + docTitle
         // // 获取当前时间毫秒
         // const now = new Date()
         // const nowStr = now.toLocaleString()

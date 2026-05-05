@@ -165,7 +165,9 @@
     "stopSyncBackground": "Stopping sync, executing in background",
     "stopSyncFailed": "Failed to stop sync",
     "syncProjectFailed": "Failed to sync project",
-    "backgroundExecuting": "Executing in background..."
+    "backgroundExecuting": "Executing in background...",
+    "noProjectOpened": "No project opened",
+    "pleaseOpenProject": "Please open a project first"
   },
   "fileList": {
     "title": "File List",
@@ -319,7 +321,15 @@
     "segmentExport": "Segment Export (save each segment separately)",
     "mergeExport": "Merge Export (merge all segments into one file)",
     "exportHint": "Exported files will be saved to streamseek_timestamp folder in user's Videos directory",
-    "export": "Export"
+    "export": "Export",
+    "splitAtCursor": "Split segment at cursor position",
+    "removeSplit": "Remove split info of this segment",
+    "removeSegment": "Remove this segment",
+    "restoreSegment": "Restore this segment",
+    "exportClip": "Export clip",
+    "addTag": "Add tag",
+    "duration": "Duration",
+    "frames": "frames"
   },
   "createPrj": {
     "returnHome": "Return Home",
@@ -468,5 +478,30 @@
     "boxProperties": "Box Properties",
     "childBoxes": "Child Boxes",
     "boxDescription": "Box Description"
+  },
+  "mp4BoxDescriptions": {
+    "ftyp": "FileTypeBox - Located at the beginning of MP4 file, identifies file type and compatibility. Contains major_brand, minor_version and compatible_brands. Players use this box to determine if the file format is supported. Common brands include isom, mp42, avc1, M4V, etc.",
+    "moov": "MovieBox - Metadata container for MP4 file, contains all media data description information. This is the most important container box, containing mvhd (movie header), trak (track) and other sub-boxes. All playback control info, track info, and time info are stored here.",
+    "mvhd": "MovieHeaderBox - Defines global information for the entire movie. Contains creation time, modification time, timescale, duration, playback rate (default 1.0), volume (default 1.0) and transformation matrix. Timescale defines the base unit of time, usually 1000 (milliseconds) or 600.",
+    "trak": "TrackBox - Represents an independent media track (video, audio or subtitle). Each trak contains tkhd (track header), mdia (media info) and other sub-boxes. An MP4 file can contain multiple traks, such as one video track and one audio track.",
+    "tkhd": "TrackHeaderBox - Defines metadata for a single track. Contains track ID, creation/modification time, duration, resolution (video track), volume (audio track), layer order and transformation matrix. The flags field indicates whether the track is enabled, used in movie, etc.",
+    "mdia": "MediaBox - Contains track media data and description info. Contains mdhd (media header), hdlr (handler) and minf (media info). Defines media type, time info and sample data structure.",
+    "mdhd": "MediaHeaderBox - Defines time information for media. Contains creation time, modification time, timescale, duration and language code. Timescale defines the time base for this track, video tracks usually use frame rate reciprocal, audio tracks use sample rate.",
+    "hdlr": "HandlerBox - Identifies media type and handler. handler_type field indicates media type: vide (video), soun (audio), text (subtitle), etc. name field contains handler description name, such as \"VideoHandler\" or \"SoundHandler\".",
+    "minf": "MediaInformationBox - Contains specific media information. Contains vmhd/smhd (video/audio media header), dinf (data info) and stbl (sample table). This is the actual description container for media data.",
+    "vmhd": "VideoMediaHeaderBox - Defines display characteristics for video track. Contains graphicsmode and opcolor, used for video composition and overlay processing. Usually graphicsmode is 0 (direct copy), opcolor is 0.",
+    "smhd": "SoundMediaHeaderBox - Defines playback characteristics for audio track. Contains balance field, controls left-right channel volume balance. 0 means center, -1 means full left channel, +1 means full right channel.",
+    "dinf": "DataInformationBox - Contains reference information for media data. Contains dref (data reference) box, defines location and access method for media data. Data can be stored in the same file or external files.",
+    "dref": "DataReferenceBox - Contains data reference entry list. Each entry describes a data source location. entry_count indicates reference count, usually 1. Sub-box url or urn defines specific data location, self_reference flag indicates data is in the same file.",
+    "stbl": "SampleTableBox - Core index container for media data. Contains multiple sub-boxes describing sample location, time, size and sync info. Includes stsd, stts, stsc, stsz, stco, etc. Players use these tables to locate and decode each sample.",
+    "stsd": "SampleDescriptionBox - Contains sample encoding format info. entry_count indicates description count, each entry is a specific encoding format description box (like avc1, mp4a). Contains encoder config, resolution, sample rate and other decoding info.",
+    "stts": "TimeToSampleBox - Defines sample timestamp mapping. Contains entry_count entries, each entry describes consecutive sample_count samples, each sample has duration sample_delta. Players use this table to calculate display time for each sample.",
+    "stsc": "SampleToChunkBox - Defines sample distribution in chunks. Contains entry_count entries, each entry describes starting from first_chunk, each chunk contains samples_per_chunk samples, using sample_description_index. Used to locate which chunk a sample is in.",
+    "stsz": "SampleSizeBox - Defines byte size of each sample. If sample_size is not 0, all samples have same size; otherwise need sample_count entries to describe each sample's size. Players use this table to know how much data to read for each sample.",
+    "stco": "ChunkOffsetBox - Defines byte offset of each chunk in file. entry_count indicates chunk count, each entry is a chunk's starting position. Used with stsc, can locate any sample's position in file. co64 is used for large files (offset exceeds 4GB).",
+    "stss": "SyncSampleBox - Defines keyframe (I-frame) positions. entry_count indicates keyframe count, each entry is a keyframe's sample number. When starting playback from random position, player needs to find nearest keyframe for decoding. Video tracks usually contain this box.",
+    "ctts": "CompositionTimeToSampleBox - Defines offset from decode time to display time. Used for handling video that needs reordering like B-frames. Display time for sample_count samples needs to add sample_offset. Videos without B-frames don't need this box.",
+    "mdat": "MediaDataBox - Stores actual media data (video frames, audio frames). This is the largest part of the file, containing all encoded audio/video data. Players locate specific sample data in mdat through index tables in stbl.",
+    "default": "{type} - This is a Box structure in MP4 container format. MP4 files consist of a series of Boxes, each Box contains type, size and data. Boxes can be nested to form a tree structure."
   }
 }

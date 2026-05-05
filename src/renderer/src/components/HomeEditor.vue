@@ -161,6 +161,15 @@ const openExternalVideo = async (filePath: string): Promise<void> => {
         appStore.appInfo.prjFile = ''
     }
 
+    if (appStore.curSltVideo) {
+        appStore.curSltVideo = null
+        appStore.curSltVideoName4Play = ''
+        util.clear_cur_slt_video_info(null)
+    }
+    appStore.videoList = []
+    appStore.videoTotalNum = 0
+    appStore.clipProject = null
+
     const req: Dty.Req<Dty.Req_SltFile> = {
         cmd: Dty.CmdType.openExternalVideo,
         data: {

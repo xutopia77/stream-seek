@@ -7,15 +7,6 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>{{ t('createProject.repoName') }}</label>
-                    <input
-                        v-model="repoName"
-                        type="text"
-                        class="xc-text-input"
-                        :placeholder="t('createProject.repoNamePlaceholder')"
-                    />
-                </div>
-                <div class="form-group">
                     <label>{{ t('createProject.repoPath') }}</label>
                     <div class="path-input-group">
                         <input
@@ -75,16 +66,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const repoName = ref('')
 const repoPath = ref('')
 const projectPath = ref('')
 
 const canCreate = computed(() => {
-    return (
-        repoName.value.trim() !== '' &&
-        repoPath.value.trim() !== '' &&
-        projectPath.value.trim() !== ''
-    )
+    return repoPath.value.trim() !== '' && projectPath.value.trim() !== ''
 })
 
 const selectFolder = async (): Promise<void> => {
@@ -105,12 +91,20 @@ const selectProjectFolder = async (): Promise<void> => {
     }
 }
 
+const getBasename = (filePath: string): string => {
+    const normalized = filePath.replace(/\\/g, '/')
+    const parts = normalized.split('/')
+    return parts[parts.length - 1] || 'default'
+}
+
 const createProject = async (): Promise<void> => {
     if (!canCreate.value) return
 
+    const repoName = getBasename(projectPath.value.trim()) || 'default'
+
     const dataRepo: Dty.DataRepo[] = [
         {
-            name: repoName.value.trim(),
+            name: repoName,
             path: repoPath.value.trim(),
             thumbnailPath: '',
             framePath: ''
@@ -129,7 +123,6 @@ const createProject = async (): Promise<void> => {
 }
 
 const close = (): void => {
-    repoName.value = ''
     repoPath.value = ''
     projectPath.value = ''
     emit('close')

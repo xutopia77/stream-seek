@@ -29,34 +29,6 @@
                     <span class="sidebar-icon">📈</span>
                     <span>{{ t('mediaInfo.frameAnalysis') }}</span>
                 </div>
-                <div
-                    class="sidebar-item"
-                    :class="{ active: activeTab === 'timestamp', disabled: true }"
-                >
-                    <span class="sidebar-icon">🕐</span>
-                    <span>{{ t('mediaInfo.timestamp') }}</span>
-                </div>
-                <div
-                    class="sidebar-item"
-                    :class="{ active: activeTab === 'bitrate', disabled: true }"
-                >
-                    <span class="sidebar-icon">〰️</span>
-                    <span>{{ t('mediaInfo.bitrate') }}</span>
-                </div>
-                <div
-                    class="sidebar-item"
-                    :class="{ active: activeTab === 'avsync', disabled: true }"
-                >
-                    <span class="sidebar-icon">🔗</span>
-                    <span>{{ t('mediaInfo.avSync') }}</span>
-                </div>
-                <div
-                    class="sidebar-item"
-                    :class="{ active: activeTab === 'interval', disabled: true }"
-                >
-                    <span class="sidebar-icon">⏱</span>
-                    <span>{{ t('mediaInfo.frameInterval') }}</span>
-                </div>
             </div>
         </div>
 
@@ -265,9 +237,7 @@ const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStore()
 
-const activeTab = ref<
-    'overview' | 'mp4' | 'frame' | 'timestamp' | 'bitrate' | 'avsync' | 'interval'
->('overview')
+const activeTab = ref<'overview' | 'mp4' | 'frame'>('overview')
 const selectedBox = ref<Dty.Mp4Box | null>(null)
 const mp4Boxes = ref<Dty.Mp4Box[]>([])
 const mp4Loading = ref(false)
@@ -286,6 +256,28 @@ const frameLoading = ref(false)
 const selectedFrame = ref<Dty.VideoFrame | null>(null)
 const frameCurrentPage = ref(1)
 const framePageSize = ref(200)
+
+watch(
+    () => appStore.curSltVideo,
+    () => {
+        activeTab.value = 'overview'
+        selectedBox.value = null
+        mp4Boxes.value = []
+        mp4Error.value = ''
+        frameData.value = {
+            frames: [],
+            totalFrames: 0,
+            duration: 0,
+            frameRate: 0,
+            codecName: '',
+            width: 0,
+            height: 0,
+            parseTime: 0
+        }
+        selectedFrame.value = null
+        frameCurrentPage.value = 1
+    }
+)
 
 const videoFile = computed<Dty.File | null>(() => {
     const file = appStore.curSltVideo

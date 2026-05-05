@@ -1,6 +1,6 @@
 {
   "name": "streamseek",
-  "version": "5.0.1",
+  "version": "5.1.3",
   "description": "StreamSeek - A video stream analysis and recording management application",
   "main": "./out/main/index.js",
   "author": "example.com",

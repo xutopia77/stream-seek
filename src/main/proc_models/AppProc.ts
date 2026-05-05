@@ -563,7 +563,8 @@ class AppProc {
                 logger.info(`create thumbnail path: ${repo.thumbnailPath}`)
             }
         }
-        const projectFilePath = path.join(prjInfo.path, 'project.json')
+        const prjName = prjInfo.name || 'project'
+        const projectFilePath = path.join(prjInfo.path, `${prjName}.json`)
         const jsonContent = JSON.stringify(prjInfo, null, 2)
         await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
         logger.info(`Project info: ${JSON.stringify(prjInfo, null)}`)
@@ -630,7 +631,7 @@ class AppProc {
             return resp.err('save prj info error ' + saveResp.status)
         }
         resp.data.prj = prjInfo
-        resp.data.prjFile = path.join(prjPath, 'project.json')
+        resp.data.prjFile = path.join(prjPath, `${prjInfo.name}.json`)
         appCfg.appInfo.prjFile = resp.data.prjFile
         this.addRecentProject(resp.data.prjFile)
         resp.success('Project file created successfully')
