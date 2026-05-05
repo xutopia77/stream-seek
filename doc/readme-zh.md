@@ -133,7 +133,7 @@ StreamSeek 是一款专业的视频流分析与录像管理系统，专为安防
 项目源码托管于 GitHub：`https://github.com/xutopia77/stream-seek.git`
 
 ## 7.2 下载地址
-最新版本下载：`https://github.com/xutopia77/stream-seek/releases/download/latest/stream-seek-latest-win.zip`
+最新版本下载：`https://github.com/xutopia77/stream-seek/releases/download/latest/streamseek-latest-win.zip`
 
 ## 7.3 社区支持
 如遇技术问题，请参考项目文档或提交 Issue。

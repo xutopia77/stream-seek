@@ -672,6 +672,24 @@ class AppProc {
         }
         return resp.success('app start success')
     }
+
+    async handle_app_config_save(req: Dty.Req): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
+        try {
+            if (req.data) {
+                const configData = JSON.parse(req.data)
+                if (configData.language) {
+                    appCfg.appInfo.language = configData.language
+                    this.saveAppCfg()
+                    logger.info(`App config saved, language: ${configData.language}`)
+                }
+            }
+            return resp.success('App config saved successfully')
+        } catch (error: unknown) {
+            logger.error('Failed to save app config:', error)
+            return resp.err('Failed to save app config')
+        }
+    }
     async handle_search_file(req: Dty.Req<Dty.FilesReq>): Promise<Dty.Resp<Dty.FilesResp>> {
         return appDb.fileViewSearch(req.data == null ? null : req.data)
     }
@@ -2130,6 +2148,9 @@ class AppProc {
             case Dty.CmdType.app_start:
                 logger.info(`cmd:${cmd}:${cseq}`)
                 return this.cmdRespMake(await this.handle_app_start())
+            case Dty.CmdType.appConfigSave:
+                logger.info(`cmd:${cmd}:${cseq}`)
+                return this.cmdRespMake(await this.handle_app_config_save(req))
             case Dty.CmdType.get_key_frame_info: {
                 const cmdReq = convertCmdRequest<Dty.Req_FrameInfo>(req)
                 logger.info(`cmd:${cmd}:${cseq}, ${cmdReq.data?.filepath}`)

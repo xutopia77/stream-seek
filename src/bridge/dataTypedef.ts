@@ -1,6 +1,7 @@
 export enum CmdType {
     heartBeat = 'heart_beat',
     app_start = 'app_start',
+    appConfigSave = 'app_config_save',
     get_key_frame_info = 'get_key_frame_info',
     tags_get = 'tags_get',
     tagUpdate = 'tag_update',
@@ -49,6 +50,7 @@ export class AppInfo {
     prjFile: string = ''
     recentFiles: RecentItem[] = []
     recentProjects: RecentItem[] = []
+    language: LangType = 'en-US'
 }
 
 export class AppStartResp {
@@ -518,7 +520,7 @@ export class Prj {
     numEachFolder: number = 10
     dataRepo: DataRepo[] = []
     repoType: RepoType = RepoType.Normal
-    language: LangType = 'zh-CN'
+    language: LangType = 'en-US'
 }
 
 export class Tiny2DbReq {

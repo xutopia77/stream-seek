@@ -5,29 +5,33 @@ import enUS from '../locales/en-US.json'
 // 类型定义
 export type MessageSchema = typeof zhCN
 
-// 获取浏览器语言
+// Get browser language (not used, always default to English)
 function getBrowserLocale(): string {
-    const locale = navigator.language || 'zh-CN'
-    // 只取语言代码部分，例如将 'zh-CN' 转为 'zh'
-    const lang = locale.split('-')[0].toLowerCase()
-
-    // 检查支持的语言
-    if (lang === 'en') {
-        return 'en-US'
-    }
-    // 默认返回中文
-    return 'zh-CN'
+    // Always default to English
+    return 'en-US'
 }
 
-// 创建 i18n 实例
+// Get stored locale or default
+function getStoredLocale(): string {
+    const stored = localStorage.getItem('locale')
+    console.log('[i18n] Stored locale:', stored)
+    if (stored) {
+        return stored
+    }
+    return getBrowserLocale()
+}
+
+// Create i18n instance
 const i18n = createI18n<[MessageSchema], 'zh-CN' | 'en-US'>({
-    legacy: false, // 使用 Composition API 模式
-    locale: localStorage.getItem('locale') || getBrowserLocale(), // 优先使用本地存储的语言设置
-    fallbackLocale: 'zh-CN', // 回退语言
+    legacy: false,
+    locale: getStoredLocale(),
+    fallbackLocale: 'en-US',
     messages: {
         'zh-CN': zhCN,
         'en-US': enUS
     }
 })
+
+console.log('[i18n] Initialized with locale:', i18n.mode === 'legacy' ? i18n.global.locale : i18n.global.locale.value)
 
 export default i18n

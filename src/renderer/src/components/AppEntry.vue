@@ -18,7 +18,7 @@ import RecentMessagesPanel from '@renderer/components/MessageNotify/RecentMessag
 import MessageToast from '@renderer/components/MessageNotify/MessageToast.vue'
 import { useI18n } from 'vue-i18n'
 const appStore = useAppStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 import { onBeforeMount, watch } from 'vue'
 import util, { setI18nFunction } from '../utils/util.js'
 import { IpcApi } from '../utils/ipcApi'
@@ -77,6 +77,13 @@ watch(
 onBeforeMount(async () => {
     util.setAppStore(appStore)
     await util.start_app()
+    
+    if (appStore.appInfo && appStore.appInfo.language) {
+        console.log('[AppEntry] Setting language from appInfo:', appStore.appInfo.language)
+        locale.value = appStore.appInfo.language
+        localStorage.setItem('locale', appStore.appInfo.language)
+    }
+    
     startTimer()
     router.push('/welcome')
 })

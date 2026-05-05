@@ -93,6 +93,9 @@
             <div class="menu-item" @click="showAboutModal">
                 <span class="xc-text">{{ t('navigation.menuItems.about') }}</span>
             </div>
+            <div class="menu-item" @click="btn_settings">
+                <span class="xc-text">🌐</span>
+            </div>
         </div>
 
         <div>
