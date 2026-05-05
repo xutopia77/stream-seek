@@ -411,7 +411,7 @@ class AppProc {
         if (!appCfg.appInfo.recentProjects) {
             appCfg.appInfo.recentProjects = []
         }
-        const prjName = path.basename(prjFile, '.json')
+        const prjName = path.basename(prjFile, '.sspj')
         const existingIndex = appCfg.appInfo.recentProjects.findIndex((p) => p.path === prjFile)
 
         if (existingIndex >= 0) {
@@ -564,7 +564,7 @@ class AppProc {
             }
         }
         const prjName = prjInfo.name || 'project'
-        const projectFilePath = path.join(prjInfo.path, `${prjName}.json`)
+        const projectFilePath = path.join(prjInfo.path, `${prjName}.sspj`)
         const jsonContent = JSON.stringify(prjInfo, null, 2)
         await fs.promises.writeFile(projectFilePath, jsonContent, 'utf-8')
         logger.info(`Project info: ${JSON.stringify(prjInfo, null)}`)
@@ -631,7 +631,7 @@ class AppProc {
             return resp.err('save prj info error ' + saveResp.status)
         }
         resp.data.prj = prjInfo
-        resp.data.prjFile = path.join(prjPath, `${prjInfo.name}.json`)
+        resp.data.prjFile = path.join(prjPath, `${prjInfo.name}.sspj`)
         appCfg.appInfo.prjFile = resp.data.prjFile
         this.addRecentProject(resp.data.prjFile)
         resp.success('Project file created successfully')
@@ -1185,13 +1185,13 @@ class AppProc {
             const defaultName =
                 clipProject.name ||
                 path.basename(clipProject.filePath, path.extname(clipProject.filePath))
-            const defaultPath = path.join(videoDir, `${defaultName}.clip.json`)
+            const defaultPath = path.join(videoDir, `${defaultName}.sspj`)
 
             const result = await dialog.showSaveDialog({
                 title: '保存剪辑项目',
                 defaultPath: defaultPath,
                 filters: [
-                    { name: 'Clip Project', extensions: ['json'] },
+                    { name: 'Clip Project', extensions: ['sspj'] },
                     { name: 'All Files', extensions: ['*'] }
                 ]
             })
@@ -1226,14 +1226,14 @@ class AppProc {
             clipProject.filePath,
             path.extname(clipProject.filePath)
         )
-        const defaultPath = path.join(videoDir, `${videoBasename}.clip.json`)
+        const defaultPath = path.join(videoDir, `${videoBasename}.sspj`)
 
         const result = await dialog.showSaveDialog({
             title: '保存剪辑项目',
             defaultPath: defaultPath,
             filters: [
-                { name: '剪辑项目文件', extensions: ['clip.json'] },
-                { name: 'JSON 文件', extensions: ['json'] }
+                { name: 'Clip Project', extensions: ['sspj'] },
+                { name: 'All Files', extensions: ['*'] }
             ]
         })
 
@@ -1266,7 +1266,7 @@ class AppProc {
 
         const result = await dialog.showOpenDialog({
             title: '打开剪辑项目',
-            filters: [{ name: '剪辑项目文件', extensions: ['clip.json', 'json'] }],
+            filters: [{ name: 'Clip Project', extensions: ['sspj'] }],
             properties: ['openFile']
         })
 
@@ -1938,7 +1938,7 @@ class AppProc {
             const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
                 properties: ['openFile'],
                 filters: [
-                    { name: 'Project Files', extensions: ['json', 'prj'] },
+                    { name: 'Project Files', extensions: ['sspj'] },
                     { name: 'All Files', extensions: ['*'] }
                 ]
             })
@@ -1995,6 +1995,7 @@ class AppProc {
             appCfg.prj = prjInfo
             appCfg.appInfo.prjFile = prjFile
             this.addRecentProject(prjFile)
+            this.saveAppCfg()
 
             const prjFilePath = path.dirname(prjFile)
             const respDb = await appDb.initDb(path.join(prjFilePath, 'db'))
@@ -2048,7 +2049,7 @@ class AppProc {
                 title: '保存项目',
                 defaultPath: prj.name || 'untitled',
                 filters: [
-                    { name: 'Project Files', extensions: ['json'] },
+                    { name: 'Project Files', extensions: ['sspj'] },
                     { name: 'All Files', extensions: ['*'] }
                 ]
             })

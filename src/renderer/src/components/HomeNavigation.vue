@@ -219,13 +219,14 @@ const btn_openProject = async (): Promise<void> => {
     if (response.data.type === Dty.ProjectType.FileManagement) {
         const prj = response.data as Dty.Prj
         appStore.prj = prj
-        appStore.appInfo.prjFile = prj.path || ''
 
         const startReq = await util.start_app()
         if (startReq.code != 0) {
             util.addToastErr(`${t('navigation.startupFailed')} ${startReq.status}`)
             return
         }
+
+        appStore.appInfo.prjFile = prj.path || ''
 
         const searchReq = new Dty.FilesReq()
         searchReq.status = [appStore.fileSearchStatus]
