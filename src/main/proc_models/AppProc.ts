@@ -1991,6 +1991,7 @@ class AppProc {
             }
 
             const prjInfo = projectData as Dty.Prj
+            prjInfo.path = prjFile
             appCfg.prj = prjInfo
             appCfg.appInfo.prjFile = prjFile
             this.addRecentProject(prjFile)
