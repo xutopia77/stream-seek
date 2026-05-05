@@ -543,6 +543,14 @@ class AppProc {
         tag.id = req.data?.id || 0
         return await appDb.tag_delete(tag)
     }
+
+    async handle_file_tag_delete(req: Dty.Req<Dty.FileTagDeleteReq>): Promise<Dty.Resp> {
+        const resp = new Dty.Resp()
+        if (req.data == null) {
+            return resp.err('req.data is null')
+        }
+        return await appDb.file_tag_delete(req.data.fileId, req.data.tagId)
+    }
     async handle_files_get(req: Dty.Req<Dty.FilesReq>): Promise<Dty.Resp<Dty.FilesResp>> {
         return await appDb.fileViewSearch(req.data == null ? null : req.data)
     }
@@ -2236,6 +2244,11 @@ class AppProc {
                 const cmdReq = convertCmdRequest<Dty.TagDeleteReq>(req)
                 logger.info(`cmd:${cmd}:${cseq}, id:${cmdReq.data?.id}`)
                 return this.cmdRespMake(await this.handle_tag_delete(cmdReq))
+            }
+            case Dty.CmdType.fileTagDelete: {
+                const cmdReq = convertCmdRequest<Dty.FileTagDeleteReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}, fileId:${cmdReq.data?.fileId}, tagId:${cmdReq.data?.tagId}`)
+                return this.cmdRespMake(await this.handle_file_tag_delete(cmdReq))
             }
             case Dty.CmdType.filesGet: {
                 const cmdReq = convertCmdRequest<Dty.FilesReq>(req)

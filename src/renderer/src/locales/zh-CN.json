@@ -408,6 +408,8 @@
     "getTagListFailed": "获取标签列表失败",
     "setTagFailed": "设置标签失败",
     "setTagSuccess": "设置标签成功",
+    "deleteTagFailed": "删除标签失败",
+    "deleteTagSuccess": "删除标签成功",
     "openFolderSuccess": "打开文件夹成功",
     "videoCropFailed": "视频裁剪失败",
     "videoCropCompleted": "视频裁剪完成",

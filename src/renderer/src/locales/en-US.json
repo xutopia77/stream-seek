@@ -385,6 +385,8 @@
     "getTagListFailed": "Failed to get tag list",
     "setTagFailed": "Failed to set tag",
     "setTagSuccess": "Tag set successfully",
+    "deleteTagFailed": "Failed to delete tag",
+    "deleteTagSuccess": "Tag deleted successfully",
     "openFolderSuccess": "Folder opened successfully",
     "videoCropFailed": "Video crop failed",
     "videoCropCompleted": "Video crop completed",

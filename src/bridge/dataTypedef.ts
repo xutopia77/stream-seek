@@ -5,6 +5,7 @@ export enum CmdType {
     tags_get = 'tags_get',
     tagUpdate = 'tag_update',
     tagDelete = 'tag_delete',
+    fileTagDelete = 'file_tag_delete',
     filesGet = 'files_get',
     fileTagsSet = 'file_tags_set',
     tagsSearch = 'search_tag',
@@ -710,6 +711,11 @@ export class TagUpdateReq {
 
 export class TagDeleteReq {
     id: number = 0
+}
+
+export class FileTagDeleteReq {
+    fileId: number = 0
+    tagId: number = 0
 }
 
 // ======================== main

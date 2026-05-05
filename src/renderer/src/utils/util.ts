@@ -908,6 +908,32 @@ class Util {
         return response
     }
 
+    async file_tag_delete(
+        fileId: number,
+        tagId: number,
+        param: Dty.FileTagsSetParam | null = null
+    ): Promise<void> {
+        const req: Dty.Req<Dty.FileTagDeleteReq> = {
+            cmd: Dty.CmdType.fileTagDelete,
+            data: { fileId, tagId }
+        }
+        const response: Dty.Resp = await IpcApi.trigger_event(req)
+        if (response.code !== 0) {
+            util.addToastErr(`${t('util.deleteTagFailed')}: ${response.status}`)
+        } else {
+            if (param != null && param.bNeedUpdate) {
+                const searchReq = new Dty.FilesReq()
+                searchReq.status.push(appStore.fileSearchStatus)
+                await this.files_get(searchReq)
+                await this.tags_get(null)
+                if (param.bNeedSltCurVideo && appStore.curSltVideo) {
+                    await this.get_slt_video(appStore.curSltVideo)
+                }
+            }
+            util.addToastInfo(t('util.deleteTagSuccess'))
+        }
+    }
+
     async file_tags_set(
         fileTags: Dty.FileTagsReq,
         param: Dty.FileTagsSetParam | null = null
