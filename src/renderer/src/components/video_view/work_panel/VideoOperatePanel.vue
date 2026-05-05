@@ -14,6 +14,7 @@
         <button class="xc-button" :title="t('videoOperatePanel.restoreSegment')" @click="restoreVideoRecord">🔃</button>
         <button class="xc-button" :title="t('videoOperatePanel.exportClip')" @click="showExportDialog">📤</button>
         <button class="xc-button" :title="t('videoOperatePanel.addTag')" @click="showTagDialog">🏷️</button>
+        <button class="xc-button" :title="t('videoOperatePanel.screenshotExport')" @click="showScreenshotDialog">📷</button>
         <div
             v-for="splitInfo in videoSplitInfo"
             :key="splitInfo.percent"
@@ -102,6 +103,44 @@
                 </div>
             </div>
         </div>
+        <div v-if="screenshotDialogVisible" class="modal-overlay" @click.self="cancelScreenshot">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <span class="modal-title">{{ t('videoOperatePanel.screenshotExport') }}</span>
+                </div>
+                <div class="modal-body">
+                    <div class="export-option">
+                        <label class="export-label">{{ t('videoOperatePanel.exportFormat') }}</label>
+                        <div class="export-mode-options">
+                            <label class="radio-label">
+                                <input
+                                    v-model="screenshotFormat"
+                                    type="radio"
+                                    value="jpg"
+                                />
+                                <span>JPG</span>
+                            </label>
+                            <label class="radio-label">
+                                <input
+                                    v-model="screenshotFormat"
+                                    type="radio"
+                                    value="png"
+                                />
+                                <span>PNG</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="xc-button" @click="confirmScreenshot">
+                        {{ t('videoOperatePanel.export') }}
+                    </button>
+                    <button class="xc-button" @click="cancelScreenshot">
+                        {{ t('common.cancel') }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -113,6 +152,7 @@ const appStore = useAppStore()
 import '@renderer/assets/common.css'
 import util from '../../../utils/util.js'
 import * as Dty from '../../../../../bridge/dataTypedef'
+import { IpcApi } from '@renderer/utils/ipcApi'
 
 const { t } = useI18n()
 
@@ -122,6 +162,9 @@ const tagInputRef = ref<HTMLInputElement | null>(null)
 
 const exportDialogVisible = ref(false)
 const exportMode = ref<Dty.ExportMode>(Dty.ExportMode.Segment)
+
+const screenshotDialogVisible = ref(false)
+const screenshotFormat = ref<'jpg' | 'png'>('jpg')
 
 const showExportDialog = (): void => {
     exportDialogVisible.value = true
@@ -134,6 +177,61 @@ const cancelExport = (): void => {
 const confirmExport = async (): Promise<void> => {
     exportDialogVisible.value = false
     await util.export_cut_video(exportMode.value)
+}
+
+const showScreenshotDialog = (): void => {
+    screenshotDialogVisible.value = true
+}
+
+const cancelScreenshot = (): void => {
+    screenshotDialogVisible.value = false
+}
+
+const confirmScreenshot = async (): Promise<void> => {
+    const videoElement = document.querySelector('video') as HTMLVideoElement
+    if (!videoElement || !videoElement.videoWidth) {
+        util.addToastErr(t('videoOperatePanel.noVideoPlaying'))
+        return
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = videoElement.videoWidth
+    canvas.height = videoElement.videoHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+        util.addToastErr(t('videoOperatePanel.canvasError'))
+        return
+    }
+
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
+
+    const mimeType = screenshotFormat.value === 'jpg' ? 'image/jpeg' : 'image/png'
+    const imageData = canvas.toDataURL(mimeType, 0.95)
+
+    const now = new Date()
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+    const filename = `stream-seek_${dateStr}`
+
+    const req: Dty.Req<Dty.ScreenshotSaveReq> = {
+        cmd: Dty.CmdType.screenshotSave,
+        data: {
+            imageData: imageData,
+            format: screenshotFormat.value,
+            filename: filename
+        }
+    }
+
+    try {
+        const resp = await IpcApi.trigger_event<Dty.ScreenshotSaveReq, Dty.ScreenshotSaveResp>(req)
+        if (resp.code === Dty.RespCode.Success) {
+            util.addToastInfo(t('videoOperatePanel.screenshotSaved', { path: resp.data?.filepath }))
+            screenshotDialogVisible.value = false
+        } else {
+            util.addToastErr(t('videoOperatePanel.screenshotFailed', { error: resp.status }))
+        }
+    } catch (error) {
+        util.addToastErr(t('videoOperatePanel.screenshotFailed', { error: String(error) }))
+    }
 }
 
 const showTagDialog = (): void => {

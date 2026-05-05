@@ -352,7 +352,13 @@
     "exportClip": "导出剪辑",
     "addTag": "添加标签",
     "duration": "时长",
-    "frames": "帧"
+    "frames": "帧",
+    "screenshotExport": "截图导出",
+    "exportFormat": "导出格式",
+    "noVideoPlaying": "没有正在播放的视频",
+    "canvasError": "Canvas 创建失败",
+    "screenshotSaved": "截图已保存到: {path}",
+    "screenshotFailed": "截图保存失败: {error}"
   },
   "createPrj": {
     "returnHome": "返回主页",

@@ -329,7 +329,13 @@
     "exportClip": "Export clip",
     "addTag": "Add tag",
     "duration": "Duration",
-    "frames": "frames"
+    "frames": "frames",
+    "screenshotExport": "Screenshot Export",
+    "exportFormat": "Export Format",
+    "noVideoPlaying": "No video is playing",
+    "canvasError": "Canvas creation failed",
+    "screenshotSaved": "Screenshot saved to: {path}",
+    "screenshotFailed": "Screenshot save failed: {error}"
   },
   "createPrj": {
     "returnHome": "Return Home",

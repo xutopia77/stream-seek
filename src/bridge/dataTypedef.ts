@@ -34,7 +34,8 @@ export enum CmdType {
     clipProjectSaveAs = 'clip_project_save_as',
     clipProjectOpen = 'clip_project_open',
     parseMp4Box = 'parse_mp4_box',
-    analyzeFrames = 'analyze_frames'
+    analyzeFrames = 'analyze_frames',
+    screenshotSave = 'screenshot_save'
 }
 
 export class RecentItem {
@@ -416,6 +417,16 @@ export class AnalyzeFramesResp {
     width: number = 0
     height: number = 0
     parseTime: number = 0
+}
+
+export class ScreenshotSaveReq {
+    imageData: string = ''
+    format: 'jpg' | 'png' = 'jpg'
+    filename: string = ''
+}
+
+export class ScreenshotSaveResp {
+    filepath: string = ''
 }
 
 export interface SltMediaInfo {

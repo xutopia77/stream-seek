@@ -24,30 +24,24 @@
     </div>
 </template>
 <script setup lang="ts">
-// import util from '@renderer/utils/util'
 import { ref, computed } from 'vue'
 import { useAppStore } from '@renderer/stores/AppStore'
 import { useI18n } from 'vue-i18n'
-const appStore = useAppStore()
 import * as Dty from '../../../../../bridge/dataTypedef'
 import util from '@renderer/utils/util'
 
+const appStore = useAppStore()
 const { t } = useI18n()
-// ------------------------------------
+
 const fileTags = computed(() => {
     if (appStore.curSltVideo == null) return []
     return appStore.curSltVideo.tags
 })
+
 function btn_removeTag(tag: Dty.Tag): void {
     console.log(t('videoInfo.removeTag', { name: tag.name }))
-    // if (appStore.curSltFile?.id == null) return
-    // const req: DatType.FilesTagSetReq = {
-    //     fileIds: [appStore.curSltFile.id],
-    //     tagName: tag.name
-    // }
-    // Utils.files_tag_delete(req)
 }
-// ------------------------------------
+
 const newTag = ref('')
 const btn_addTag = async (): Promise<void> => {
     const req = new Dty.FileTagsReq()
@@ -76,29 +70,24 @@ const btn_addTag = async (): Promise<void> => {
 </script>
 
 <style scoped>
-/* 原有的样式保持不变 */
 .page-container {
     height: 100%;
     width: calc(100% - 1px);
     padding: 0;
     margin: 0;
     background-color: var(--xc-background-color);
-    /* VSCode 侧边栏背景色 */
     color: var(--xc-text-color);
-    /* 文字颜色 */
     white-space: nowrap;
     overflow-x: auto;
     border-right: 1px solid #333;
-    /* 右侧边框 */
 }
 
 .tag-info {
     width: 100%;
-    padding: 0;
+    padding: 8px;
     margin: 0;
 }
 
-/* 兼容 Firefox */
 .page-container {
     scrollbar-width: thin;
     scrollbar-color: #555 #333;

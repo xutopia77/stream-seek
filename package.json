@@ -1,10 +1,10 @@
 {
   "name": "streamseek",
-  "version": "5.2.0",
+  "version": "5.2.1",
   "description": "StreamSeek - A video stream analysis and recording management application",
   "main": "./out/main/index.js",
   "author": "xutopia77",
-  "homepage": "https://electron-vite.org",
+  "homepage": "https://xutopia.top/project/stream-seek",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",

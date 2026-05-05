@@ -11,7 +11,7 @@ import { workQueue } from './TaskEvent'
 import { Util } from './Utils.js'
 import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
-import { dialog } from 'electron'
+import { dialog, app } from 'electron'
 
 function logStatusRespReturn<T>(resp: Dty.Resp<T>): Dty.Resp<T> {
     if (resp.code === 0) {
@@ -2261,6 +2261,11 @@ class AppProc {
                 logger.info(`cmd:${cmd}:${cseq}, path:${cmdReq.data?.filePath}`)
                 return this.cmdRespMake(await this.handle_analyze_frames(cmdReq))
             }
+            case Dty.CmdType.screenshotSave: {
+                const cmdReq = convertCmdRequest<Dty.ScreenshotSaveReq>(req)
+                logger.info(`cmd:${cmd}:${cseq}, format:${cmdReq.data?.format}`)
+                return this.cmdRespMake(await this.handle_screenshot_save(cmdReq))
+            }
             default: {
                 console.log(`Unknown event: ${cmd}:${cseq}`)
                 const resp = new Dty.Resp()
@@ -2292,6 +2297,40 @@ class AppProc {
             req.data.pageSize || 200,
             req.data.startTime
         )
+    }
+
+    async handle_screenshot_save(
+        req: Dty.Req<Dty.ScreenshotSaveReq>
+    ): Promise<Dty.Resp<Dty.ScreenshotSaveResp>> {
+        const resp = new Dty.Resp<Dty.ScreenshotSaveResp>()
+        
+        if (!req.data?.imageData) {
+            return resp.err('imageData is required')
+        }
+
+        try {
+            const userPicturesPath = app.getPath('pictures')
+            const now = new Date()
+            const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
+            const timeStr = `_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+            
+            const filename = req.data.filename || `stream-seek_${dateStr}`
+            const extension = req.data.format === 'png' ? 'png' : 'jpg'
+            const fullFilename = `${filename}${timeStr}.${extension}`
+            const filepath = path.join(userPicturesPath, fullFilename)
+
+            const base64Data = req.data.imageData.replace(/^data:image\/\w+;base64,/, '')
+            const buffer = Buffer.from(base64Data, 'base64')
+
+            await fs.promises.writeFile(filepath, buffer)
+            
+            resp.data = { filepath: filepath }
+            logger.info(`Screenshot saved to: ${filepath}`)
+            return resp.success('screenshot saved successfully')
+        } catch (error) {
+            logger.error('Failed to save screenshot:', error)
+            return resp.err(`Failed to save screenshot: ${error}`)
+        }
     }
 }
 
