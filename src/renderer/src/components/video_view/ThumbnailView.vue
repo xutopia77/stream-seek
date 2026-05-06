@@ -86,7 +86,7 @@ let thumbnailImages = ref<Thumbnail[]>([])
 
 let curCheckImage = ref<Thumbnail | null>(null)
 
-// 按钮点击检查函数
+// Button click check function
 function btnclk_card_check(thumb: Thumbnail): void {
     let lastChked = thumb.checked
     for (let i = 0; i < thumbnailImages.value.length; i++) {
@@ -102,7 +102,7 @@ function btnclk_card_check(thumb: Thumbnail): void {
     }
 }
 
-// 处理图片选中状态改变函数
+// Handle image selection status change function
 function handle_image_checked_change(thumb: Thumbnail | null): void {
     if (thumb?.checked === false) {
         appStore.thumbSeekTime = 0
@@ -155,7 +155,7 @@ function changeCardSize(delta: number): void {
     }
 }
 
-// 监听当前选中图片的变化
+// Watch current selected image change
 watch(
     () => curCheckImage.value,
     async (newVal: Thumbnail | null, oldVal: Thumbnail | null): Promise<void> => {
@@ -166,7 +166,7 @@ watch(
     }
 )
 
-// 监听当前视频信息的缩略图变化
+// Watch current video info thumbnail change
 watch(
     () => appStore.curSltVideo?.thumbnail,
     async (): Promise<void> => {
@@ -176,7 +176,7 @@ watch(
     }
 )
 
-// 组件挂载时更新缩略图
+// Update thumbnail when component is mounted
 onMounted(async (): Promise<void> => {
     thumbnailImages.value = []
     update_thumbnail_images(thumbnailImages.value)

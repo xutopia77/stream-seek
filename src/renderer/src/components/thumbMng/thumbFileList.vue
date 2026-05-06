@@ -1,7 +1,7 @@
 <template>
     <div class="page-container xc-scrollbar">
         <ul>
-            <!-- 修改部分：添加动态类名和 checkbox -->
+            <!-- Modified: Add dynamic class name and checkbox -->
             <li
                 v-for="(video, index) in videoList"
                 :key="index"
@@ -45,12 +45,12 @@ import * as Dty from '../../../../bridge/dataTypedef'
 const { t } = useI18n()
 const videoList = computed<Dty.File[]>(() => appStore.thumbList)
 
-// 记录上一次选中的索引
+// Record last selected index
 const lastSelectedIndex = ref(-1)
-// 记录 Shift 键是否按下
+// Record if Shift key is pressed
 const isShiftPressed = ref(false)
 
-// 监听键盘事件
+// Listen to keyboard events
 const handleKeyDown = (event: KeyboardEvent): void => {
     if (event.shiftKey) {
         isShiftPressed.value = true
@@ -71,7 +71,7 @@ onUnmounted(() => {
     window.removeEventListener('keyup', handleKeyUp)
 })
 
-// 切换视频的选中状态
+// Toggle video selection state
 const toggleVideoSelection = (video: Dty.File, isChecked: boolean, currentIndex: number): void => {
     console.log(
         t('thumbFileList.selectionChanged', {
@@ -107,29 +107,29 @@ const btn_playVideo = (video: Dty.File): void => {
 }
 
 /**
- * 根据视频等级获取黑色主题下的字体颜色样式
- * @param {Object} video - 视频对象，包含tags数组
- * @returns {string} 带颜色的行内样式字符串
+ * Get font color style under dark theme based on video level
+ * @param {Object} video - Video object containing tags array
+ * @returns {string} Inline style string with color
  */
 const getVideoLevelColorStyle = (video): string => {
-    // 防御性判断：避免tags不存在/为空导致的报错
+    // Defensive check: avoid errors caused by tags not existing or being empty
     if (!video?.tags || video.tags.length === 0) {
-        return 'color: #cccccc;' // 默认浅灰色（黑色背景通用）
+        return 'color: #cccccc;' // Default light gray (common for dark background)
     }
 
-    // 提取等级名称并统一转为小写，增强鲁棒性
+    // Extract level name and convert to lowercase for robustness
     const levelName = video.tags[0].name.toLowerCase()
 
-    // 黑色主题下的等级颜色映射表（高对比度、层级区分）
+    // Level color mapping for dark theme (high contrast, level distinction)
     const levelColorMap = {
-        sys_score1: '#00c6ff', // 亮蓝色（最高级，最醒目）
-        sys_score2: '#76ff03', // 亮绿色（次高级）
-        sys_score3: '#ffea00', // 金黄色（中级）
-        sys_score4: '#ff9100', // 橙色（次低级）
-        sys_score5: '#ff3d00' // 橙红色（最低级）
+        sys_score1: '#00c6ff', // Bright blue (highest level, most prominent)
+        sys_score2: '#76ff03', // Bright green (second highest)
+        sys_score3: '#ffea00', // Golden yellow (medium level)
+        sys_score4: '#ff9100', // Orange (second lowest)
+        sys_score5: '#ff3d00' // Orange-red (lowest level)
     }
 
-    // 匹配颜色，无匹配则用默认浅灰色
+    // Match color, use default light gray if no match
     const targetColor = levelColorMap[levelName] || '#cccccc'
     console.log(t('thumbFileList.levelColorMapping', { levelName, targetColor }))
     return `color: ${targetColor};`
@@ -137,25 +137,25 @@ const getVideoLevelColorStyle = (video): string => {
 </script>
 
 <style scoped>
-/* 原有的样式保持不变 */
+/* Keep original styles unchanged */
 .page-container {
     height: 100%;
     width: calc(100% - 1px);
     padding: 0;
     margin: 0;
     background-color: var(--xc-background-color);
-    /* VSCode 侧边栏背景色 */
+    /* VSCode sidebar background color */
     color: var(--xc-text-color);
-    /* 文字颜色 */
+    /* Text color */
     white-space: nowrap;
     overflow-x: auto;
     border-right: 1px solid #333;
-    /* 右侧边框 */
+    /* Right border */
     display: flex;
     flex-direction: column;
 }
 
-/* 兼容 Firefox */
+/* Firefox compatibility */
 .page-container {
     scrollbar-width: thin;
     scrollbar-color: #555 #333;
@@ -172,27 +172,27 @@ const getVideoLevelColorStyle = (video): string => {
 .page-container li {
     cursor: pointer;
     padding: 2px 2px;
-    /* 增加内边距 */
+    /* Add padding */
     border-bottom: 1px solid #333;
-    /* 底部边框 */
+    /* Bottom border */
 }
 
 .page-container li:hover {
     background-color: #37373d;
-    /* 鼠标悬停背景色 */
+    /* Mouse hover background color */
 }
 
 .page-container li:active {
     background-color: #094771;
-    /* 鼠标点击背景色 */
+    /* Mouse click background color */
 }
 
-/* 修改部分：添加选中样式 */
+/* Modified: Add selected style */
 .page-container li.selected {
     background-color: #094771;
-    /* VSCode 选中项背景色 */
+    /* VSCode selected item background color */
     color: white;
-    /* VSCode 选中项文字颜色 */
+    /* VSCode selected item text color */
 }
 
 .vscode-checkbox {

@@ -16,7 +16,7 @@ function generateTaskId(): string {
 }
 // async function checkFileExists(filePath: string): Promise<boolean> {
 //     try {
-//         // 尝试访问文件
+//         // Try to access file
 //         await fs.promises.access(filePath, fs.constants.F_OK)
 //         return true
 //     } catch (error) {
@@ -27,7 +27,7 @@ function generateTaskId(): string {
 //     }
 // }
 
-// // 检查文件记录时间是否连续
+// // Check if file record times are continuous
 // function check_record_time(files: Dty.FileInfo[]): void {
 //     // let lastStartTime: string = ''
 //     let lastEndTime: string = ''
@@ -51,7 +51,7 @@ function generateTaskId(): string {
 //     }
 // }
 
-// // 文件分类处理
+// // File classification processing
 // async function file_classify(
 //     req: Dty.Req<Dty.Req_SearchFile>,
 //     files: Dty.FileInfo[]
@@ -66,7 +66,7 @@ function generateTaskId(): string {
 //         totalSize: number
 //         totalCount: number
 //     } {
-//         // 计算媒体信息
+//         // Calculate media info
 //         const filesInfo = {
 //             totalSize: 0,
 //             totalCount: 0
@@ -80,7 +80,7 @@ function generateTaskId(): string {
 //     }
 
 //     function groupFiles(files: Dty.FileInfo[]): Dty.FileInfo[][] {
-//         // 每 100 个文件一组进行分类
+//         // Group every 100 files for classification
 //         const groupNum = appCfg.folderClassifyNum
 //         const groupedFiles: Dty.FileInfo[][] = []
 //         for (let i = 0; i < files.length; i += groupNum) {
@@ -90,7 +90,7 @@ function generateTaskId(): string {
 //     }
 
 //     async function moveFilesToFolders(
-//         // 创建文件夹并移动文件
+//         // Create folders and move files
 //         groupedFiles: Dty.FileInfo[][],
 //         baseDir: string
 //     ): Promise<void> {
@@ -98,17 +98,17 @@ function generateTaskId(): string {
 //             const group = groupedFiles[i]
 //             const folderName = path.join(baseDir, String(i + 1))
 //             try {
-//                 // 检查文件夹是否存在
+//                 // Check if folder exists
 //                 await fs.promises.access(folderName)
 //             } catch (error) {
-//                 // 文件夹不存在，创建文件夹
+//                 // Folder doesn't exist, create folder
 //                 if (!error) {
 //                     logger.log('folder exist')
 //                 }
 //                 try {
 //                     await fs.promises.mkdir(folderName, { recursive: true })
 //                 } catch (mkdirError) {
-//                     console.error(`创建文件夹 ${folderName} 时出错:`, mkdirError)
+//                     console.error(`Error creating folder ${folderName}:`, mkdirError)
 //                     continue
 //                 }
 //             }
@@ -117,7 +117,7 @@ function generateTaskId(): string {
 //                 const fileName = path.basename(sourcePath)
 //                 const destinationPath = path.join(folderName, fileName)
 //                 try {
-//                     // 移动文件
+//                     // Move file
 //                     const fileExists = await checkFileExists(destinationPath)
 //                     await fs.promises.rename(sourcePath, destinationPath)
 //                     if (!fileExists) {
@@ -132,7 +132,7 @@ function generateTaskId(): string {
 
 //     const filesInfo = calculateFilesInfo(files)
 
-//     // 根据文件名中的时间戳进行排序
+//     // Sort by timestamp in filename
 //     const sortFiles = files.slice().sort((a, b) => {
 //         const startTimeA = Dty.FileTools.miFilenameParse(a.title)?.startTime
 //         const startTimeB = Dty.FileTools.miFilenameParse(b.title)?.startTime
@@ -145,16 +145,16 @@ function generateTaskId(): string {
 //         return startTimeA.localeCompare(startTimeB)
 //     })
 
-//     // 目前仅仅是检查文件名中的时间戳是否连续
+//     // Currently just checking if timestamps in filenames are continuous
 //     check_record_time(sortFiles)
 
 //     const baseDir = folderpath
-//     // 文件分组
+//     // Group files
 //     const groupedFiles = groupFiles(sortFiles)
-//     // 安装分组结果移动文件夹
+//     // Move files according to grouping results
 //     await moveFilesToFolders(groupedFiles, baseDir)
 
-//     // 仅仅是 检查分组后的文件夹和分组前的文件夹的信息是否相同
+//     // Just checking if info matches before and after grouping
 //     const traversalFolder2 = new TraversalFolder()
 //     traversalFolder2.type = 'search'
 //     traversalFolder2.folder = folderpath
@@ -163,7 +163,7 @@ function generateTaskId(): string {
 //     if (files2resp.code === 0) {
 //         if (files2resp.data?.files != null) {
 //             const filesInfo2 = calculateFilesInfo(files2resp.data.files)
-//             // 比较两个文件夹的信息
+//             // Compare info of two folders
 //             let bEqual = true
 //             if (filesInfo.totalSize !== filesInfo2.totalSize) {
 //                 logger.log('two folder total size are not equal')
@@ -316,10 +316,10 @@ class RecordsProc {
     }
 
     /**
-     * 生成缩略图
-     * @param fileInfo 文件信息
-     * @param genType 生成类型
-     * @returns 缩略图路径数组
+     * Generate thumbnail
+     * @param fileInfo File info
+     * @param genType Generation type
+     * @returns Thumbnail path array
      */
     async gen_thumbnail(fileInfo: Dty.File, genType: Dty.ThumbType): Promise<Dty.Resp<string[]>> {
         const resp = new Dty.Resp<string[]>()
@@ -379,7 +379,7 @@ class RecordsProc {
             )
         }
 
-        //2, 先删除临时文件夹，再创建新文件夹
+        //2, Delete temp folder first, then create new folder
         const tmpThumbDir = path.join(thumbPath, 'tmp')
         try {
             await fs.promises.access(tmpThumbDir)
@@ -393,7 +393,7 @@ class RecordsProc {
             logger.log(`mkdir error ${error}`)
             return resp.err(`mkdir error ${error}`)
         }
-        // 3, 获取文件名称中的信息
+        // 3, Get info from filename
         const parseRe = Dty.FileTools.miFilenameParse(filename)
         if (parseRe == null) {
             return resp.err(`parse filename error ${filename}`)
@@ -409,8 +409,8 @@ class RecordsProc {
             const thumbFileName = `${Dty.FileTools.parsetimeToTimeStr(picTime)}.jpg`
             const outputPath = path.join(tmpThumbDir, thumbFileName)
             resp.data.push(thumbFileName)
-            const width = 640 // 设置图片宽度
-            const height = 480 // 设置图片高度
+            const width = 640 // Set image width
+            const height = 480 // Set image height
             let args = [
                 '-v',
                 'error',
@@ -448,7 +448,7 @@ class RecordsProc {
                         }
                     })
                     child.on('close', () => {
-                        // 确保进程关闭
+                        // Ensure process is closed
                     })
                 })
             } catch (error) {
@@ -471,14 +471,14 @@ class RecordsProc {
             await thumbDb.exec(Util.thumbDbCreateSqlGet())
             await thumbDb.exec(Util.thumbDbCreateSqlInfoGet())
 
-            // 开始事务以提高批量插入性能
+            // Start transaction to improve batch insert performance
             await thumbDb.run('BEGIN TRANSACTION')
 
             try {
-                // 遍历 tmpThumbDir 目录下的所有文件，并把缩略图文件批量插入到thumbDb数据库
+                // Traverse all files under tmpThumbDir directory, and batch insert thumbnail files into thumbDb database
                 const files = await fs.promises.readdir(tmpThumbDir)
 
-                // 将媒体信息插入到 infos 表
+                // Insert media info into infos table
                 if (fileInfo.mediaInfo !== null) {
                     let infoStmt
                     try {
@@ -493,17 +493,17 @@ class RecordsProc {
                     }
                 }
 
-                // 使用预编译语句提高插入效率
+                // Use prepared statement to improve insert efficiency
                 const stmt = await thumbDb.prepare(
                     'INSERT INTO files (filename, raw, type, desc) VALUES (?, ?, ?, ?)'
                 )
 
-                // 控制并发数以避免内存占用过高，同时提高机械硬盘的顺序读取效率
+                // Control concurrency to avoid high memory usage, while improving sequential read efficiency for HDD
                 const batchSize = 10
                 for (let i = 0; i < files.length; i += batchSize) {
                     const batch = files.slice(i, i + batchSize)
 
-                    // 并行读取一批文件的内容
+                    // Read a batch of files in parallel
                     const filePromises = batch.map(async (file) => {
                         const filePath = path.join(tmpThumbDir, file)
                         const fileStat = await fs.promises.stat(filePath)
@@ -516,7 +516,7 @@ class RecordsProc {
 
                     const results = await Promise.all(filePromises)
 
-                    // 批量插入数据库
+                    // Batch insert into database
                     for (const result of results) {
                         if (result !== null) {
                             const [filename, imageData] = result
@@ -535,7 +535,7 @@ class RecordsProc {
             }
         }
 
-        // 删除临时文件夹
+        // Delete temporary folder
         try {
             await fs.promises.rm(tmpThumbDir, { recursive: true })
         } catch (error) {

@@ -40,7 +40,7 @@ onMounted(() => {
     height: 36px;
     width: 100%;
     overflow-y: auto;
-    /* 添加垂直滚动条 */
+    /* Add vertical scrollbar */
 }
 
 .content-section {
@@ -49,6 +49,6 @@ onMounted(() => {
     height: calc(100% - 36px);
     width: 100%;
     overflow-y: auto;
-    /* 添加垂直滚动条 */
+    /* Add vertical scrollbar */
 }
 </style>

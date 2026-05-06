@@ -12,7 +12,7 @@
             @mouseover="showTooltip(clip)"
             @mouseout="handleMouseOut($event, clip)"
         >
-            <!-- 修改部分：增加对 clip.tip 的判断 -->
+            <!-- Modified: Add check for clip.tip -->
             <div v-if="showTip && currentClip === clip && clip.tip" class="tooltip">
                 {{ `${clip.tip}` }}
             </div>
@@ -23,7 +23,7 @@
 <script lang="ts" setup>
 import { defineProps, ref } from 'vue'
 
-// 定义 clip 类型接口
+// Define clip type interface
 interface Clip {
     percent: number
     width: number
@@ -31,7 +31,7 @@ interface Clip {
     tip?: string
 }
 
-// 定义 props 类型
+// Define props type
 defineProps<{
     clips: Clip[]
     height: number
@@ -50,7 +50,7 @@ const handleMouseOut = (event: MouseEvent, clip: Clip | null): void => {
         return
     }
     const tooltip = (event.target as Element).querySelector('.tooltip')
-    // 修改部分：先检查 event.relatedTarget 是否为 Node 类型
+    // Modified: First check if event.relatedTarget is of Node type
     const relatedTarget = event.relatedTarget as Node | null
     if (!tooltip || (relatedTarget && !tooltip.contains(relatedTarget))) {
         showTip.value = false

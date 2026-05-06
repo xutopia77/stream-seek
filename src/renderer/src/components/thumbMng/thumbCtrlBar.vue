@@ -61,7 +61,7 @@ function btn_thumbDel(): void {
     display: flex;
     align-items: center;
     background-color: #252526;
-    /* VSCode 侧边栏背景色 */
+    /* VSCode sidebar background color */
 }
 
 .right-area-ctrl {

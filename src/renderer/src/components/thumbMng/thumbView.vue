@@ -61,7 +61,7 @@ let thumbnailImages = ref<Thumbnail[]>([])
 
 let curCheckImage = ref<Thumbnail | null>(null)
 
-// 按钮点击检查函数
+// Button click check function
 function btnclk_card_check(thumb: Thumbnail): void {
     let lastChked = thumb.checked
     for (let i = 0; i < thumbnailImages.value.length; i++) {
@@ -77,7 +77,7 @@ function btnclk_card_check(thumb: Thumbnail): void {
     }
 }
 
-// 处理图片选中状态改变函数
+// Handle image selection state change function
 function handle_image_checked_change(thumb: Thumbnail | null): void {
     if (thumb?.checked === false) {
         appStore.thumbSeekTime = 0
@@ -114,7 +114,7 @@ function update_thumbnail_images(thumbnailImages: Thumbnail[]): void {
     }
 }
 
-// 监听当前选中图片的变化
+// Watch current selected image change
 watch(
     () => curCheckImage.value,
     async (newVal: Thumbnail | null, oldVal: Thumbnail | null): Promise<void> => {
@@ -125,7 +125,7 @@ watch(
     }
 )
 
-// 监听当前视频信息的缩略图变化
+// Watch current video info thumbnail change
 watch(
     () => appStore.curSltThumb?.thumbnail,
     async (): Promise<void> => {
@@ -136,7 +136,7 @@ watch(
     }
 )
 
-// 组件挂载时更新缩略图
+// Update thumbnail when component is mounted
 onMounted(async (): Promise<void> => {
     thumbnailImages.value = []
     update_thumbnail_images(thumbnailImages.value)
@@ -148,20 +148,20 @@ onMounted(async (): Promise<void> => {
     display: flex;
     flex-wrap: wrap;
     gap: 2px;
-    /* 卡片之间的间隙 */
+    /* Gap between cards */
     width: 100%;
     height: 100%;
     padding: 0;
     margin: 0;
     color: var(--xc-text-color);
     overflow-y: auto;
-    /* 添加竖向滚动条 */
-    /* 计算卡片的总高度（3 行卡片 + 2 个间隙） */
+    /* Add vertical scrollbar */
+    /* Calculate total height of cards (3 rows of cards + 2 gaps) */
     /* max-height: calc((((100% - 20px) / 3) * 3) + 20px); */
 }
 
 .thumbnail-card {
-    /* 每行显示 4 张图片，减去间隙宽度 */
+    /* Display 4 images per row, minus gap width */
     flex: 0 0 calc(25% - 2px);
     max-width: calc(25% - 2px);
     border: 1px solid #2e2e2e;
@@ -170,14 +170,14 @@ onMounted(async (): Promise<void> => {
     box-sizing: border-box;
     background-color: var(--xc-background-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    /* 计算卡片的高度，使每行显示 3 行 */
+    /* Calculate card height to display 3 rows */
     height: calc((100% - 8px) / 3);
 }
 
 .thumbnail-card img {
     width: 100%;
     height: calc(100% - 20px);
-    /* 减去标题的高度 */
+    /* Subtract title height */
     /* object-fit: cover; */
     border-radius: 4px;
 }

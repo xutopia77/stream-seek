@@ -1,7 +1,7 @@
 <template>
     <div class="page-container xc-scrollbar">
         <ul>
-            <!-- 修改部分：添加动态类名和 checkbox -->
+            <!-- Modified part: add dynamic class name and checkbox -->
             <li
                 v-for="(video, index) in videoList"
                 :key="index"
@@ -46,12 +46,12 @@ import * as Dty from '../../../../../bridge/dataTypedef'
 const { t } = useI18n()
 const videoList = computed<Dty.File[]>(() => appStore.videoList)
 
-// 记录上一次选中的索引
+// Record last selected index
 const lastSelectedIndex = ref(-1)
-// 记录 Shift 键是否按下
+// Record whether Shift key is pressed
 const isShiftPressed = ref(false)
 
-// 监听键盘事件
+// Listen to keyboard events
 const handleKeyDown = (event: KeyboardEvent): void => {
     if (event.shiftKey) {
         isShiftPressed.value = true
@@ -72,7 +72,7 @@ onUnmounted(() => {
     window.removeEventListener('keyup', handleKeyUp)
 })
 
-// 切换视频的选中状态
+// Toggle video selection status
 const toggleVideoSelection = (video: Dty.File, isChecked: boolean, currentIndex: number): void => {
     console.log(
         t('videoList.selectionChanged', {
@@ -108,9 +108,9 @@ const btn_playVideo = (video: Dty.File): void => {
 }
 
 /**
- * 根据视频等级获取黑色主题下的字体颜色样式
- * @param {Object} video - 视频对象，包含tags数组
- * @returns {string} 带颜色的行内样式字符串
+ * Get font color style under dark theme based on video level
+ * @param {Object} video - Video object containing tags array
+ * @returns {string} Inline style string with color
  */
 const getVideoLevelColorStyle = (video): string => {
     if (appStore.fileSearchStatus === Dty.Fstatus.Deleted) {
@@ -138,25 +138,25 @@ const getVideoLevelColorStyle = (video): string => {
 </script>
 
 <style scoped>
-/* 原有的样式保持不变 */
+/* Original styles remain unchanged */
 .page-container {
     height: 100%;
     width: calc(100% - 1px);
     padding: 0;
     margin: 0;
     background-color: var(--xc-background-color);
-    /* VSCode 侧边栏背景色 */
+    /* VSCode sidebar background color */
     color: var(--xc-text-color);
-    /* 文字颜色 */
+    /* Text color */
     white-space: nowrap;
     overflow-x: auto;
     border-right: 1px solid #333;
-    /* 右侧边框 */
+    /* Right border */
     display: flex;
     flex-direction: column;
 }
 
-/* 兼容 Firefox */
+/* Firefox compatibility */
 .page-container {
     scrollbar-width: thin;
     scrollbar-color: #555 #333;
@@ -173,27 +173,27 @@ const getVideoLevelColorStyle = (video): string => {
 .page-container li {
     cursor: pointer;
     padding: 2px 2px;
-    /* 增加内边距 */
+    /* Increase padding */
     border-bottom: 1px solid #333;
-    /* 底部边框 */
+    /* Bottom border */
 }
 
 .page-container li:hover {
     background-color: #37373d;
-    /* 鼠标悬停背景色 */
+    /* Mouse hover background color */
 }
 
 .page-container li:active {
     background-color: #094771;
-    /* 鼠标点击背景色 */
+    /* Mouse click background color */
 }
 
-/* 修改部分：添加选中样式 */
+/* Modified part: add selected style */
 .page-container li.selected {
     background-color: #094771;
-    /* VSCode 选中项背景色 */
+    /* VSCode selected item background color */
     color: white;
-    /* VSCode 选中项文字颜色 */
+    /* VSCode selected item text color */
 }
 
 .vscode-checkbox {

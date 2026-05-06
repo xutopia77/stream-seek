@@ -1,4 +1,4 @@
-/* 定义通用的字体颜色变量 */
+/* Define common font color variables */
 :root {
   --xc-text-color: #ccc;
   --xc-background-color: #1e1e1e;
@@ -27,7 +27,7 @@
   background: #777;
 }
 
-/* 兼容 Firefox */
+/* Firefox compatibility */
 .xc-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #555 #333;
@@ -52,7 +52,7 @@
   border: var(--xc-border-hover);
 }
 
-/* 选中状态样式 */
+/* Selected state style */
 .xc-tag.selected {
   background-color: #2196F3;
   color: white;
@@ -64,10 +64,10 @@
 }
 
 /* --------------------------------------------------------- button */
-/* 通用按钮样式 */
+/* Common button style */
 .xc-button {
   margin: 1px;
-  padding: 6px 12px; /* 统一内边距 */
+  padding: 6px 12px; /* Unified padding */
   background-color: var(--xc-button-bg, #333);
   color: var(--xc-text-color);
   border: 1px solid var(--xc-border-color, #444);
@@ -80,8 +80,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  text-decoration: none; /* 如果用于链接 */
-  user-select: none; /* 防止文本选择 */
+  text-decoration: none; /* If used for links */
+  user-select: none; /* Prevent text selection */
 }
 
 .xc-button:hover:not(:disabled) {
@@ -112,7 +112,7 @@
   outline: none;
 }
 
-/* 主要按钮 */
+/* Primary button */
 .xc-button.primary {
   background-color: var(--xc-primary-color, #007acc);
   border-color: var(--xc-primary-color, #007acc);
@@ -125,7 +125,7 @@
   border-color: var(--xc-primary-hover, #006bb3);
 }
 
-/* 次要按钮 */
+/* Secondary button */
 .xc-button.secondary {
   background-color: transparent;
   border: 1px solid var(--xc-border-color, #444);
@@ -136,7 +136,7 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* 危险按钮 */
+/* Danger button */
 .xc-button.danger {
   background-color: var(--xc-danger-color, #e51400);
   border-color: var(--xc-danger-color, #e51400);
@@ -148,7 +148,7 @@
   border-color: var(--xc-danger-hover, #f03a17);
 }
 
-/* 尺寸变体 */
+/* Size variants */
 .xc-button.small {
   padding: 2px 8px;
   font-size: 12px;
@@ -161,13 +161,13 @@
   min-height: 36px;
 }
 
-/* 通用下拉选择框样式 */
+/* Common dropdown select style */
 .xc-select {
   margin: 0 5px;
   padding: 2px 5px;
   background-color: #333;
   color: var(--xc-text-color);
-  /* 使用定义的字体颜色变量 */
+  /* Use defined font color variables */
   border: 1px solid #444;
   border-radius: 3px;
   outline: none;
@@ -184,7 +184,7 @@
 }
 
 
-/* 去除 router-link 生成的 a 标签下划线 */
+/* Remove underline from router-link generated a tags */
 a.router-link-exact-active,
 a.router-link-active {
   text-decoration: none;
@@ -208,6 +208,6 @@ a.router-link-active {
 
 .xc-text-input:hover {
   background-color: var(--xc-background-color);
-  /* 设置鼠标悬停时的背景颜色 */
+  /* Set background color on hover */
   border: var(--xc-border-hover);
 }

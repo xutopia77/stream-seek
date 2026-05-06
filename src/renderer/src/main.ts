@@ -10,6 +10,6 @@ import router from './router/router'
 const app = createApp(App)
 app.use(router)
 app.use(pinia)
-// 使用国际化
+// Use internationalization
 app.use(i18n)
 app.mount('#app')

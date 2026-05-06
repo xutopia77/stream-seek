@@ -4,7 +4,7 @@ import { app } from 'electron'
 import logger from './Logger'
 import * as Dty from '../../bridge/dataTypedef'
 
-// 初始化应用配置的函数
+// Function to initialize app configuration
 async function initApp(appCfg: AppCfg): Promise<void> {
     const isDev = process.env.NODE_ENV === 'development'
     const appPath = app.getAppPath()
@@ -44,8 +44,8 @@ async function initApp(appCfg: AppCfg): Promise<void> {
 }
 
 class AppCfg {
-    appData: string // 程序运行数据文件夹
-    log_dir: string = '' // 在程序运行路径下
+    appData: string // Application runtime data folder
+    log_dir: string = '' // Under program runtime path
     file_prj_dir: string = ''
     trashFolder: string = '.trash'
     ffmpegExe: string = ''

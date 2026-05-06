@@ -23,12 +23,12 @@ function logStatusRespReturn<T>(resp: Dty.Resp<T>): Dty.Resp<T> {
 }
 
 /**
- * 安全地重命名文件，检查源文件存在性和目标文件冲突
- * @param srcPath 源文件路径
- * @param destPath 目标文件路径
- * @param type 重命名类型
- *          force ： 强制移动，如果目标文件存在，先把目标文件删除，再移动
- *          strict ： 严格模式，如果目标文件存在，不做处理
+ * Safely rename file, check source file existence and destination file conflict
+ * @param srcPath Source file path
+ * @param destPath Destination file path
+ * @param type Rename type
+ *          force : Force move, if destination file exists, delete it first then move
+ *          strict : Strict mode, if destination file exists, do nothing
  */
 async function fileSafeRename(
     srcPath: string,
@@ -36,13 +36,13 @@ async function fileSafeRename(
     type: 'force' | 'strict' = 'strict'
 ): Promise<'destExist' | 'srcNot' | 'success' | 'err'> {
     try {
-        // 检查源文件是否存在
+        // Check if source file exists
         if (!fs.existsSync(srcPath)) {
             logger.warn(`Source file does not exist: ${srcPath}`)
             return 'srcNot'
         }
 
-        // 如果目标文件已存在，先删除它
+        // If destination file exists, delete it first
         if (fs.existsSync(destPath)) {
             // logger.info(`Destination file already exists, removing: ${destPath}`)
             if (type == 'force') {
@@ -52,13 +52,13 @@ async function fileSafeRename(
             }
         }
 
-        // 确保目标目录存在
+        // Ensure destination directory exists
         const destDir = path.dirname(destPath)
         if (!fs.existsSync(destDir)) {
             await fs.promises.mkdir(destDir, { recursive: true })
         }
 
-        // 执行重命名操作
+        // Execute rename operation
         await fs.promises.rename(srcPath, destPath)
         return 'success'
     } catch (error) {
@@ -68,7 +68,7 @@ async function fileSafeRename(
 }
 
 export class TraversalFolder {
-    type: string | null = null // search时才遍历子文件夹
+    type: string | null = null // Only traverse subfolders during search
     repo: Dty.DataRepo = new Dty.DataRepo()
     bSort: boolean = false
     status: Dty.TrasStatus = new Dty.TrasStatus()
@@ -83,7 +83,7 @@ export class TraversalFolder {
             this.status.fileErrNum++
             return resp.err(logger.warn(`traversal skip: ${fPath}`))
         }
-        // 1， check file if in db
+        // 1, check file if in db
         const searchReq: Dty.FilesReq = new Dty.FilesReq()
         searchReq.path = fPath
         const respSearch = await appDb.filesSearch(searchReq)
@@ -111,10 +111,10 @@ export class TraversalFolder {
         const fileModel: Dty.FileModel = {
             name: fName,
             path: fPath,
-            startTimeSec: fileTimeInfo.startTimeSec, // 视频开始时间，单位秒
-            endTimeSec: fileTimeInfo.endTimeSec, // 视频结束时间，单位秒
-            duration: fileTimeInfo.durationSec, // 视频时长
-            size: stats.size, // 视频大小，单位字节
+            startTimeSec: fileTimeInfo.startTimeSec, // Video start time in seconds
+            endTimeSec: fileTimeInfo.endTimeSec, // Video end time in seconds
+            duration: fileTimeInfo.durationSec, // Video duration
+            size: stats.size, // Video size in bytes
             mediaInfo: JSON.stringify(respMediaInfo),
             splitInfo: '',
             frameInfo: '',
@@ -136,8 +136,10 @@ export class TraversalFolder {
     }
 
     /*
-        1，遍历文件夹。文件插入数据库，如果文件已经存在，检查文件状态，如果文件状态正常，则跳过，不插入数据库，如果文
-    件状态不正常，先删除文件记录，再插入数据库，虽然文件的缩略图文件可能还存在，但是后面再生成就是了。
+        1, Traverse folder. Insert files into database, if file already exists, check file status,
+        if file status is normal, skip and do not insert into database, if file status is abnormal,
+        delete file record first then insert into database, although thumbnail file may still exist,
+        it can be regenerated later.
     */
     async folderTraversal(): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
@@ -160,7 +162,7 @@ export class TraversalFolder {
                         try {
                             const stats = await fs.promises.stat(filePath)
                             if (stats.isDirectory()) {
-                                // todo 如果目录的名称是trash，也进行扫描，要更新数据库的状态
+                                // todo if directory name is trash, also scan and update database status
                                 if (file === '.trash') {
                                     // logger.log(`traversal skip: ${filePath}`)
                                     continue
@@ -190,9 +192,9 @@ export class TraversalFolder {
     }
 
     /*
-        1, 数据库表files，检查文件是否存在，不存在标记为destroy。 todo ， 如果缩略图也不存在，设置为nothing
-        2，遍历缩略图数据库文件，插入到数据库表files（如果表中没有
-    对应项），但文件状态设置为destroy。todo
+        1, Database table files, check if file exists, if not mark as destroy. todo, if thumbnail also not exists, set to nothing
+        2, Traverse thumbnail database files, insert into database table files (if no corresponding entry in table),
+        but file status set to destroy. todo
     */
     async checkDb(): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
@@ -339,7 +341,7 @@ export class TraversalFolder {
                     const fPath = path.join(currentPath, fName)
                     const stats = await fs.promises.stat(fPath)
                     if (stats.isDirectory()) {
-                        // 判断目录的名称，如果目录的名称是trash，则跳过
+                        // Check directory name, if directory name is trash, skip
                         if (fName === '.trash') {
                             // logger.log(`traversal skip: ${filePath}`)
                             continue
@@ -595,7 +597,7 @@ class AppProc {
         if (req.data?.dataRepo == null || req.data.dataRepo.length === 0) {
             return resp.err('dataBase is empty')
         }
-        // 检查req.data?.dataRepo 数组中的name是否都相同
+        // Check if all names in req.data.dataRepo array are the same
         const dataBaseNames = req.data.dataRepo.map((repo) => repo.name)
         const isSameName = dataBaseNames.every((name) => name === dataBaseNames[0])
         if (!isSameName) {
@@ -969,20 +971,20 @@ class AppProc {
     }
 
     /*
-    同步项目
+    Sync Project
 
-    保存项目信息：
-        创建缩略图文件夹。
-        创建项目json文件。
-        把项目json文件路径信息保存到appdata文件夹中。
+    Save project info:
+        Create thumbnail folder.
+        Create project JSON file.
+        Save project JSON file path to appdata folder.
 
-    文件分类：
-        1，首先遍历仓库文件夹，解析文件信息，保存到数据库中。同时修复数据库记录。
-        2，文件分类，从数据库中搜索文件，按照文件的创建时间，把文件
-    分散到各个子文件夹中。 数据库中会跟新文件路径信息。
-        3，删除文件的缩略图的移动到缩略图的回收站中。
+    File categorization:
+        1. First traverse repository folder, parse file info, save to database. Also fix database records.
+        2. Categorize files by searching database and distributing files 
+    into subfolders by creation time. Database will update file path info.
+        3. Move deleted files' thumbnails to thumbnail recycle bin.
 
-    生成缩略图
+    Generate thumbnails
     */
     async handle_prjSync(req: Dty.Req<Dty.SyncPrjReq>): Promise<Dty.Resp<Dty.SyncPrjResp>> {
         const resp = new Dty.Resp<Dty.SyncPrjResp>()
@@ -1070,7 +1072,7 @@ class AppProc {
         }
 
         let bExist = true
-        // 对应文件的缩略图存储在文件名对应的文件夹中， 文件夹不存在，返回错误
+        // Thumbnails for the file are stored in a folder named after the file. Return error if folder doesn't exist
         try {
             await fs.promises.access(file_thubmbnail_dir)
         } catch (error) {
@@ -1082,7 +1084,7 @@ class AppProc {
         if (!bExist) {
             return resp.err(`folder not exist ${file_thubmbnail_dir}`)
         }
-        // 开始遍历缩略图的文件夹
+        // Start traversing the thumbnail folder
         const traversalFolder = new TraversalFolder()
         traversalFolder.type = 'search'
         traversalFolder.repo.path = file_thubmbnail_dir
@@ -1090,7 +1092,7 @@ class AppProc {
         if (!response.isSuccess()) {
             return resp.err(`traversal folder error ${response.status}`)
         }
-        // 缩略图安装时间排序
+        // Sort thumbnails by time
         response.data?.files.sort((a, b) => {
             const timeA = Dty.FileTools.miFilenameParse(a.name)?.startTime
             const timeB = Dty.FileTools.miFilenameParse(b.name)?.startTime
@@ -1177,9 +1179,9 @@ class AppProc {
     async handle_open_video_dialog(): Promise<Dty.Resp<string>> {
         const resp = new Dty.Resp<string>()
         const result = await dialog.showOpenDialog({
-            title: '选择视频文件',
+            title: 'Select video file',
             filters: [
-                { name: '视频文件', extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'] }
+                { name: 'Video files', extensions: ['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'] }
             ],
             properties: ['openFile']
         })
@@ -1214,7 +1216,7 @@ class AppProc {
             const defaultPath = path.join(videoDir, `${defaultName}.sspj`)
 
             const result = await dialog.showSaveDialog({
-                title: '保存剪辑项目',
+                title: 'Save clip project',
                 defaultPath: defaultPath,
                 filters: [
                     { name: 'Clip Project', extensions: ['sspj'] },
@@ -1255,7 +1257,7 @@ class AppProc {
         const defaultPath = path.join(videoDir, `${videoBasename}.sspj`)
 
         const result = await dialog.showSaveDialog({
-            title: '保存剪辑项目',
+            title: 'Save clip project',
             defaultPath: defaultPath,
             filters: [
                 { name: 'Clip Project', extensions: ['sspj'] },
@@ -1291,7 +1293,7 @@ class AppProc {
         const resp = new Dty.Resp<Dty.ClipProject>()
 
         const result = await dialog.showOpenDialog({
-            title: '打开剪辑项目',
+            title: 'Open clip project',
             filters: [{ name: 'Clip Project', extensions: ['sspj'] }],
             properties: ['openFile']
         })
@@ -1409,7 +1411,7 @@ class AppProc {
     }
 
     /**
-     *      删除方式均是'destroy'，会同时删除 thumb和frame
+     *      Delete method is 'destroy', will delete both thumb and frame
      */
     async thumbsDel(req: Dty.Req<Dty.DeleteFileReq>): Promise<Dty.Resp<Dty.DeleteFileResp>> {
         const resp = new Dty.Resp<Dty.DeleteFileResp>()
@@ -1437,7 +1439,7 @@ class AppProc {
                     const filepath = fInfo.path
                     const fName = fInfo.name
                     let attempts = 0
-                    const maxAttempts = 3 // 最大尝试次数
+                    const maxAttempts = 3 // Maximum retry attempts
                     async function attemptRename(): Promise<void> {
                         try {
                             fInfo.status = Dty.Fstatus.Nothing
@@ -1521,10 +1523,10 @@ class AppProc {
     }
 
     /**
-     *      如果删除方式是 'del'， 就把文件移动到回收站，同时把缩略图也移动到回收站（不依赖于bDelThumb），
-     *  确保文件不会被误删
-     *      如果删除方式是 'destroy'， 就把文件彻底删除，但是缩略图会根据bDelThumb决定，如
-     * 果bDelThumb为true，就连同缩略图也彻底删除，如果bDelThumb为false，缩略图会保留。
+     *      If delete method is 'del', move file to recycle bin and also move thumbnails to recycle bin (independent of bDelThumb),
+     *  ensuring files won't be accidentally deleted
+     *      If delete method is 'destroy', delete file completely, but thumbnails depend on bDelThumb:
+     * if bDelThumb is true, thumbnails are also deleted; if bDelThumb is false, thumbnails are preserved.
      */
     async filesDel(req: Dty.Req<Dty.DeleteFileReq>): Promise<Dty.Resp<Dty.DeleteFileResp>> {
         const resp = new Dty.Resp<Dty.DeleteFileResp>()
@@ -1555,10 +1557,10 @@ class AppProc {
                 for (const fInfo of searchResp.data?.files || []) {
                     const filepath = fInfo.path
                     const fName = fInfo.name
-                    // 回收站文件名称
+                    // Recycle bin filename
                     const distFilename = path.join(trashFolderPath, fName)
                     let attempts = 0
-                    const maxAttempts = 3 // 最大尝试次数
+                    const maxAttempts = 3 // Maximum retry attempts
                     async function attemptRename(): Promise<void> {
                         try {
                             if (fs.existsSync(distFilename)) {
@@ -1672,14 +1674,14 @@ class AppProc {
                     const filename = fInfo.name
                     const distFilename = path.join(trashFolderPath, filename)
                     let attempts = 0
-                    const maxAttempts = 3 // 最大尝试次数
+                    const maxAttempts = 3 // Maximum retry attempts
                     async function attemptRename(): Promise<void> {
                         try {
-                            // 移动文件
+                            // Move file
                             if (fs.existsSync(filepath)) {
                                 await fs.promises.rename(filepath, distFilename)
                             }
-                            // 更新数据库
+                            // Update database
                             fInfo.status = Dty.Fstatus.Deleted
                             fInfo.path = distFilename
                             const respUp = await appDb.fileUpdate(fInfo)
@@ -1691,7 +1693,7 @@ class AppProc {
                                 workQueue.statusSet(
                                     logger.info(`file move: ${filepath} to ${distFilename}`)
                                 )
-                                // 移动缩略图文件
+                                // Move thumbnail files
                                 {
                                     const thumbTrashDbPath = Util.thumbTrashDbPathGet(
                                         filename,
@@ -1710,7 +1712,7 @@ class AppProc {
                                         `thumb file move: ${thumbDbPath} to ${thumbTrashDbPath} ${rmResp}`
                                     )
                                 }
-                                // 移动抽帧文件
+                                // Move frame files
                                 {
                                     const thumbTrashDbPath = Util.thumbTrashDbPathGet(
                                         filename,
@@ -1848,24 +1850,24 @@ class AppProc {
             })
             await thumbDb.exec(Util.thumbDbCreateSqlGet())
             await thumbDb.exec(Util.thumbDbCreateSqlInfoGet())
-            // 开始事务以提高批量插入性能
+            // Start transaction to improve batch insert performance
             await thumbDb.run('BEGIN TRANSACTION')
 
             try {
-                // 遍历 tmpThumbDir 目录下的所有文件，并把缩略图文件批量插入到thumbDb数据库
+                // Traverse all files in tmpThumbDir and batch insert thumbnail files into thumbDb
                 const files = await fs.promises.readdir(thumbDir)
 
-                // 使用预编译语句提高插入效率
+                // Use prepared statement to improve insert efficiency
                 const stmt = await thumbDb.prepare(
                     'INSERT INTO files (filename, raw, type, desc) VALUES (?, ?, ?, ?)'
                 )
 
-                // 控制并发数以避免内存占用过高，同时提高机械硬盘的顺序读取效率
+                // Control concurrency to avoid high memory usage and improve sequential read efficiency on HDD
                 const batchSize = 10
                 for (let i = 0; i < files.length; i += batchSize) {
                     const batch = files.slice(i, i + batchSize)
 
-                    // 并行读取一批文件的内容
+                    // Read batch of files in parallel
                     const filePromises = batch.map(async (file) => {
                         const filePath = path.join(thumbDir, file)
                         const fileStat = await fs.promises.stat(filePath)
@@ -1878,7 +1880,7 @@ class AppProc {
 
                     const results = await Promise.all(filePromises)
 
-                    // 批量插入数据库
+                    // Batch insert into database
                     for (const result of results) {
                         if (result !== null) {
                             const [filename, imageData] = result
@@ -1902,17 +1904,17 @@ class AppProc {
         const tinyFileDbPath = req.data?.tinyFileDbPath || ''
         const tinyFilePath = req.data?.tinyFilePath || ''
 
-        // 检查路径参数是否为空
+        // Check if path parameters are empty
         if (!tinyFileDbPath || !tinyFilePath) {
             return resp.err('err param is null')
         }
 
-        // 检查源文件夹是否存在
+        // Check if source folder exists
         if (!fs.existsSync(tinyFilePath)) {
             return resp.err(`err thumb path not exist: ${tinyFilePath}`)
         }
 
-        // 检查源路径是否为文件夹
+        // Check if source path is a folder
         const stats = fs.statSync(tinyFilePath)
         if (!stats.isDirectory()) {
             return resp.err(`err thumb not path: ${tinyFilePath}`)
@@ -1921,7 +1923,7 @@ class AppProc {
         logger.info(`start ${tinyFilePath} to ${tinyFileDbPath}`)
 
         try {
-            // 遍历 tinyFilePath 的第一级目录
+            // Traverse first-level directory of tinyFilePath
             const items = fs.readdirSync(tinyFilePath)
             totalNum = items.length
             for (const item of items) {
@@ -1933,16 +1935,16 @@ class AppProc {
                 const itemStat = fs.statSync(itemPath)
 
                 if (itemStat.isFile()) {
-                    // logger.info(`找到文件: ${itemPath}`)
-                    // 这里可以处理文件
+                    // logger.info(`Found file: ${itemPath}`)
+                    // File processing can be done here
                 } else if (itemStat.isDirectory()) {
                     let thumbDbFilePath = Util.thumbDbPathGet(
                         `${item}.mp4`,
                         Dty.ThumbType.FnameThumb
                     )
                     thumbDbFilePath = path.join(tinyFileDbPath, thumbDbFilePath)
-                    // logger.info(`find dir: ${itemPath} thumbPath: ${thumbDbFilePath}`)
-                    // 这里可以处理子文件夹
+                    // logger.info(`Found dir: ${itemPath} thumbPath: ${thumbDbFilePath}`)
+                    // Subfolder processing can be done here
                     await procOneDir(itemPath, thumbDbFilePath)
                 }
             }
@@ -2072,7 +2074,7 @@ class AppProc {
 
         if (!savePath) {
             const result = await dialog.showSaveDialog(mainWindow, {
-                title: '保存项目',
+                title: 'Save project',
                 defaultPath: prj.name || 'untitled',
                 filters: [
                     { name: 'Project Files', extensions: ['sspj'] },

@@ -1,20 +1,20 @@
 <template>
     <div class="play-ctrl">
-        <!-- 播放/暂停按钮 -->
-        <button class="xc-button btn-noborder" title="播放/暂停" @click="btnclk_toggle_play">
+        <!-- Play/Pause button -->
+        <button class="xc-button btn-noborder" title="Play/Pause" @click="btnclk_toggle_play">
             {{ iconPlayPause }}
         </button>
-        <!-- 文件切换 -->
-        <button class="xc-button btn-noborder" title="上一个文件" @click="changeFile('previous')">
+        <!-- File switch -->
+        <button class="xc-button btn-noborder" title="Previous file" @click="changeFile('previous')">
             ⏮
         </button>
-        <button class="xc-button btn-noborder" title="停止播放" @click="btnclk_stop_play()">
+        <button class="xc-button btn-noborder" title="Stop" @click="btnclk_stop_play()">
             ⏹
         </button>
-        <button class="xc-button btn-noborder" title="下一个文件" @click="changeFile('next')">
+        <button class="xc-button btn-noborder" title="Next file" @click="changeFile('next')">
             ⏭
         </button>
-        <!-- 倍速选择 -->
+        <!-- Speed selection -->
         <select
             v-model="appStore.videoPlayCtrl.playbackRate"
             class="xc-select"
@@ -27,7 +27,7 @@
             <option value="4">4x</option>
             <option value="6">6x</option>
         </select>
-        <!-- 音量控制 -->
+        <!-- Volume control -->
         <button
             class="xc-button btn-noborder"
             :title="appStore.videoPlayCtrl.muted ? t('playCtrl.unmute') : t('playCtrl.mute')"
@@ -45,21 +45,21 @@
             :title="t('playCtrl.volume')"
             @input="changeVolume"
         />
-        <!-- 播放时间 -->
+        <!-- Playback time -->
         <span class="xc-text" style="padding-right: 3px">{{ curTime }}/{{ videoDuration }}</span>
-        <!-- 帧控制播放 -->
-        <button class="xc-button btn-noborder" title="后退一帧" @click="previousFrame">◀️</button>
-        <button class="xc-button btn-noborder" title="前进一帧" @click="nextFrame">▶️</button>
+        <!-- Frame control playback -->
+        <button class="xc-button btn-noborder" title="Previous frame" @click="previousFrame">◀️</button>
+        <button class="xc-button btn-noborder" title="Next frame" @click="nextFrame">▶️</button>
         <span class="xc-text" style="padding-right: 3px; color: darkcyan">{{ frameInfo }}</span>
         <span class="xc-text" style="padding-right: 3px; color: chocolate">{{ frameRate }}</span>
-        <!-- 显示i帧 -->
-        <button class="xc-button btn-noborder" title="显示关键帧" @click="btn_showKeyFrame">
+        <!-- Show I-frame -->
+        <button class="xc-button btn-noborder" title="Show key frame" @click="btn_showKeyFrame">
             🔑
         </button>
         <div v-if="appStore.isProjectMode" class="right-area-ctrl">
             <button
                 class="xc-button btn-noborder"
-                title="设置文件的等级"
+                title="Set file level"
                 @click="btnclk_set_file_level"
             >
                 ⭐
@@ -70,16 +70,16 @@
 
             <button
                 class="xc-button btn-noborder"
-                title="删除当前所选的文件"
+                title="Delete selected files"
                 @click="btnclk_delSltVideos"
             >
                 🗑
             </button>
-            <select v-model="delType" class="xc-select" title="删除方式" @change="changeDelType">
-                <option value="delVideo" title="移动到回收站">🗑</option>
+            <select v-model="delType" class="xc-select" title="Delete method" @change="changeDelType">
+                <option value="delVideo" title="Move to recycle bin">🗑</option>
                 <option
                     value="delVideoAndThumb"
-                    title="移动到回收站，同时删除缩略图"
+                    title="Move to recycle bin and delete thumbnails"
                     :disabled="!(appStore.fileSearchStatus == Dty.Fstatus.Deleted)"
                 >
                     🗑+
@@ -88,7 +88,7 @@
 
             <button
                 class="xc-button btn-noborder"
-                title="显示文件列表"
+                title="Show file list"
                 @click="btnclk_chg_panel(Dty.WorkPanel.List)"
             >
                 🛢️
@@ -96,14 +96,14 @@
             <button
                 v-if="!appStore.isProjectMode"
                 class="xc-button btn-noborder"
-                title="显示文件处理"
+                title="Show file operations"
                 @click="btnclk_chg_panel(Dty.WorkPanel.Operate)"
             >
                 🛠️
             </button>
             <button
                 class="xc-button btn-noborder"
-                title="处理文件标签"
+                title="Edit file tags"
                 @click="btnclk_chg_panel(Dty.WorkPanel.VideoInfo)"
             >
                 🏷️
@@ -123,7 +123,7 @@ import * as Dty from '../../../../bridge/dataTypedef'
 
 const { t } = useI18n()
 
-// 改变播放倍速
+// Change playback speed
 const changePlaybackRate = (): void => {}
 
 // volume control
@@ -211,7 +211,7 @@ function btnclk_stop_play(): void {
     util.stop_play()
 }
 
-// 切换播放/暂停状态
+// Toggle play/pause status
 const btnclk_toggle_play = (): void => {
     if (appStore.curSltVideo == null) {
         util.addToastInfo(t('playCtrl.selectVideoFirst'))
@@ -232,7 +232,7 @@ watch(
     }
 )
 
-// ==================================== 文件等级设置
+// ==================================== File level setting
 const fileLevel = ref(1)
 async function btnclk_set_file_level(): Promise<void> {
     const req = new Dty.FileTagsReq()
@@ -263,9 +263,9 @@ function btn_showKeyFrame(): void {
     appStore.bShowKeyFrameInfo = !appStore.bShowKeyFrameInfo
 }
 
-// ==================================== 文件切换
+// ==================================== File switch
 function changeFile(flag: string): void {
-    // 根据curSltVideo 从appStore的videoList中找到当前视频的索引
+    // Find current video index from appStore's videoList based on curSltVideo
     if (appStore.videoList.length == 0) {
         util.addToastInfo(t('playCtrl.noVideoFiles'))
         return
@@ -359,7 +359,7 @@ function btnclk_delSltVideos(): void {
     display: flex;
     align-items: center;
     background-color: #252526;
-    /* VSCode 侧边栏背景色 */
+    /* VSCode sidebar background color */
 }
 
 .right-area-ctrl {

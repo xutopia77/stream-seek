@@ -10,7 +10,7 @@ class Util {
     }
 
     static getCurTime(): string {
-        // 获取当前的时间的字符串，精确到秒，格式为：YYYY-MM-DD hh:mm:ss
+        // Get current time string, accurate to seconds, format: YYYY-MM-DD hh:mm:ss
         const now = new Date()
         const year = now.getFullYear()
         const month = String(now.getMonth() + 1).padStart(2, '0')

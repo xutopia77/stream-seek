@@ -110,7 +110,7 @@ function previousFrame(): void {
     }
 }
 
-// 防止刚切换过来，videoRef为空，导致没有开始播放，所以等待videoRef不为空后再播放
+// Prevent playback failure when videoRef is null after switching, wait until videoRef is available
 watch(
     () => videoRef.value,
     (newVal) => {
@@ -128,7 +128,7 @@ watch(
     }
 )
 
-// 播放模式，video or thumbnail
+// Playback mode: video or thumbnail
 watch(
     () => appStore.curViewModel,
     (newVal) => {
@@ -175,20 +175,20 @@ watch(
         if (videoRef.value != null) {
             const targetTime = newValue + appStore.videoPlayCtrl.videoStartTime
 
-            // 暂停视频以确保seek操作能够正确执行
+            // Pause video to ensure seek operation executes correctly
             const wasPlaying = !videoRef.value.paused
             if (wasPlaying) {
                 videoRef.value.pause()
             }
 
-            // 设置新的播放时间
+            // Set new playback time
             videoRef.value.currentTime = targetTime
 
             console.log(
                 `seeking to ${targetTime}(start:${appStore.videoPlayCtrl.videoStartTime}), state ${videoRef.value.readyState}, currentTime ${appStore.videoPlayCtrl.curTime}`
             )
 
-            // 创建一个Promise来等待seek完成
+            // Create a Promise to wait for seek completion
             const waitForSeek = new Promise<void>((resolve) => {
                 const onSeeked = (): void => {
                     videoRef.value?.removeEventListener('seeked', onSeeked)
@@ -200,14 +200,14 @@ watch(
                     videoRef.value?.removeEventListener('seeked', onSeeked)
                     videoRef.value?.removeEventListener('error', onError)
                     console.error('Video seek error')
-                    resolve() // 即使出错也resolve，以免无限等待
+                    resolve() // Resolve even on error to avoid infinite wait
                 }
 
                 videoRef.value?.addEventListener('seeked', onSeeked, { once: true })
                 videoRef.value?.addEventListener('error', onError, { once: true })
             })
 
-            // 等待seek完成后再恢复播放（如果原来在播放）
+            // Resume playback after seek completes (if was playing)
             waitForSeek.then(() => {
                 if (wasPlaying && videoRef.value) {
                     videoRef.value.play()
@@ -312,7 +312,7 @@ onUnmounted(() => {
     padding: 0;
     margin: 0;
     object-fit: contain;
-    /* 确保视频适应容器 */
+    /* Ensure video fits container */
 }
 
 .control-container {

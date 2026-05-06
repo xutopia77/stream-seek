@@ -15,7 +15,7 @@ import { useAppStore } from '@renderer/stores/AppStore'
 const appStore = useAppStore()
 import * as DatType from '../../../../bridge/dataTypedef'
 
-// 获取图标
+// Get icon
 const getIcon = (type: DatType.MessageShowType): string => {
     switch (type) {
         case 'success':
@@ -85,7 +85,7 @@ const getIcon = (type: DatType.MessageShowType): string => {
     font-size: small;
 }
 
-/* 进入和离开动画 */
+/* Enter and leave animations */
 .toast-enter-active {
     animation: toast-in 0.3s ease-out forwards;
 }

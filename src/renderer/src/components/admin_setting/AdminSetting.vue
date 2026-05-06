@@ -116,32 +116,32 @@ onMounted(() => {})
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;
-    gap: 12px; /* 减少间距 */
-    overflow: hidden; /* 防止出现滚动条 */
-    box-sizing: border-box; /* 确保padding不增加额外尺寸 */
+    gap: 12px; /* Reduce gap */
+    overflow: hidden; /* Prevent scrollbar */
+    box-sizing: border-box; /* Ensure padding doesn't add extra size */
 }
 
 .setting-card {
     background-color: #2d2d30;
     border: 1px solid #444;
     border-radius: 6px;
-    padding: 12px; /* 减少内边距 */
+    padding: 12px; /* Reduce padding */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    flex-shrink: 0; /* 防止卡片被压缩 */
+    flex-shrink: 0; /* Prevent card from being compressed */
 }
 
 .setting-title {
-    margin: 0 0 10px 0; /* 减少底部边距 */
+    margin: 0 0 10px 0; /* Reduce bottom margin */
     padding-bottom: 6px;
     border-bottom: 1px solid #444;
     color: #ddd;
-    font-size: 15px; /* 稍微减小字体 */
+    font-size: 15px; /* Slightly reduce font size */
     font-weight: 600;
 }
 
 .info-item {
     display: flex;
-    margin-bottom: 6px; /* 减少底部边距 */
+    margin-bottom: 6px; /* Reduce bottom margin */
     align-items: center;
 }
 
@@ -149,13 +149,13 @@ onMounted(() => {})
     display: inline-block;
     width: 80px;
     color: #aaa;
-    font-size: 13px; /* 稍微减小字体 */
-    margin-right: 8px; /* 减少右边距 */
+    font-size: 13px; /* Slightly reduce font size */
+    margin-right: 8px; /* Reduce right margin */
 }
 
 .info-value {
     color: #ccc;
-    font-size: 13px; /* 稍微减小字体 */
+    font-size: 13px; /* Slightly reduce font size */
     word-break: break-all;
     flex: 1;
 }
@@ -181,23 +181,23 @@ onMounted(() => {})
 .option-item {
     display: flex;
     align-items: center;
-    margin-bottom: 10px; /* 减少底部边距 */
+    margin-bottom: 10px; /* Reduce bottom margin */
 }
 
 .option-label {
-    margin-left: 6px; /* 减少左边距 */
+    margin-left: 6px; /* Reduce left margin */
     color: #ccc;
-    font-size: 13px; /* 稍微减小字体 */
+    font-size: 13px; /* Slightly reduce font */
 }
 
 .mode-selector {
     display: flex;
     align-items: center;
-    gap: 8px; /* 减少间距 */
+    gap: 8px; /* Reduce spacing */
 }
 
-/* 针对较长文本进行优化 */
+/* Optimize for longer text */
 .info-value {
-    min-width: 0; /* 允许收缩 */
+    min-width: 0; /* Allow shrinking */
 }
 </style>

@@ -428,7 +428,7 @@ const restoreVideoRecord = (): void => {
     background-color: #1e1e1e;
     color: #d4d4d4;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* 设置超出范围了是不显示，而是出现滚动条 */
+    /* Set overflow to show scrollbar instead of content overflow */
     overflow-x: hidden;
 }
 

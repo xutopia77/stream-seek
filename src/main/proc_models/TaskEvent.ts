@@ -4,20 +4,20 @@ import logger from './Logger'
 import * as Dty from '../../bridge/dataTypedef'
 import appCfg from './AppCfg'
 
-// 定义工作队列请求类型
+// Define work queue request type
 interface WorkQueueRequest {
     cmd: string
-    // 可以根据实际情况添加更多属性
+    // Can add more properties as needed
 }
 
-// 工作队列类
+// Work queue class
 class WorkQueue {
     processing = false
     curReq: WorkQueueRequest | null = null
     resps: Dty.WorkResp[] = []
     status: string = ''
 
-    // 判断队列是否忙碌
+    // Check if queue is busy
     isBusy = (): boolean => {
         return this.curReq !== null
     }
@@ -35,13 +35,13 @@ class WorkQueue {
         // logger.info('======================', str)
         this.status = str
     }
-    // 生成忙碌响应
+    // Generate busy response
     makeBusyResponse = (): Dty.Resp => {
         const resp = new Dty.Resp()
         return resp.err(`busy cur cmd is ${this.curReq?.cmd}`)
     }
 
-    // 添加任务到队列
+    // Add task to queue
     addTask(req: WorkQueueRequest | null): void {
         if (req !== null) {
             if (appCfg.bPrtWorkQueue) {

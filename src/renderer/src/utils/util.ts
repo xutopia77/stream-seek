@@ -4,10 +4,10 @@ let appStore: AppStore
 import * as Dty from '../../../bridge/dataTypedef'
 import { IpcApi } from './ipcApi'
 
-// 创建一个可以在Vue组件中使用的国际化函数
+// Create an internationalization function that can be used in Vue components
 let t: (key: string, values?: Record<string, unknown>) => string = (key: string) => key
 
-// 设置国际化函数，由Vue组件调用
+// Set internationalization function, called by Vue component
 export function setI18nFunction(
     i18nFunction: (key: string, values?: Record<string, unknown>) => string
 ): void {
@@ -66,7 +66,7 @@ function processVideoEvent(videoEvent: Dty.FileEventInfo[][]): void {
     let lastColor = barBaseColor
 
     let eventInTimePoint: Dty.FileEventInfo[] = []
-    // 首先把二维数组中每个数组的最大值取出来，变成一维数组
+    // First extract the max value from each array in the 2D array to form a 1D array
     for (const event of videoEvent) {
         if (event.length === 0) {
             continue
@@ -81,7 +81,7 @@ function processVideoEvent(videoEvent: Dty.FileEventInfo[][]): void {
         eventInTimePoint.push(maxEvent)
     }
 
-    // 去掉eventInTimePoint中面积小的event
+    // Filter out events with small area from eventInTimePoint
     eventInTimePoint = eventInTimePoint.filter((e) => {
         return e.area > 2000
     })
@@ -119,10 +119,10 @@ function processVideoEvent(videoEvent: Dty.FileEventInfo[][]): void {
         }
     }
     colorSegments.push({ startTime: startTime, endTime: Infinity, color: lastColor })
-    // [todo] 事件的数据暂时不处理
+    // [todo] Event data is not processed for now
 }
 
-// 把秒数字转换成为年月日时分秒
+// Convert seconds to year month day hour minute second
 const formatSecond2Time = (timeSec: number): string => {
     const hours = Math.floor(timeSec / 3600)
     const minutes = Math.floor((timeSec % 3600) / 60)
@@ -165,7 +165,7 @@ const formatTime = (time: number): string => {
 }
 
 function splitInfoCorrect(splitInfos: Dty.SplitInfo[], videoDuration: number): void {
-    // 把开始时间，结束时间，颜色确定后，再矫正一些关键信息
+    // Correct start time, end time, color, then correct some key info
     for (let i = 0; i < splitInfos.length; i++) {
         const splitInfo = splitInfos[i]
         splitInfo.currentTime = splitInfo.startTime
@@ -202,21 +202,21 @@ export class PlayReq {
     }
 }
 
-// 封装视频事件监听函数
+// Wrap video event listener function
 function setupVideoEventListeners(videoRef: HTMLVideoElement, bRemoveEvent: boolean = false): void {
-    // 监听视频加载元数据事件，获取视频总时长
+    // Listen for video loaded metadata event, get video total duration
     const onLoadedMetadata = (): void => {
         appStore.videoPlayCtrl.videoStartTime = 0
     }
     videoRef.addEventListener('loadedmetadata', onLoadedMetadata)
 
-    // 监听视频时间更新事件，更新当前播放时间
+    // Listen for video time update event, update current playback time
     const onTimeUpdate = (): void => {
         if (videoRef != null) {
             // if (appStore.videoPlayCtrl.videoStartTime == 0) {
             //   appStore.videoPlayCtrl.videoStartTime = videoRef.currentTime
             // }
-            // 减去起始时间，得到从视频起始点开始的播放时间
+            // Subtract start time to get playback time from video start point
             appStore.videoPlayCtrl.curTime =
                 videoRef.currentTime - appStore.videoPlayCtrl.videoStartTime
         }
@@ -266,7 +266,7 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
     videoRef.load()
 
     setupVideoEventListeners(videoRef, true)
-    // 监听 canplay 事件
+    // Listen for canplay event
     const onCanPlay = (): void => {
         if (videoRef == null) {
             util.addToastErr('video ref null')
@@ -283,7 +283,7 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
         }
         videoRef.play()
         setupVideoEventListeners(videoRef)
-        // 移除监听器，避免重复触发
+        // Remove listener to avoid repeated triggering
         videoRef.removeEventListener('canplay', onCanPlay)
         if (req.playStartTimeSec != null) {
             appStore.barSeekTime = req.playStartTimeSec
@@ -298,7 +298,7 @@ function play_video(videoRef: HTMLVideoElement, req: PlayReq): void {
 }
 
 function toggle_play(videoRef: HTMLVideoElement): void {
-    // 首先判断是否有视频被选中
+    // First check if a video is selected
     if (appStore.curSltVideo == null) {
         return
     }
@@ -315,7 +315,7 @@ function toggle_play(videoRef: HTMLVideoElement): void {
     }
     let p1 = convert_filepath_to_linux_style(videoRef.src)
     let p2 = convert_filepath_to_linux_style(Dty.File.makePlayUrl(appStore.curSltVideo))
-    // 再去掉p1，p2的前缀file:// 或者 file:///
+    // Then remove prefix file:// or file:/// from p1, p2
     if (p1?.startsWith('file:///')) {
         p1 = p1.substring(8)
     } else if (p1?.startsWith('file://')) {
@@ -497,7 +497,7 @@ class Util {
     update_bar_clips = update_bar_clips
     updateKeyframeSplitInfo(frameInfoReq: Dty.FrameInfo): Dty.SplitInfo[] {
         const frameInfo = frameInfoReq.frames
-        // 根据i帧的时间信息，生成bar上的分割信息
+        // Generate split info on bar based on I-frame time info
         const frameSplitInfo: Dty.SplitInfo[] = []
         let lastTime = 0.0
         for (let i = 0; i < frameInfo.length; i++) {
@@ -538,16 +538,16 @@ class Util {
         const timestamp = Date.now()
         const toast = { id, message, type, timestamp }
 
-        // 添加到当前消息和历史消息
+        // Add to current messages and history messages
         appStore.toasts.push(toast)
         appStore.historyToasts.push(toast)
 
-        // 限制历史消息数量，最多保留100条
+        // Limit history message count, keep max 100
         if (appStore.historyToasts.length > 100) {
             appStore.historyToasts.shift()
         }
 
-        // 3秒后自动移除当前显示的消息
+        // Auto remove current displayed message after 3 seconds
         setTimeout(() => {
             // this.removeToast(id)
             const index = appStore.toasts.findIndex((toast) => toast.id === id)
@@ -563,7 +563,7 @@ class Util {
     addToastErr = (message: string): void => {
         Util.addToast(message, 'error')
     }
-    // 清空所有历史消息
+    // Clear all history messages
     clearHistoryToasts(): void {
         appStore.historyToasts = []
     }
@@ -669,7 +669,7 @@ class Util {
             if (response.bOver === false) {
                 util.addToastInfo(`${delStr} ${t('util.processing')}`)
             } else {
-                // util.addToastInfo(`删除成功`)
+                // util.addToastInfo(`Delete success`)
                 appStore.curCheckedVideo.clear()
                 const searchReq = new Dty.FilesReq()
                 searchReq.status.push(appStore.fileSearchStatus)
@@ -987,7 +987,7 @@ class Util {
             }
         }
 
-        // 有条件的清除
+        // Conditional clear
         if (req != null) {
             if (req.clearModel === 'changeToThumbnail') {
                 const tmpDuration = appStore?.curSltVideo?.mediaInfo?.duration
@@ -1002,7 +1002,7 @@ class Util {
             }
         }
 
-        // 全部清除
+        // Clear all
         clear_videoPlayCtrl()
         appStore.bShowKeyFrameInfo = false
         appStore.barSeekTime = 0
@@ -1026,7 +1026,7 @@ class Util {
     }
 
     process_work_response(data: string): void {
-        // const showCtx = `命令:${cmd} 执行结果: ${response.status}`
+        // const showCtx = `Command:${cmd} Result: ${response.status}`
         // if (response.code !== 0) {
         //   util.addToastErr(showCtx)
         // } else {

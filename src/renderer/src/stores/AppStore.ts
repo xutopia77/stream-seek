@@ -6,7 +6,7 @@ export interface ToastMessage {
     id: number
     message: string
     type: Dty.MessageShowType
-    timestamp: number // 添加时间戳
+    timestamp: number // Add timestamp
 }
 
 export type AppStore = {
@@ -19,7 +19,7 @@ export type AppStore = {
     curWorks: Dty.WorkResp[]
 
     // ------ message toast
-    bPageResentMsg: boolean // 打开界面 最近消息
+    bPageResentMsg: boolean // Open page recent messages
     toasts: ToastMessage[]
     historyToasts: ToastMessage[]
     // ------
@@ -53,9 +53,9 @@ export type AppStore = {
     curChkThumb: Set<Dty.File>
     videoList: Dty.File[]
     curCheckedVideo: Set<Dty.File>
-    curSltVideo: Dty.File | null // 在列表中，鼠标选中后，更新
-    curSltVideoName4Play: string // 当前选中视频的名称，在videoPreview中watch然后，更新播放状态使用，其他地方不要用这个变量
-    // curVideoInfo: Dty.File | null // 根据 鼠标选中的视频，从后台获取信息，更新此信息
+    curSltVideo: Dty.File | null // Updated when mouse selects in list
+    curSltVideoName4Play: string // Name of currently selected video, watched in videoPreview to update playback status, don't use elsewhere
+    // curVideoInfo: Dty.File | null // Get info from backend based on selected video
     //   videoSplitInfo: any[]
     bShowKeyFrameInfo: boolean
     barSeekTime: number
@@ -101,7 +101,7 @@ export const useAppStore = defineStore('app', {
             volume: 1, // volume 0-1
             muted: false // mute status
         },
-        curViewModel: 'video', //当前视图模式 video, thumbnail
+        curViewModel: 'video', // Current view mode video, thumbnail
         func_nextFrame: null,
         func_prevFrame: null,
         func_get_ele_video: null,
@@ -116,21 +116,21 @@ export const useAppStore = defineStore('app', {
         thumbTotalNum: 0,
         thumbList: [],
         curSltThumb: null,
-        curChkThumb: new Set<Dty.File>(), // 当前选中的缩略图文件列表
+        curChkThumb: new Set<Dty.File>(), // Currently selected thumbnail file list
         videoList: [],
-        curCheckedVideo: new Set<Dty.File>(), // 当前选中的视频列表
-        curSltVideo: null, // 当前选中的视频
-        curSltVideoName4Play: '', // 当前选中视频的名称，在videoPreview中watch然后，更新播放状态使用，其他地方不要用这个变量
-        // curVideoInfo: null, // 当前选中的视频信息
-        // ------ 视频切分信息
+        curCheckedVideo: new Set<Dty.File>(), // Currently selected video list
+        curSltVideo: null, // Currently selected video
+        curSltVideoName4Play: '', // Currently selected video name, used in videoPreview watch to update play status, do not use this variable elsewhere
+        // curVideoInfo: null, // Currently selected video info
+        // ------ Video split info
         // videoSplitInfo: [],
-        bShowKeyFrameInfo: false, // 是否显示关键帧信息
-        barSeekTime: 0, // 进度条拖动时间
+        bShowKeyFrameInfo: false, // Whether to show keyframe info
+        barSeekTime: 0, // Progress bar drag time
         // document
         documentTitle: '',
         // thumbnail
-        // thumbnailImages: [], // 缩略图列表
-        thumbSeekTime: 0, // 缩略图拖动时间
+        // thumbnailImages: [], // Thumbnail list
+        thumbSeekTime: 0, // Thumbnail drag time
         thumbnailCardSize: 4, // default 4 columns per row
         // admin
         // queryInfo: null,

@@ -1,6 +1,6 @@
 <template>
     <div class="progress-bar">
-        <!-- 合并后的进度条 -->
+        <!-- Merged progress bar -->
         <div
             ref="mergedProgressBar"
             class="merged-progress-bar"
@@ -53,7 +53,7 @@ const { t } = useI18n()
 
 const mergedProgressBar = ref<HTMLElement | null>(null)
 const isDragging = ref<boolean>(false)
-const isMouseOver = ref<boolean>(false) // 新增：记录鼠标是否在进度条上
+const isMouseOver = ref<boolean>(false) // New: record whether mouse is over progress bar
 
 const playBarPercent = computed(() => {
     if (appStore.curSltVideo?.mediaInfo?.duration == null) {
@@ -65,7 +65,7 @@ const playBarPercent = computed(() => {
     return `${(appStore.videoPlayCtrl.curTime / appStore.curSltVideo.mediaInfo.duration) * 100}%`
 })
 
-// 拖动进度条改变播放位置
+// Drag progress bar to change playback position
 const seekVideo = (time: number): void => {
     console.log('seekVideo', time)
     appStore.barSeekTime = time
@@ -96,7 +96,7 @@ let videoSplitInfo = computed(() => {
     return resp
 })
 
-// 生成进度条片段数据
+// Generate progress bar segment data
 const barClips = ref<Dty.BarClip[]>([])
 watch(
     [
@@ -148,7 +148,7 @@ watch(
     }
 )
 
-// tooltip 相关
+// tooltip related
 const showTip = ref<boolean>(false)
 const currentClip = ref<Dty.BarClip>()
 
@@ -168,7 +168,7 @@ const handleMouseOut = (event: MouseEvent, clip: Dty.BarClip): void => {
     }
 }
 
-// 处理进度条鼠标按下事件
+// Handle progress bar mouse down event
 const onProgressBarMouseDown = (event: MouseEvent): void => {
     if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return
@@ -182,7 +182,7 @@ const onProgressBarMouseDown = (event: MouseEvent): void => {
     }
 }
 
-// // 处理进度条鼠标移动事件
+// // Handle progress bar mouse move event
 // const onProgressBarMouseMove = (event: MouseEvent): void => {
 //   if (appStore.curSltVideo?.mediaInfo?.duration == null) {
 //     return
@@ -197,30 +197,30 @@ const onProgressBarMouseDown = (event: MouseEvent): void => {
 //   }
 // }
 
-// // 处理进度条鼠标抬起事件
+// // Handle progress bar mouse up event
 // const onProgressBarMouseUp = (): void => {
 //   isDragging.value = false
 // }
 
-// // 处理进度条鼠标进入事件
+// // Handle progress bar mouse enter event
 // const onProgressBarMouseEnter = (): void => {
 //   isMouseOver.value = true
-//   mergedProgressBar.value?.focus() // 使进度条获取焦点
+//   mergedProgressBar.value?.focus() // Give focus to progress bar
 // }
 
-// // 处理进度条鼠标离开事件
+// // Handle progress bar mouse leave event
 // const onProgressBarMouseLeave = (): void => {
 //   isDragging.value = false
 //   isMouseOver.value = false
 // }
 
-// 处理进度条键盘按下事件
+// Handle progress bar key down event
 const onProgressBarKeyDown = (event: KeyboardEvent): void => {
     if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return
     }
     if (isMouseOver.value) {
-        const step = 1 // 每次移动的秒数
+        const step = 1 // Seconds to move each time
         let newTime = appStore.videoPlayCtrl.curTime
         if (event.key === 'ArrowLeft') {
             newTime = Math.max(0, newTime - step)
@@ -233,7 +233,7 @@ const onProgressBarKeyDown = (event: KeyboardEvent): void => {
     }
 }
 
-// 组件挂载时生成进度条片段数据
+// Generate progress bar segment data when component is mounted
 onMounted(() => {
     if (appStore.curSltVideo?.mediaInfo?.duration == null) {
         return

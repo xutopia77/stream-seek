@@ -25,9 +25,9 @@ import { IpcApi } from '../utils/ipcApi'
 import * as Dty from '../../../bridge/dataTypedef'
 import router from '../router/router'
 
-// 设置util.ts中的国际化函数
+// Set i18n function in util.ts
 setI18nFunction(t)
-// 启动一个定时器，周期性trigger_event
+// Start timer to periodically trigger events
 function startTimer(): void {
     setInterval(() => {
         const req: Dty.Req = {
@@ -51,10 +51,10 @@ watch(
             return
         }
         document.title = 'StreamSeek' + '  ' + docTitle
-        // // 获取当前时间毫秒
+        // // Get current time in milliseconds
         // const now = new Date()
         // const nowStr = now.toLocaleString()
-        // // 获取当前时间的毫秒数
+        // // Get current time in milliseconds
         // const nowMs = now.getTime()
         // console.log('document.title', nowStr, nowMs, document.title)
     }

@@ -42,7 +42,7 @@ import { useAppStore } from '../../stores/AppStore'
 const appStore = useAppStore()
 const { t } = useI18n()
 
-// 明确 ref 变量的类型
+// Explicitly define ref variable types
 const startDate = ref<string>('2025-03-23')
 const startTime = ref<string>('00:00')
 const endDate = ref<string>('2025-03-25')
@@ -62,7 +62,7 @@ const displayOption = computed<string>({
     }
 })
 
-// 定义 handleQuery 函数的返回值类型
+// Define return type for handleQuery function
 const handleQuery = async (): Promise<void> => {}
 </script>
 

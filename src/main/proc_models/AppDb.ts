@@ -5,9 +5,9 @@ import { open, Database } from 'sqlite'
 
 class FileSearchParam {
     query: string = ``
-    countQuery: string = `` // 用于统计总记录数
+    countQuery: string = `` // Used to count total records
     params: unknown[] = []
-    countParams: unknown[] = [] // 统计总记录数的参数
+    countParams: unknown[] = [] // Parameters for counting total records
 }
 
 class AppDb {
@@ -21,10 +21,10 @@ class AppDb {
         if (dbFolderPath === '') return new Dty.Resp().err('dbFolderPath is empty')
         const resp = new Dty.Resp()
         try {
-            // 检查文件夹是否存在，不存在则创建
+            // Check if folder exists, create if not exists
             await import('fs/promises').then((fs) => fs.mkdir(dbFolderPath, { recursive: true }))
             const dbFilePath = `${dbFolderPath}/app.db`
-            // 打开或创建 SQLite 数据库
+            // Open or create SQLite database
             const db: Database = await open({
                 filename: dbFilePath,
                 driver: sqlite3.Database
@@ -244,7 +244,7 @@ class AppDb {
         return resp
     }
 
-    // 删除视频信息
+    // Delete video info
     async file_delete(video: Pick<Dty.FileModel, 'id'>): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
         try {
@@ -266,7 +266,7 @@ class AppDb {
         return resp
     }
 
-    // 修改视频信息
+    // Update video info
     async fileUpdate(fInfo: Dty.File): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
         try {
@@ -350,7 +350,7 @@ class AppDb {
                 infoHash = Dty.FileModel.makeInfoHash(fInfo.repo, fInfo.path, fInfo.status)
             } else {
                 updateFields.push('updated_at =?')
-                // 获取当前时间，这种形式 2025-07-18 15:14:41
+                // Get current time in format 2025-07-18 15:14:41
                 sqlParams.push(curTimeStr)
                 updateFields.push('deleted_at =?')
                 sqlParams.push(null)
@@ -377,9 +377,9 @@ class AppDb {
 
     private make_file_search_param(tblName: string, req: Dty.FilesReq | null): FileSearchParam {
         let query = `SELECT * FROM ${tblName}`
-        let countQuery = `SELECT COUNT(*) as total FROM ${tblName}` // 用于统计总记录数
+        let countQuery = `SELECT COUNT(*) as total FROM ${tblName}` // Used to count total records
         const params: unknown[] = []
-        const countParams: unknown[] = [] // 统计总记录数的参数
+        const countParams: unknown[] = [] // Parameters for counting total records
         if (req != null) {
             const conditionsParam: string[] = []
             const countConditionsParam: string[] = []
@@ -459,7 +459,7 @@ class AppDb {
                 countParams.push(...req.type)
             }
 
-            // 处理标签过滤条件
+            // Handle tag filter conditions
             if (req.tags.length > 0) {
                 const noScoreTag = 'sys_no_score'
                 const hasNoScoreFilter = req.tags.includes(noScoreTag)
@@ -546,7 +546,7 @@ class AppDb {
             const countQuery = searchParam.countQuery
             const countParams: unknown[] = searchParam.countParams
             if (!this.db) throw new Error('Database not initialized')
-            // 执行统计总记录数的查询
+            // Execute query to count total records
             const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
             const total = countResult?.total || 0
 
@@ -573,7 +573,7 @@ class AppDb {
 
             if (!this.db) throw new Error('Database not initialized')
 
-            // 执行统计总记录数的查询
+            // Execute query to count total records
             const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
             const total = countResult?.total || 0
 
@@ -602,7 +602,7 @@ class AppDb {
                 fileInfo.repo = fileModel.repo
                 fileInfo.description = fileModel.description
 
-                // 加载文件关联的标签
+                // Load tags associated with file
                 const tagQuery = `
                     SELECT t.* FROM ${this.tbl_tags} t
                     INNER JOIN ${this.tbl_fileTag} ft ON t.id = ft.tagId
@@ -641,13 +641,13 @@ class AppDb {
             const params: unknown[] = searchParam.params
             const countParams: unknown[] = searchParam.countParams
             // logger.info(`search query:${query}`, params)
-            // 执行统计总记录数的查询
+            // Execute query to count total records
             const countResult = await this.db.get<{ total: number }>(countQuery, countParams)
             const total = countResult?.total || 0
 
-            // 执行主查询
+            // Execute main query
             const fileViewModels = await this.db.all<Dty.FileViewModel[]>(query, params)
-            // 按文件 ID 分组标签信息
+            // Group tag info by file ID
             const fileMap = new Map<number, Dty.File>()
             for (const fileViewModel of fileViewModels) {
                 if (fileViewModel.id === undefined) {
@@ -948,10 +948,10 @@ class AppDb {
     }
 
     /**
-     * 根据文件ID删除文件记录
-     * @param fileId 文件ID
-     * @param softDelete 是否软删除（仅更新状态为Deleted），默认为false（硬删除）
-     * @returns 删除结果
+     * Delete file record by file ID
+     * @param fileId File ID
+     * @param softDelete Whether to soft delete (only update status to Deleted), default is false (hard delete)
+     * @returns Delete result
      */
     async fileDeleteById(fileId: number): Promise<Dty.Resp> {
         const resp = new Dty.Resp()
@@ -959,9 +959,9 @@ class AppDb {
         try {
             if (!this.db) throw new Error('Database not initialized')
 
-            // 硬删除：删除关联的标签记录，然后删除文件记录
+            // Hard delete: delete associated tag records, then delete file record
 
-            // // 首先检查文件是否存在
+            // // First check if file exists
             // const existingFile = await this.db.get(
             //     `SELECT id, path FROM ${this.tbl_files} WHERE id = ?`,
             //     [fileId]
@@ -970,13 +970,13 @@ class AppDb {
             //     return resp.err('File not found')
             // }
 
-            // 开始事务以确保数据一致性
+            // Start transaction to ensure data consistency
             await this.db.run('BEGIN TRANSACTION')
 
             try {
-                // 删除关联的标签记录
+                // Delete associated tag records
                 await this.db.run(`DELETE FROM ${this.tbl_fileTag} WHERE fileId = ?`, [fileId])
-                // 删除文件记录
+                // Delete file record
                 const result = await this.db.run(`DELETE FROM ${this.tbl_files} WHERE id = ?`, [
                     fileId
                 ])

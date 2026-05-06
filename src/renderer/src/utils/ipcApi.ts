@@ -1,4 +1,4 @@
-// // 定义 Window 类型的扩展，解决 'electron' 属性不存在的问题
+// // Define Window type extension to resolve 'electron' property does not exist issue
 // declare global {
 //   interface Window {
 //     electron: {
@@ -14,7 +14,7 @@ import * as Dty from '../../../bridge/dataTypedef'
 
 export class IpcApi {
     static cseq: number = 0
-    // 为函数添加返回类型注解
+    // Add return type annotation for function
     static async trigger_event<T = string, R = string>(req: Dty.Req<T>): Promise<Dty.Resp<R>> {
         const sendReq: Dty.Req<string> = {
             ...req,
@@ -28,10 +28,10 @@ export class IpcApi {
         try {
             const response = await window.electron.ipcRenderer.invoke('render_event', reqStr)
             return {
-                ...response, // 1. 展开response对象的所有属性
-                data: response.data // 2. 条件判断response.data是否存在
-                    ? (JSON.parse(response.data) as R) // 3. 存在则解析JSON并类型断言为R
-                    : undefined // 4. 不存在则设为undefined
+                ...response, // 1. Spread all properties of response object
+                data: response.data // 2. Check if response.data exists
+                    ? (JSON.parse(response.data) as R) // 3. If exists, parse JSON and type assert as R
+                    : undefined // 4. If not exists, set to undefined
             }
         } catch (error) {
             console.error('err:', error)
@@ -41,7 +41,7 @@ export class IpcApi {
     }
 }
 
-// 下面注释掉的代码在原文件中可能是开发过程中的不同尝试，这里也保留并转换为 TypeScript 风格
+// The commented code below may be different attempts during development, preserved and converted to TypeScript style
 // export class IpcApi {
 //   async trigger_event(event: string, ...args: any[]): Promise<void> {
 //     console.log(`Triggering event: ${event}`);
@@ -57,18 +57,18 @@ export class IpcApi {
 //         const files = input.files;
 //         if (files && files.length > 0) {
 //           const folderPath = files[0].webkitRelativePath.split('/')[0];
-//           console.log('选择的文件夹路径:', folderPath);
-//           // 发送 open-folder 事件到主进程
-//           window.electron.ipcRenderer.send('render_event', folderPath);
-//           // 接收后端返回的信息
-//           const fileInfo = await window.electron.ipcRenderer.invoke('render_event', folderPath);
-//           console.log('文件夹中的文件信息:', fileInfo);
+//           console.log('Selected folder path:', folderPath);
+          // Send open-folder event to main process
+          window.electron.ipcRenderer.send('render_event', folderPath);
+          // Receive information returned from backend
+          const fileInfo = await window.electron.ipcRenderer.invoke('render_event', folderPath);
+          console.log('File info in folder:', fileInfo);
 //         }
 //       });
 
 //       input.click();
 //     } catch (error) {
-//       console.error('打开文件夹时出错:', error);
+//       console.error('Error opening folder:', error);
 //     }
 //   }
 // }
@@ -88,14 +88,14 @@ export class IpcApi {
 
 //       // if (!result.canceled) {
 //       //   const folderPath = result.filePaths[0];
-//       //   console.log('选择的文件夹路径:', folderPath);
-//       //   // 发送 open-folder 事件到主进程
-//       //   window.electron.ipcRenderer.send('render_event', folderPath);
-//       //   // const fileInfo = await ipcRenderer.invoke('render_event', folderPath);
-//       //   // console.log('文件夹中的文件信息:', fileInfo);
+//       //   console.log('Selected folder path:', folderPath);
+        //   // Send open-folder event to main process
+        //   window.electron.ipcRenderer.send('render_event', folderPath);
+        //   // const fileInfo = await ipcRenderer.invoke('render_event', folderPath);
+        //   // console.log('File info in folder:', fileInfo);
 //       // }
 //     } catch (error) {
-//       console.error('打开文件夹时出错:', error);
+//       console.error('Error opening folder:', error);
 //     }
 //   }
 // }

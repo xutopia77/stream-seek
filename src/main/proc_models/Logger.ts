@@ -5,11 +5,11 @@ class Logger {
     make_log_file_path = (): string => {
         return path.join(this.log_dir, `app.log`)
     }
-    // 获取调用栈信息中的文件名和行号
+    // Get caller info from call stack
     // getCallerInfo() {
     //   const error = new Error();
     //   const stackLines = error.stack?.split('\n');
-    //   // 通常第 3 行是调用日志方法的位置
+    //   // Usually line 3 is where the log method was called
     //   const callerLine = stackLines?.[3]?.trim();
     //   const match = callerLine?.match(/at\s+(.*)\s+\((.*):(\d+):(\d+)\)/);
     //   if (match) {
@@ -20,7 +20,7 @@ class Logger {
     //   return 'unknown';
     // }
 
-    // 生成格式化时间戳
+    // Generate formatted timestamp
     getTimestamp(): string {
         const now = new Date()
         const year = now.getFullYear()
@@ -33,7 +33,7 @@ class Logger {
         return `${year}-${month}-${day} ${hour}:${minute}:${second}.${millisecond}`
     }
 
-    // 封装 console.log 方法
+    // Wrap console.log method
     log(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         // const callerInfo = this.getCallerInfo();
@@ -44,7 +44,7 @@ class Logger {
         return `${args.join(' ')}`
     }
 
-    // 封装 console.info 方法
+    // Wrap console.info method
     info(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         console.info(`[I][${timestamp}]`, ...args)
@@ -53,7 +53,7 @@ class Logger {
         return `${args.join(' ')}`
     }
 
-    // 封装 console.warn 方法
+    // Wrap console.warn method
     warn(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         console.warn(`[W][${timestamp}]`, ...args)
@@ -62,7 +62,7 @@ class Logger {
         return `${args.join(' ')}`
     }
 
-    // 封装 console.error 方法
+    // Wrap console.error method
     error(...args: unknown[]): string {
         const timestamp = this.getTimestamp()
         console.error(`[E][${timestamp}]`, ...args)

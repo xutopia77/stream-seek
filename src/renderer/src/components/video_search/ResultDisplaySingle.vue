@@ -17,7 +17,7 @@ import { onMounted, ref } from 'vue'
 import ProgressBar from './ProgressBar.vue'
 import '@renderer/assets/common.css'
 
-// 定义 Clip 类型
+// Define Clip type
 interface Clip {
     start: string
     end: string
@@ -27,7 +27,7 @@ interface Clip {
     color: string
 }
 
-// 定义 DateLabel 类型
+// Define DateLabel type
 interface DateLabel {
     percent: number
     date: string
@@ -38,7 +38,7 @@ type GroupedClips = Record<string, Clip[]>
 const filteredClips = ref<Clip[]>([])
 const dateLabels = ref<DateLabel[]>([])
 
-// 修改为分组后的数据结构
+// Modified to grouped data structure
 const allClips = ref<GroupedClips>({
     '2025-03-23': [
         { start: '09:00', end: '09:30', tip: 'tip01', percent: 0, width: 0, color: '' },
@@ -56,14 +56,14 @@ const allClips = ref<GroupedClips>({
 })
 
 /**
- * 计算录像片段在时间轴上的位置和宽度
- * @param {Object} clip - 录像片段对象
- * @param {number} totalWidth - 时间轴的总宽度（毫秒）
- * @param {number} start - 时间轴的起始时间（毫秒）
- * @returns {Object} - 包含位置和宽度的对象
+ * Calculate the position and width of a video clip on the timeline
+ * @param {Object} clip - Video clip object
+ * @param {number} totalWidth - Total width of the timeline (milliseconds)
+ * @param {number} start - Start time of the timeline (milliseconds)
+ * @returns {Object} - Object containing position and width
  */
 const getLeftAndWidth = (
-    clip: Clip & { date: string }, // 添加 date 属性
+    clip: Clip & { date: string }, // Add date property
     totalWidth: number,
     start: number
 ): { percent: number; width: number } => {
@@ -75,28 +75,28 @@ const getLeftAndWidth = (
 }
 
 function updateClip(): void {
-    // 合并所有分组的录像片段，并添加日期信息
+    // Merge all grouped video clips and add date information
     const allClipsArray = Object.entries(allClips.value).flatMap(([date, clips]) => {
         return clips.map((clip) => ({ ...clip, date }))
     })
-    // 根据开始和结束时间过滤所有录像片段
+    // Filter all video clips by start and end time
     const filtered = allClipsArray
 
-    // 定义一组颜色，用于为每个录像片段分配不同的颜色
+    // Define a set of colors to assign different colors to each video clip
     const colors = ['#FF5733', '#33FF57', '#5733FF', '#FF33E0', '#33E0FF']
-    // 颜色索引，用于循环选择颜色
+    // Color index for cycling through colors
     let colorIndex = 0
 
     const timeStrStart = '2025-03-23'
     const timeStrEnd = '2025-03-25'
     const startDateTime = new Date(`${timeStrStart}T00:00`)
     const endDateTime = new Date(`${timeStrEnd}T23:59`)
-    // 计算单时间轴的总宽度
+    // Calculate total width of single timeline
     const totalWidth =
         86400000 * Math.ceil((endDateTime.getTime() - startDateTime.getTime()) / 86400000)
-    // 用于存储日期标签的对象
+    // Object to store date labels
     const dateLabelsObj: Record<string, DateLabel> = {}
-    // 为过滤后的片段添加样式信息
+    // Add style information to filtered clips
     const clipsWithStyles = filtered.map((clip) => {
         const { percent, width } = getLeftAndWidth(clip, totalWidth, startDateTime.getTime())
         const color = colors[colorIndex % colors.length]
@@ -107,8 +107,8 @@ function updateClip(): void {
         }
         return { ...clip, percent, width, color }
     })
-    filteredClips.value = clipsWithStyles // 更新过滤后的片段数据
-    dateLabels.value = Object.values(dateLabelsObj) // 更新日期标签数据
+    filteredClips.value = clipsWithStyles // Update filtered clip data
+    dateLabels.value = Object.values(dateLabelsObj) // Update date label data
 }
 
 onMounted(() => {

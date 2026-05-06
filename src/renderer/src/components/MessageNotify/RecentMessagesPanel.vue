@@ -42,7 +42,7 @@ import * as DatType from '../../../../bridge/dataTypedef'
 const { t } = useI18n()
 const visible = computed(() => appStore.bPageResentMsg)
 
-// 计算最近5条消息（从历史消息中获取）
+// Get latest 5 messages (from history)
 const recentMessages = computed(() => {
     if (appStore.historyToasts == null) {
         return []
@@ -50,12 +50,12 @@ const recentMessages = computed(() => {
     return appStore.historyToasts.slice(-5).reverse()
 })
 
-// 清空所有历史消息
+// Clear all history messages
 function btn_clear_all_msg(): void {
     Utils.clearHistoryToasts()
 }
 
-// 获取消息图标
+// Get message icon
 const getIcon = (type: DatType.MessageShowType): string => {
     switch (type) {
         case 'success':
@@ -71,7 +71,7 @@ const getIcon = (type: DatType.MessageShowType): string => {
     }
 }
 
-// 格式化时间
+// Format time
 const formatTime = (timestamp: number): string => {
     const date = new Date(timestamp)
     const now = new Date()
@@ -108,7 +108,7 @@ const formatTime = (timestamp: number): string => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px; /* 减少内边距 */
+    padding: 8px 12px; /* Reduce padding */
     border-bottom: 1px solid var(--border-color, #444);
     background-color: var(--header-bg-color, #3c3c3c);
     border-radius: 8px 8px 0 0;
@@ -116,28 +116,28 @@ const formatTime = (timestamp: number): string => {
 
 .panel-title {
     margin: 0;
-    font-size: 13px; /* 减小字体大小 */
+    font-size: 13px; /* Reduce font size */
     font-weight: 600;
     color: var(--text-color, #ffffff);
 }
 
 .header-actions {
     display: flex;
-    gap: 6px; /* 减少按钮间距 */
+    gap: 6px; /* Reduce button spacing */
 }
 
 .message-list {
     max-height: 300px;
     overflow-y: auto;
-    padding: 3px 0; /* 减少内边距 */
+    padding: 3px 0; /* Reduce padding */
 }
 
 .message-item {
     display: flex;
-    padding: 6px 12px; /* 减少内边距 */
+    padding: 6px 12px; /* Reduce padding */
     border-bottom: 1px solid var(--border-color, #444);
     transition: background-color 0.2s ease;
-    min-height: auto; /* 确保高度由内容决定 */
+    min-height: auto; /* Ensure height determined by content */
 }
 
 .message-item:hover {
@@ -166,8 +166,8 @@ const formatTime = (timestamp: number): string => {
 }
 
 .message-icon {
-    font-size: 14px; /* 减小图标大小 */
-    margin-right: 8px; /* 减少右边距 */
+    font-size: 14px; /* Reduce icon size */
+    margin-right: 8px; /* Reduce right margin */
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -181,23 +181,23 @@ const formatTime = (timestamp: number): string => {
 
 .message-text {
     display: block;
-    margin-bottom: 3px; /* 减少底部边距 */
+    margin-bottom: 3px; /* Reduce bottom margin */
     color: var(--text-color, #ffffff);
     word-break: break-word;
-    font-size: 12px; /* 减小字体大小 */
+    font-size: 12px; /* Reduce font size */
 }
 
 .message-time {
-    font-size: 10px; /* 减小时间标签字体大小 */
+    font-size: 10px; /* Reduce time label font size */
     color: var(--muted-text-color, #aaa);
     align-self: flex-end;
 }
 
 .no-messages {
-    padding: 20px 12px; /* 减少内边距 */
+    padding: 20px 12px; /* Reduce padding */
     text-align: center;
     color: var(--muted-text-color, #aaa);
     font-style: italic;
-    font-size: 12px; /* 减小字体大小 */
+    font-size: 12px; /* Reduce font size */
 }
 </style>
