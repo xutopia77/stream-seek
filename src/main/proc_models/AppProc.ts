@@ -7,7 +7,7 @@ import recordsProc from './RecordsProcess.js'
 import mp4Parser from './Mp4Parser.js'
 import * as Dty from '../../bridge/dataTypedef'
 import appCfg from './AppCfg.js'
-import { workQueue } from './TaskEvent'
+import { taskManager } from './TaskEvent'
 import { Util } from './Utils.js'
 import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
@@ -15,9 +15,9 @@ import { dialog, app } from 'electron'
 
 function logStatusRespReturn<T>(resp: Dty.Resp<T>): Dty.Resp<T> {
     if (resp.code === 0) {
-        workQueue.statusSet(logger.info(resp.status))
+        taskManager.statusSet(logger.info(resp.status))
     } else {
-        workQueue.statusSet(logger.error(resp.status))
+        taskManager.statusSet(logger.error(resp.status))
     }
     return resp
 }
@@ -77,7 +77,7 @@ export class TraversalFolder {
         const resp: Dty.Resp = new Dty.Resp()
 
         this.status.fileNum++
-        workQueue.statusSet(`traversal file count: ${this.status.fileNum}`)
+        taskManager.statusSet(`traversal file count: ${this.status.fileNum}`)
         const fileTimeInfo = Dty.FileTools.miFilenameParse(fName)
         if (fileTimeInfo == null) {
             this.status.fileErrNum++
@@ -447,8 +447,8 @@ class AppProc {
         const resp = new Dty.Resp<Dty.HeartBeat>()
         const respData: Dty.HeartBeat = new Dty.HeartBeat()
         respData.time = Util.getCurTime()
-        respData.appStatus = workQueue.status
-        respData.processing = workQueue.isBusy()
+        respData.appStatus = taskManager.getStatus()
+        respData.processing = taskManager.isBusy()
         resp.data = respData
         return resp
     }
@@ -460,7 +460,7 @@ class AppProc {
         if (!tagResp.isSuccess()) {
             return logStatusRespReturn(resp.err(`tag search err: ${tagResp.status}`))
         }
-        workQueue.statusSet(`start set file tags len= ${req.data?.fileTags.length}`)
+        taskManager.statusSet(`start set file tags len= ${req.data?.fileTags.length}`)
         let tags = tagResp.data?.tags ?? []
         for (const item of req.data?.fileTags ?? []) {
             // find tag is in db
@@ -499,11 +499,11 @@ class AppProc {
             }
             const respDel = await appDb.file_tag_delete_all(fileTag.fileId)
             if (!respDel.isSuccess()) {
-                workQueue.statusSet(logger.error(`delete file tag err: ${respDel.status}`))
+                taskManager.statusSet(logger.error(`delete file tag err: ${respDel.status}`))
                 resp.err('delete file tags error')
             }
             if (item.tagName == Dty.tagNoneDefName) {
-                workQueue.statusSet(
+                taskManager.statusSet(
                     logger.info(
                         `file tag delete success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
                     )
@@ -511,10 +511,10 @@ class AppProc {
             } else {
                 const respUpdate = await appDb.file_tag_insert(fileTag)
                 if (!respUpdate.isSuccess()) {
-                    workQueue.statusSet(logger.error(`insert file tag err: ${respUpdate.status}`))
+                    taskManager.statusSet(logger.error(`insert file tag err: ${respUpdate.status}`))
                     resp.err('insert file tags error')
                 } else {
-                    workQueue.statusSet(
+                    taskManager.statusSet(
                         logger.info(
                             `insert file tag success: fId:${item.fileId},tagId:${fileTag.tagId},tagName:${item.tagName}`
                         )
@@ -522,7 +522,7 @@ class AppProc {
                 }
             }
         }
-        workQueue.statusSet(
+        taskManager.statusSet(
             logger.info(
                 `set file tags success:  ${req.data?.fileTags != null && req.data?.fileTags?.length > 0 ? 'tag name : ' + req.data?.fileTags[0].tagName : 'no tag'}`
             )
@@ -772,12 +772,12 @@ class AppProc {
                     if (respThumb.code == Dty.RespCode.FileExist) {
                         continue
                     }
-                    workQueue.statusSet(
+                    taskManager.statusSet(
                         logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
                     )
                     continue
                 } else {
-                    workQueue.statusSet(
+                    taskManager.statusSet(
                         logger.info(
                             `${count}/${searchRe.data?.total} gen thumbnail ${respThumb.status} num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} s, ${fileInfo.path}`
                         )
@@ -799,12 +799,12 @@ class AppProc {
                     if (respThumb.code == Dty.RespCode.FileExist) {
                         continue
                     }
-                    workQueue.statusSet(
+                    taskManager.statusSet(
                         logger.error('gen thumbnail error:', fileInfo.path, respThumb.status)
                     )
                     continue
                 } else {
-                    workQueue.statusSet(
+                    taskManager.statusSet(
                         logger.info(
                             `${count}/${searchRe.data?.total} gen thumbnail ${respThumb.status} num=${respThumb.data?.length},rate=${fileInfo.mediaInfo?.bit_rate},duration=${fileInfo.duration} s,coast ${duration} s, ${fileInfo.path}`
                         )
@@ -891,7 +891,7 @@ class AppProc {
                             logger.error(`update file error: ${updateResp.status}`)
                             continue
                         }
-                        workQueue.statusSet(
+                        taskManager.statusSet(
                             logger.info(
                                 `${fileCnt}/${fileList.length} group file success: ${fileInfo.path}`
                             )
@@ -1017,7 +1017,7 @@ class AppProc {
 
             //  save prj info
             if (bNeedSavePrjInfo) {
-                workQueue.statusSet(logger.info(`save prj info start`))
+                taskManager.statusSet(logger.info(`save prj info start`))
                 const prjInfo = req.data.prj
                 if (prjInfo == null) {
                     return logStatusRespReturn(resp.err('prjInfo is null,err'))
@@ -1027,19 +1027,19 @@ class AppProc {
                     return logStatusRespReturn(resp.err(`save prj info error ${saveResp.status}`))
                 }
                 resp.data.prj = prjInfo
-                workQueue.statusSet(logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`))
+                taskManager.statusSet(logger.info(`save prj info ${saveResp.status} ${prjInfo.path}`))
             }
 
             // traversal folder , check db
             if (bNeedClassifyFile) {
-                workQueue.statusSet(logger.log('classify file start'))
+                taskManager.statusSet(logger.log('classify file start'))
                 const classifyResp = await this.classifyFileStart(req.data.prj.dataRepo)
                 if (!classifyResp.isSuccess()) {
                     return logStatusRespReturn(
                         resp.err(`classify file error ${classifyResp.status}`)
                     )
                 }
-                workQueue.statusSet(logger.log('classify file ', classifyResp.status))
+                taskManager.statusSet(logger.log('classify file ', classifyResp.status))
             }
 
             // gen thumbnail
@@ -1053,7 +1053,7 @@ class AppProc {
             }
         }
 
-        workQueue.statusSet('sync work success')
+        taskManager.statusSet('sync work success')
         const workResp: Dty.WorkResp<Dty.Resp<Dty.SyncPrjResp>> = { cmd: req.cmd, data: resp }
         Util.notifyRender(JSON.stringify(workResp))
         return resp
@@ -1419,7 +1419,7 @@ class AppProc {
             return logStatusRespReturn(resp.err('file is null'))
         }
 
-        workQueue.statusSet(logger.info(`delete thumb start`))
+        taskManager.statusSet(logger.info(`delete thumb start`))
 
         if (req.data.type == 'destroy') {
             for (const item of req.data.files) {
@@ -1427,7 +1427,7 @@ class AppProc {
                 searchReq.status = []
                 const searchResp = await appDb.fileViewSearch(searchReq)
                 if (searchResp.code !== 0 || searchResp.data?.files.length === 0) {
-                    workQueue.statusSet(
+                    taskManager.statusSet(
                         logger.error(
                             `thumb del err: ${item.repo} ${item.path}, ${searchResp.status}`
                         )
@@ -1445,7 +1445,7 @@ class AppProc {
                             fInfo.status = Dty.Fstatus.Nothing
                             const respUp = await appDb.fileUpdate(fInfo)
                             if (respUp.code != 0) {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error(`file update error: ${respUp.status} ${filepath}`)
                                 )
                                 throw respUp.status
@@ -1490,7 +1490,7 @@ class AppProc {
                         } catch (err) {
                             attempts++
                             if (attempts < maxAttempts) {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error(
                                         `thumb rm attempt ${attempts} failed, retrying in 1 second...`,
                                         err
@@ -1499,7 +1499,7 @@ class AppProc {
                                 await new Promise((resolve) => setTimeout(resolve, 1000))
                                 await attemptRename()
                             } else {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error('thumb rm err after multiple attempts:', err)
                                 )
                                 throw err
@@ -1517,7 +1517,7 @@ class AppProc {
             resp.err(logger.error(`thumb rm not support type ${req.data.type}`))
         }
 
-        workQueue.statusSet(logger.info(`thumb rm over`))
+        taskManager.statusSet(logger.info(`thumb rm over`))
         resp.data = {}
         return resp
     }
@@ -1534,7 +1534,7 @@ class AppProc {
             return logStatusRespReturn(resp.err('file is null'))
         }
 
-        workQueue.statusSet(logger.info(`delete file start`))
+        taskManager.statusSet(logger.info(`delete file start`))
 
         if (req.data.type == 'destroy') {
             for (const item of req.data.files) {
@@ -1548,7 +1548,7 @@ class AppProc {
                 searchReq.status = []
                 const searchResp = await appDb.fileViewSearch(searchReq)
                 if (searchResp.code !== 0 || searchResp.data?.files.length === 0) {
-                    workQueue.statusSet(
+                    taskManager.statusSet(
                         logger.error(`file rm err: ${item.repo} ${item.path} ${searchResp.status}`)
                     )
                     continue
@@ -1578,11 +1578,11 @@ class AppProc {
                             }
                             const respUp = await appDb.fileUpdate(fInfo)
                             if (respUp.code != 0) {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error(`file rm update err: ${respUp.status} ${filepath}`)
                                 )
                             } else {
-                                workQueue.statusSet(`file rm success: ${distFilename}`)
+                                taskManager.statusSet(`file rm success: ${distFilename}`)
                                 if (req.data?.bDelThumb) {
                                     {
                                         const thumbTrashDbPath = Util.thumbTrashDbPathGet(
@@ -1625,7 +1625,7 @@ class AppProc {
                         } catch (err) {
                             attempts++
                             if (attempts < maxAttempts) {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error(
                                         `file rm err attempt ${attempts} failed, retrying in 1 second...`,
                                         err
@@ -1634,7 +1634,7 @@ class AppProc {
                                 await new Promise((resolve) => setTimeout(resolve, 1000))
                                 await attemptRename()
                             } else {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error('file rm err after multiple attempts:', err)
                                 )
                                 throw err
@@ -1661,7 +1661,7 @@ class AppProc {
                 const searchReq = Dty.FilesReq.makeReqStatusNormal(item.path, item.repo)
                 const searchResp = await appDb.fileViewSearch(searchReq)
                 if (searchResp.code !== 0 || searchResp.data?.files.length === 0) {
-                    workQueue.statusSet(
+                    taskManager.statusSet(
                         logger.error(
                             `search file ${item.repo} ${item.path} err: ${searchResp.status}`
                         )
@@ -1686,11 +1686,11 @@ class AppProc {
                             fInfo.path = distFilename
                             const respUp = await appDb.fileUpdate(fInfo)
                             if (respUp.code != 0) {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error(`file update error: ${respUp.status} ${filepath}`)
                                 )
                             } else {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.info(`file move: ${filepath} to ${distFilename}`)
                                 )
                                 // Move thumbnail files
@@ -1735,7 +1735,7 @@ class AppProc {
                         } catch (err) {
                             attempts++
                             if (attempts < maxAttempts) {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error(
                                         `file move attempt ${attempts} failed, retrying in 1 second...`,
                                         err
@@ -1744,7 +1744,7 @@ class AppProc {
                                 await new Promise((resolve) => setTimeout(resolve, 1000))
                                 await attemptRename()
                             } else {
-                                workQueue.statusSet(
+                                taskManager.statusSet(
                                     logger.error('file move err after multiple attempts:', err)
                                 )
                                 throw err
@@ -1760,7 +1760,7 @@ class AppProc {
             }
         }
 
-        workQueue.statusSet(logger.info(`delete file over`))
+        taskManager.statusSet(logger.info(`delete file over`))
         resp.data = {}
         return resp
     }
@@ -1782,11 +1782,11 @@ class AppProc {
         }
         resp.data = JSON.stringify(cmdResp.data)
         if (appCfg.bPrtWorkQueue) {
-            logger.info(`cmd response: ${cmdResp.bOver}, cur cmd ${workQueue.curReq?.cmd}`)
+            logger.info(`cmd response: ${cmdResp.bOver}, cur cmd ${taskManager.curReq?.cmd}`)
         }
         if (bDoClear) {
             if (!(cmdResp.bOver == false)) {
-                workQueue.addTask(null)
+                taskManager.addTask(null)
             }
         }
         return resp
@@ -2106,9 +2106,6 @@ class AppProc {
     async handle_cmd(req: Dty.Req, mainWin: Electron.BrowserWindow | null): Promise<Dty.Resp> {
         const cmd = req.cmd
         const cseq = req.cseq
-        if (req.cmd != Dty.CmdType.heartBeat) {
-            // console.log(`Arguments: ${args}`);
-        }
         if (req.cmd == Dty.CmdType.heartBeat) {
             return this.cmdRespMake(await this.handle_heartbeat(), false)
         }
@@ -2132,11 +2129,11 @@ class AppProc {
             )
             return this.cmdRespMake(await this.handle_thumb_img_get(cmdReq))
         }
-        if (workQueue.isBusy()) {
-            logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${workQueue.curReq?.cmd}`)
-            return workQueue.makeBusyResponse()
+        if (taskManager.isBusy()) {
+            logger.warn(`work queue is busy, cmd: ${req.cmd}, curReq: ${taskManager.curReq?.cmd}`)
+            return taskManager.makeBusyResponse()
         }
-        workQueue.addTask(req)
+        taskManager.addTask(req)
         function convertCmdRequest<T>(req: Dty.Req): Dty.Req<T> {
             const cmdReq: Dty.Req<T> = {
                 cmd: req.cmd,

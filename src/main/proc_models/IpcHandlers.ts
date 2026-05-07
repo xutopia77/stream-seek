@@ -6,7 +6,7 @@ import { IpcMainInvokeEvent } from 'electron'
 import appProc from './AppProc'
 // import recordsProc from './RecordsProcess.js'
 // import { Util } from './Utils.js'
-import { workQueue } from './TaskEvent'
+import { taskManager } from './TaskEvent'
 // import type { WorkResp } from './Utils.js'
 import * as Dty from '../../bridge/dataTypedef'
 // import appCfg from './AppCfg.js'
@@ -26,7 +26,7 @@ export class IpcHandlers {
         const req: Dty.Req<string> = JSON.parse(args[0])
         const resp = await appProc.handle_cmd(req, this.mainWindow)
         if (resp.bOver == true || resp.bOver == undefined) {
-            workQueue.curReq = null
+            taskManager.completeTask()
         }
         return resp
     }

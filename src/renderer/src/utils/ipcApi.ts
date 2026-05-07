@@ -59,10 +59,10 @@ export class IpcApi {
 //           const folderPath = files[0].webkitRelativePath.split('/')[0];
 //           console.log('Selected folder path:', folderPath);
           // Send open-folder event to main process
-          window.electron.ipcRenderer.send('render_event', folderPath);
+//           window.electron.ipcRenderer.send('render_event', folderPath);
           // Receive information returned from backend
-          const fileInfo = await window.electron.ipcRenderer.invoke('render_event', folderPath);
-          console.log('File info in folder:', fileInfo);
+//           const fileInfo = await window.electron.ipcRenderer.invoke('render_event', folderPath);
+//           console.log('File info in folder:', fileInfo);
 //         }
 //       });
 

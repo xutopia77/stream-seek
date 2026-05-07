@@ -1,5 +1,5 @@
 import logger from './Logger.js'
-import { workQueue } from './TaskEvent.js'
+import { taskManager } from './TaskEvent.js'
 import appCfg from './AppCfg.js'
 import appDb from './AppDb'
 import mediaProc from './MediaProcess.js'
@@ -11,9 +11,6 @@ import sqlite3 from 'sqlite3'
 import { open, Database } from 'sqlite'
 import { Util } from './Utils.js'
 
-function generateTaskId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-}
 // async function checkFileExists(filePath: string): Promise<boolean> {
 //     try {
 //         // Try to access file
@@ -191,8 +188,11 @@ function generateTaskId(): string {
 async function start_cut_video(
     req: Dty.Req<Dty.Req_CutVideo>
 ): Promise<Dty.Resp<Dty.Resp_CutVideo>> {
-    const taskId = generateTaskId()
-    workQueue.addTask({ cmd: req.cmd })
+    const taskId = taskManager.startTask(req.cmd)
+    if (!taskId) {
+        const resp = new Dty.Resp<Dty.Resp_CutVideo>()
+        return resp.err(taskManager.makeBusyResponse().status)
+    }
 
     mediaProc
         .cutVideo(req)
@@ -205,7 +205,7 @@ async function start_cut_video(
                 error: resp.code !== 0 ? resp.status : undefined
             }
             Util.sendTaskNotify(notify)
-            workQueue.addTask(null)
+            taskManager.completeTask(taskId, resp.code === 0)
         })
         .catch((error) => {
             const notify: Dty.TaskNotify<Dty.Resp<Dty.Resp_CutVideo>> = {
@@ -215,7 +215,7 @@ async function start_cut_video(
                 error: String(error)
             }
             Util.sendTaskNotify(notify)
-            workQueue.addTask(null)
+            taskManager.completeTask(taskId, false)
         })
     const resp = new Dty.Resp<Dty.Resp_CutVideo>()
     resp.code = 0
